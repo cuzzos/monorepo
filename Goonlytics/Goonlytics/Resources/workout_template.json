@@ -1,0 +1,96 @@
+[
+    [
+        {
+            "exercise_id": "b06cd128-f3a4-4855-b88d-5225cd8f8c76",
+            "exercise_name": "Sit Ups",
+            "sets": [
+                {
+                    "type": "Warm Up",
+                    "suggested_weight": 50.0,
+                    "suggested_reps": 10,
+                    "suggested_RPE": 0,
+                    "actual_weight": null,
+                    "actual_reps": null,
+                    "actual_RPE": null
+                },
+                {
+                    "type": "Working",
+                    "suggested_weight": 50.0,
+                    "suggested_reps": 10,
+                    "suggested_RPE": 0,
+                    "actual_weight": null,
+                    "actual_reps": null,
+                    "actual_RPE": null
+                }
+            ],
+            "weight_unit": "lbs",
+            "warm_up_time": 60,
+            "rest_time": 60
+        }
+    ],
+    [
+        {
+            "exercise_id": "ddf2e31f-9349-4c50-a8b0-3f0e0c96e297",
+            "exercise_name": "Pull Ups",
+            "sets": [
+                {
+                    "type": "Warm Up",
+                    "suggested_weight": 50.0,
+                    "suggested_reps": 10,
+                    "suggested_RPE": 0,
+                    "actual_weight": null,
+                    "actual_reps": null,
+                    "actual_RPE": null
+                },
+                {
+                    "type": "Working",
+                    "suggested_weight": 50.0,
+                    "suggested_reps": 10,
+                    "suggested_RPE": 0,
+                    "actual_weight": null,
+                    "actual_reps": null,
+                    "actual_RPE": null
+                },
+                {
+                    "type": "Working",
+                    "suggested_weight": 50.0,
+                    "suggested_reps": 10,
+                    "suggested_RPE": 0,
+                    "actual_weight": null,
+                    "actual_reps": null,
+                    "actual_RPE": null
+                }
+            ],
+            "weight_unit": "lbs",
+            "warm_up_time": 60,
+            "rest_time": 60
+        },
+        {
+            "exercise_id": "9ee7fc99-bc6b-4dbb-9cf2-a27b1b4c7c18",
+            "exercise_name": "Bench Press",
+            "sets": [
+                {
+                    "type": "Working",
+                    "suggested_weight": 50.0,
+                    "suggested_reps": 10,
+                    "suggested_RPE": 0,
+                    "actual_weight": null,
+                    "actual_reps": null,
+                    "actual_RPE": null
+                },
+                {
+                    "type": "Working",
+                    "suggested_weight": 50.0,
+                    "suggested_reps": 10,
+                    "suggested_RPE": 0,
+                    "actual_weight": null,
+                    "actual_reps": null,
+                    "actual_RPE": null
+                }
+            ],
+            "weight_unit": "lbs",
+            "warm_up_time": 60,
+            "rest_time": 60
+        }
+    ]
+]
