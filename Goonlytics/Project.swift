@@ -19,7 +19,9 @@ let project = Project(
             sources: ["Goonlytics/Sources/**"],
             resources: ["Goonlytics/Resources/**"],
             dependencies: [
-                .external(name: "Dependencies")
+                .external(name: "Dependencies"),
+                .external(name: "SwiftNavigation"),
+                .external(name: "SharingGRDB"),
             ]
         ),
         .target(

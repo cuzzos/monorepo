@@ -1,17 +1,21 @@
 import Foundation
 
 // MARK: - Models
-struct Workout: Identifiable, Codable {
+struct Workout: Identifiable, Codable, Hashable {
     let id: UUID
+    var name: String
+    var date: Date
     var exercises: [Exercise]
     
-    init(id: UUID = UUID(), exercises: [Exercise]) {
+    init(id: UUID = UUID(), name: String = "", date: Date = .now, exercises: [Exercise] = []) {
         self.id = id
+        self.name = name
+        self.date = date
         self.exercises = exercises
     }
 }
 
-struct Exercise: Identifiable, Codable {
+struct Exercise: Identifiable, Codable, Hashable {
     var id: UUID { UUID(uuidString: exerciseId) ?? UUID() }
     let exerciseId: String
     let exerciseName: String
@@ -36,7 +40,7 @@ struct Exercise: Identifiable, Codable {
     }
 }
 
-struct ExerciseSet: Identifiable, Codable {
+struct ExerciseSet: Identifiable, Codable, Hashable {
     let id = UUID()
     let type: String
     let suggestedWeight: Double
