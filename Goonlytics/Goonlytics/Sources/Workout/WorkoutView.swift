@@ -41,10 +41,7 @@ struct WorkoutView: View {
         }
         .keyboardAware() // Add keyboard awareness
         .sheet(isPresented: $showingImportSheet) {
-            ImportWorkoutView { workoutText in
-                // TODO: Send to server
-                print("Importing workout text:", workoutText)
-            }
+            ImportWorkoutView(model: ImportWorkoutModel())
         }
     }
     

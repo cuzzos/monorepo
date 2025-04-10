@@ -20,6 +20,7 @@ let project = Project(
             resources: ["Goonlytics/Resources/**"],
             dependencies: [
                 .external(name: "Dependencies"),
+                .external(name: "DependenciesMacros"),
                 .external(name: "SwiftNavigation"),
                 .external(name: "SharingGRDB"),
             ]
