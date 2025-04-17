@@ -1,13 +1,21 @@
 import SwiftUI
-import SwiftNavigation
+import SwiftUINavigation
+import SharingGRDB
 
 @main
 struct GoonlyticsApp: App {
-    let model = AppModel()
+    
+    init() {
+        try! prepareDependencies {
+            $0.defaultDatabase = try appDatabase()
+        }
+    }
+    
+    static let model = AppModel(historyModel: HistoryModel())
     
     var body: some Scene {
         WindowGroup {
-            AppView(model: model)
+            AppView(model: Self.model)
         }
     }
 }
@@ -36,11 +44,11 @@ class AppModel {
     init(
         path: [Path] = [],
         selectedTab: Tab = .workout,
-        historyModel: HistoryModel = HistoryModel()
+        historyModel: HistoryModel
     ) {
         self.path = path
         self.selectedTab = selectedTab
-        self.historyModel = historyModel
+        self.historyModel = HistoryModel()
         self.bind()
     }
     
@@ -93,7 +101,10 @@ struct AppView: View {
         }
     }
 }
-
 #Preview {
-    AppView(model: AppModel())
-} 
+    let _ = try! prepareDependencies {
+        $0.defaultDatabase = try appDatabase()
+    }
+    
+    return AppView(model: GoonlyticsApp.model)
+}

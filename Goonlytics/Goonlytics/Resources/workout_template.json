@@ -1,96 +1,188 @@
-[
-    [
+{
+    "title": "Hybrid Athlete 1.0; W7D2",
+    "date": "2025-04-08T11:00:00",
+    "exercises": [
+      [
         {
-            "exercise_id": "b06cd128-f3a4-4855-b88d-5225cd8f8c76",
-            "exercise_name": "Sit Ups",
-            "sets": [
-                {
-                    "type": "Warm Up",
-                    "suggested_weight": 50.0,
-                    "suggested_reps": 10,
-                    "suggested_RPE": 0,
-                    "actual_weight": null,
-                    "actual_reps": null,
-                    "actual_RPE": null
-                },
-                {
-                    "type": "Working",
-                    "suggested_weight": 50.0,
-                    "suggested_reps": 10,
-                    "suggested_RPE": 0,
-                    "actual_weight": null,
-                    "actual_reps": null,
-                    "actual_RPE": null
-                }
-            ],
-            "weight_unit": "lbs",
-            "warm_up_time": 60,
-            "rest_time": 60
-        }
-    ],
-    [
-        {
-            "exercise_id": "ddf2e31f-9349-4c50-a8b0-3f0e0c96e297",
-            "exercise_name": "Pull Ups",
-            "sets": [
-                {
-                    "type": "Warm Up",
-                    "suggested_weight": 50.0,
-                    "suggested_reps": 10,
-                    "suggested_RPE": 0,
-                    "actual_weight": null,
-                    "actual_reps": null,
-                    "actual_RPE": null
-                },
-                {
-                    "type": "Working",
-                    "suggested_weight": 50.0,
-                    "suggested_reps": 10,
-                    "suggested_RPE": 0,
-                    "actual_weight": null,
-                    "actual_reps": null,
-                    "actual_RPE": null
-                },
-                {
-                    "type": "Working",
-                    "suggested_weight": 50.0,
-                    "suggested_reps": 10,
-                    "suggested_RPE": 0,
-                    "actual_weight": null,
-                    "actual_reps": null,
-                    "actual_RPE": null
-                }
-            ],
-            "weight_unit": "lbs",
-            "warm_up_time": 60,
-            "rest_time": 60
+          "id": "d77462f9-941c-40bb-a88c-05d446e9edae",
+          "name": "Hanging Leg Raise",
+          "sets": [
+            {
+              "weight": null,
+              "unit": null,
+              "reps": 20,
+              "rpe": null,
+              "type": "Working",
+              "rest_seconds": null,
+              "warm_up_rest_seconds": null
+            },
+            {
+              "weight": null,
+              "unit": null,
+              "reps": 20,
+              "rpe": null,
+              "type": "Working",
+              "rest_seconds": null,
+              "warm_up_rest_seconds": null
+            },
+            {
+              "weight": null,
+              "unit": null,
+              "reps": 20,
+              "rpe": null,
+              "type": "Working",
+              "rest_seconds": null,
+              "warm_up_rest_seconds": null
+            },
+            {
+              "weight": null,
+              "unit": null,
+              "reps": 20,
+              "rpe": null,
+              "type": "Working",
+              "rest_seconds": null,
+              "warm_up_rest_seconds": null
+            }
+          ],
+          "unit": null,
+          "default_rest_seconds": null,
+          "default_warm_up_rest_seconds": null
         },
         {
-            "exercise_id": "9ee7fc99-bc6b-4dbb-9cf2-a27b1b4c7c18",
-            "exercise_name": "Bench Press",
-            "sets": [
-                {
-                    "type": "Working",
-                    "suggested_weight": 50.0,
-                    "suggested_reps": 10,
-                    "suggested_RPE": 0,
-                    "actual_weight": null,
-                    "actual_reps": null,
-                    "actual_RPE": null
-                },
-                {
-                    "type": "Working",
-                    "suggested_weight": 50.0,
-                    "suggested_reps": 10,
-                    "suggested_RPE": 0,
-                    "actual_weight": null,
-                    "actual_reps": null,
-                    "actual_RPE": null
-                }
-            ],
-            "weight_unit": "lbs",
-            "warm_up_time": 60,
-            "rest_time": 60
+          "id": "1fc7ffca-1eb8-45a9-928d-81efaf51a9a0",
+          "name": "Superman",
+          "sets": [
+            {
+              "weight": null,
+              "unit": null,
+              "reps": 12,
+              "rpe": null,
+              "type": "Working",
+              "rest_seconds": null,
+              "warm_up_rest_seconds": null
+            },
+            {
+              "weight": null,
+              "unit": null,
+              "reps": 12,
+              "rpe": null,
+              "type": "Working",
+              "rest_seconds": null,
+              "warm_up_rest_seconds": null
+            },
+            {
+              "weight": null,
+              "unit": null,
+              "reps": 12,
+              "rpe": null,
+              "type": "Working",
+              "rest_seconds": null,
+              "warm_up_rest_seconds": null
+            }
+          ],
+          "unit": null,
+          "default_rest_seconds": null,
+          "default_warm_up_rest_seconds": null
+        },
+        {
+          "id": "60003c2d-0025-4aa8-b4b7-0dd2f46971c8",
+          "name": "Pull Up Amrap",
+          "sets": [
+            {
+              "weight": null,
+              "unit": null,
+              "reps": 15,
+              "rpe": null,
+              "type": "Working",
+              "rest_seconds": null,
+              "warm_up_rest_seconds": null
+            },
+            {
+              "weight": null,
+              "unit": null,
+              "reps": 10,
+              "rpe": null,
+              "type": "Working",
+              "rest_seconds": null,
+              "warm_up_rest_seconds": null
+            },
+            {
+              "weight": null,
+              "unit": null,
+              "reps": 9,
+              "rpe": null,
+              "type": "Working",
+              "rest_seconds": null,
+              "warm_up_rest_seconds": null
+            },
+            {
+              "weight": null,
+              "unit": null,
+              "reps": 7,
+              "rpe": null,
+              "type": "Working",
+              "rest_seconds": null,
+              "warm_up_rest_seconds": null
+            }
+          ],
+          "unit": null,
+          "default_rest_seconds": null,
+          "default_warm_up_rest_seconds": null
+        },
+        {
+          "id": "06637708-076a-4312-9b4c-ed366e919f2e",
+          "name": "Bent Over Row (Barbell)",
+          "sets": [
+            {
+              "weight": 45,
+              "unit": "lb",
+              "reps": 5,
+              "rpe": null,
+              "type": "Warm-up",
+              "rest_seconds": null,
+              "warm_up_rest_seconds": null
+            },
+            {
+              "weight": 105,
+              "unit": "lb",
+              "reps": 12,
+              "rpe": null,
+              "type": "Working",
+              "rest_seconds": null,
+              "warm_up_rest_seconds": null
+            },
+            {
+              "weight": 105,
+              "unit": "lb",
+              "reps": 12,
+              "rpe": null,
+              "type": "Working",
+              "rest_seconds": null,
+              "warm_up_rest_seconds": null
+            },
+            {
+              "weight": 105,
+              "unit": "lb",
+              "reps": 12,
+              "rpe": 9,
+              "type": "Working",
+              "rest_seconds": null,
+              "warm_up_rest_seconds": null
+            },
+            {
+              "weight": 105,
+              "unit": "lb",
+              "reps": 12,
+              "rpe": 9,
+              "type": "Working",
+              "rest_seconds": null,
+              "warm_up_rest_seconds": null
+            }
+          ],
+          "unit": "lb",
+          "default_rest_seconds": null,
+          "default_warm_up_rest_seconds": null
         }
+      ]
     ]
-]
+  }

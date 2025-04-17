@@ -2,11 +2,10 @@ import SwiftUI
 
 // MARK: - Views
 struct WorkoutView: View {
-    @ObservedObject var viewModel: WorkoutViewModel
+    @ObservedObject var viewModel: WorkoutModel
     @State private var showingImportSheet = false
-    let appName = "Swolytics"
     
-    init(viewModel: WorkoutViewModel = WorkoutViewModel()) {
+    init(viewModel: WorkoutModel = WorkoutModel()) {
         self.viewModel = viewModel
     }
     
@@ -39,7 +38,6 @@ struct WorkoutView: View {
                 }
             }
         }
-        .keyboardAware() // Add keyboard awareness
         .sheet(isPresented: $showingImportSheet) {
             ImportWorkoutView(model: ImportWorkoutModel())
         }
@@ -91,231 +89,168 @@ struct WorkoutView: View {
     private var exerciseList: some View {
         ScrollView {
             LazyVStack(spacing: 20, pinnedViews: .sectionHeaders) {
-                ForEach(viewModel.exercises, id: \.id) { exercise in
-                    exerciseSection(for: exercise)
-                        .id(exercise.id) // Add explicit ID to help with view recycling
+                ForEach(viewModel.exercises, id: \.self) { exerciseGroup in
+                    ForEach(exerciseGroup, id: \.id) { exercise in
+                        exerciseSection(for: exercise)
+                            .id(exercise.id) // Add explicit ID to help with view recycling
+                    }
                 }
                 
                 Spacer().frame(height: 80) // Bottom spacing for "Add Exercise" button
             }
-            .padding(.top)
         }
-        .simultaneousGesture(DragGesture().onChanged { _ in
-            // Dismiss keyboard when scrolling
-            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-        })
     }
     
     private func exerciseSection(for exercise: Exercise) -> some View {
-        Section {
-            VStack(spacing: 0) {
-                // Exercise Header with Superset Indicator
-                HStack {
-                    if exercise.isPartOfSuperset {
-                        Image(systemName: "arrow.triangle.2.circlepath")
-                            .foregroundColor(.orange)
-                            .padding(.leading, 8)
-                    }
-                    
-                    Text(exercise.exerciseName)
-                        .font(.title3)
-                        .padding(.horizontal)
-                        .padding(.vertical, 10)
-                        .lineLimit(1)
-                    
-                    Spacer()
-                    
-                    Button {
-                        // Handle link
-                    } label: {
-                        Image(systemName: "link")
-                            .padding(8)
-                    }
-                    
-                    Button {
-                        // Handle more actions
-                    } label: {
-                        Image(systemName: "ellipsis")
-                            .padding(8)
-                    }
-                    .padding(.trailing, 4)
-                }
+        VStack(alignment: .leading, spacing: 8) {
+            // Exercise Header
+            HStack {
+                Text(exercise.name)
+                    .font(.headline)
                 
-                // Set Headers
-                HStack(spacing: 8) {
-                    Text("Set")
-                        .font(.headline)
-                        .lineLimit(1)
-                        .frame(width: 40, alignment: .center)
-                    
-                    Text("Previous")
-                        .font(.headline)
-                        .lineLimit(1)
-                        .frame(maxWidth: .infinity, alignment: .center)
-                    
-                    Text(exercise.weightUnit)
-                        .font(.headline)
-                        .lineLimit(1)
-                        .frame(width: 60, alignment: .center)
-                    
-                    Text("Reps")
-                        .font(.headline)
-                        .lineLimit(1)
-                        .frame(width: 60, alignment: .center)
-                    
-                    Image(systemName: "checkmark")
-                        .font(.headline)
-                        .frame(width: 40, alignment: .center)
-                }
-                .padding(.horizontal)
-                .padding(.vertical, 8)
+                Spacer()
                 
-                // Sets
-                ForEach(exercise.sets, id: \.id) { set in
-                    SetRowView(set: set, exercise: exercise, viewModel: viewModel)
-                        .id(set.id)
-                }
-                
-                // Add Set Button
                 Button {
                     viewModel.addSet(to: exercise)
                 } label: {
-                    Text("+ Add Set")
-                        .frame(maxWidth: .infinity)
-                        .padding()
+                    Image(systemName: "plus.circle.fill")
+                        .foregroundColor(.blue)
                 }
             }
-            .clipShape(RoundedRectangle(cornerRadius: 10))
             .padding(.horizontal)
-            .overlay(
-                exercise.isPartOfSuperset ?
-                    RoundedRectangle(cornerRadius: 10)
-                    .stroke(Color.orange.opacity(0.4), lineWidth: 2)
-                    : nil
-            )
+            .padding(.top, 8)
+            
+            // Sets
+            ForEach(exercise.sets, id: \.self) { set in
+                SetRow(set: set, exercise: exercise, viewModel: viewModel)
+            }
         }
+        .background(Color(.systemBackground))
+        .cornerRadius(12)
+        .shadow(radius: 2)
+        .padding(.horizontal)
     }
 }
 
-// MARK: - Supporting Views
-struct SetRowView: View {
+// MARK: - Set Row View
+struct SetRow: View {
     let set: ExerciseSet
     let exercise: Exercise
-    @ObservedObject var viewModel: WorkoutViewModel
+    @ObservedObject var viewModel: WorkoutModel
     
     var body: some View {
         HStack(spacing: 8) {
-            // Set Number
-            Text("\(exercise.sets.firstIndex(where: { $0.id == set.id })?.advanced(by: 1) ?? 0)")
+            Text("\(set.number)")
                 .font(.headline)
-                .frame(width: 40, alignment: .center)
+                .frame(width: 40, alignment: .leading)
             
-            // Previous
             HStack(spacing: 1) {
-                if set.suggestedWeight > 0 && set.suggestedReps > 0 {
-                    Text("\(String(format: "%.1f", set.suggestedWeight)) \(exercise.weightUnit) × \(set.suggestedReps)")
-                        .lineLimit(1)
-                } else {
-                    Text("—")
-                }
+                Text("—")
             }
-            .frame(maxWidth: .infinity, alignment: .center)
-            
-            // Weight TextField
-            TextField("", value: Binding(
-                get: { set.actualWeight ?? 0 },
-                set: { newValue in
-                    if let index = viewModel.exercises.firstIndex(where: { $0.id == exercise.id }),
-                       let setIndex = viewModel.exercises[index].sets.firstIndex(where: { $0.id == set.id }) {
-                        viewModel.exercises[index].sets[setIndex].actualWeight = newValue
-                    }
-                }
-            ), format: .number)
-            .keyboardType(.decimalPad)
-            .multilineTextAlignment(.center)
-            .padding(8)
-            .background(Color(.systemBackground))
-            .overlay(
-                RoundedRectangle(cornerRadius: 6)
-                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-            )
-            .frame(width: 60)
-            
-            // Reps TextField
-            TextField("", value: Binding(
-                get: { set.actualReps ?? 0 },
-                set: { newValue in
-                    if let index = viewModel.exercises.firstIndex(where: { $0.id == exercise.id }),
-                       let setIndex = viewModel.exercises[index].sets.firstIndex(where: { $0.id == set.id }) {
-                        viewModel.exercises[index].sets[setIndex].actualReps = newValue
-                    }
-                }
-            ), format: .number)
-            .keyboardType(.numberPad)
-            .multilineTextAlignment(.center)
-            .padding(8)
-            .background(Color(.systemBackground))
-            .overlay(
-                RoundedRectangle(cornerRadius: 6)
-                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-            )
-            .frame(width: 60)
-            
-            // Completion Checkmark
-            Button {
-                if let index = viewModel.exercises.firstIndex(where: { $0.id == exercise.id }),
-                   let setIndex = viewModel.exercises[index].sets.firstIndex(where: { $0.id == set.id }) {
-                    viewModel.exercises[index].sets[setIndex].isCompleted.toggle()
-                }
-            } label: {
-                ZStack {
-                    Circle()
-                        .stroke(Color.gray, lineWidth: 1)
-                        .frame(width: 24, height: 24)
-                    
-                    if set.isCompleted {
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 14, weight: .bold))
-                    }
-                }
-            }
-            .frame(width: 40, alignment: .center)
         }
-        .padding(.horizontal)
-        .padding(.vertical, 8)
     }
-}
-
-// MARK: - Keyboard Aware Modifier
-extension View {
-    func keyboardAware() -> some View {
-        self.modifier(KeyboardAwareModifier())
-    }
-}
-
-struct KeyboardAwareModifier: ViewModifier {
-    @State private var keyboardHeight: CGFloat = 0
     
-    func body(content: Content) -> some View {
-        content
-            .padding(.bottom, keyboardHeight)
-            .onAppear {
-                NotificationCenter.default.addObserver(forName: UIResponder.keyboardWillShowNotification, object: nil, queue: .main) { notification in
-                    let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect ?? .zero
-                    self.keyboardHeight = keyboardFrame.height
-                }
-                
-                NotificationCenter.default.addObserver(forName: UIResponder.keyboardWillHideNotification, object: nil, queue: .main) { _ in
-                    self.keyboardHeight = 0
-                }
-            }
-    }
+//    var body: some View {
+//        HStack(spacing: 8) {
+//            // Set Number
+//            Text("\(set.number)")
+//                .font(.headline)
+//                .frame(width: 40, alignment: .center)
+//
+//            // Previous
+//            HStack(spacing: 1) {
+//                Text("—")
+//            }
+//            .frame(maxWidth: .infinity, alignment: .center)
+//
+//            // Weight TextField
+//            TextField("", value: Binding(
+//                get: { set.actual?.weight ?? 0 },
+//                set: { newValue in
+//                    if let index = viewModel.exercises.firstIndex(where: { $0.id == exercise.id }),
+//                       let setIndex = viewModel.exercises[index].sets.firstIndex(where: { $0.id == set.id }) {
+//                        // Create a new SetActual with the updated weight
+//                        let currentActual = viewModel.exercises[index].sets[setIndex].actual
+//                        let newActual = SetActual(
+//                            weight: newValue,
+//                            reps: currentActual?.reps,
+//                            duration: currentActual?.duration,
+//                            rpe: currentActual?.rpe,
+//                            actualRestTime: currentActual?.actualRestTime
+//                        )
+//                        viewModel.exercises[index].sets[setIndex].actual = newActual
+//                    }
+//                }
+//            ), format: .number)
+//            .keyboardType(.decimalPad)
+//            .multilineTextAlignment(.center)
+//            .padding(8)
+//            .background(Color(.systemBackground))
+//            .overlay(
+//                RoundedRectangle(cornerRadius: 6)
+//                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+//            )
+//            .frame(width: 60)
+//
+//            // Reps TextField
+//            TextField("", value: Binding(
+//                get: { set.actual?.reps ?? 0 },
+//                set: { newValue in
+//                    if let index = viewModel.exercises.firstIndex(where: { $0.id == exercise.id }),
+//                       let setIndex = viewModel.exercises[index].sets.firstIndex(where: { $0.id == set.id }) {
+//                        // Create a new SetActual with the updated reps
+//                        let currentActual = viewModel.exercises[index].sets[setIndex].actual
+//                        let newActual = SetActual(
+//                            weight: currentActual?.weight,
+//                            reps: newValue,
+//                            duration: currentActual?.duration,
+//                            rpe: currentActual?.rpe,
+//                            actualRestTime: currentActual?.actualRestTime
+//                        )
+//                        viewModel.exercises[index].sets[setIndex].actual = newActual
+//                    }
+//                }
+//            ), format: .number)
+//            .keyboardType(.numberPad)
+//            .multilineTextAlignment(.center)
+//            .padding(8)
+//            .background(Color(.systemBackground))
+//            .overlay(
+//                RoundedRectangle(cornerRadius: 6)
+//                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+//            )
+//            .frame(width: 60)
+//
+//            // Completion Checkmark
+//            Button {
+//                if let index = viewModel.exercises.firstIndex(where: { $0.id == exercise.id }),
+//                   let setIndex = viewModel.exercises[index].sets.firstIndex(where: { $0.id == set.id }) {
+//                    viewModel.exercises[index].sets[setIndex].isCompleted.toggle()
+//                }
+//            } label: {
+//                ZStack {
+//                    Circle()
+//                        .stroke(Color.gray, lineWidth: 1)
+//                        .frame(width: 24, height: 24)
+//
+//                    if set.isCompleted {
+//                        Image(systemName: "checkmark")
+//                            .font(.system(size: 14, weight: .bold))
+//                    }
+//                }
+//            }
+//            .frame(width: 40, alignment: .center)
+//        }
+//        .padding(.horizontal)
+//        .padding(.vertical, 8)
+//        .background(Color(.secondarySystemBackground))
+//    }
 }
 
 // MARK: - Preview
 #Preview {
     // Create a ViewModel that will load from the file
-    let viewModel = WorkoutViewModel()
+    let viewModel = WorkoutModel()
     
     // This would be called when the preview initializes
     return WorkoutView(viewModel: viewModel)

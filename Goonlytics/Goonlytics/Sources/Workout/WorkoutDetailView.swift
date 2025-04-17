@@ -1,5 +1,5 @@
 import SwiftUI
-import SwiftNavigation
+import SwiftUINavigation
 
 @MainActor
 @Observable
@@ -20,15 +20,15 @@ struct WorkoutDetailView: View {
                 HStack {
                     Text("Date")
                     Spacer()
-                    Text(model.workout.date, style: .date)
+                    Text(model.workout.startTimestamp, style: .date)
                         .foregroundStyle(.secondary)
                 }
             }
             
             Section("Exercises") {
-                ForEach(model.workout.exercises) { exercise in
+                ForEach(model.workout.exercises.flatMap { $0 }, id: \.id) { exercise in
                     VStack(alignment: .leading) {
-                        Text(exercise.exerciseName)
+                        Text(exercise.name)
                             .font(.headline)
                         
                         if !exercise.sets.isEmpty {
@@ -45,31 +45,52 @@ struct WorkoutDetailView: View {
 }
 
 #Preview {
+    let workoutId = UUID().uuidString
+    
     NavigationStack {
         WorkoutDetailView(
             model: WorkoutDetailModel(
                 workout: Workout(
+                    id: workoutId,
                     name: "Morning Workout",
-                    date: .now,
-                    exercises: [
+                    note: nil,
+                    duration: nil,
+                    startTimestamp: .now,
+                    endTimestamp: nil,
+                    exercises: [[
                         Exercise(
-                            exerciseId: "1",
-                            exerciseName: "Bench Press",
+                            id: "1",
+                            workoutId: workoutId,
+                            name: "Bench Press",
+                            pinnedNotes: [],
+                            notes: [],
+                            duration: nil,
+                            type: .barbell,
+                            weightUnit: .kg,
+                            defaultWarmUpTime: 0,
+                            defaultRestTime: 90,
                             sets: [
                                 ExerciseSet(
-                                    type: "working",
-                                    suggestedWeight: 60,
-                                    suggestedReps: 10,
-                                    suggestedRPE: 8,
-                                    actualWeight: 60,
-                                    actualReps: 10
+                                    type: .working,
+                                    weightUnit: .kg,
+                                    suggest: SetSuggest(
+                                        weight: 60,
+                                        reps: 10,
+                                        repRange: nil,
+                                        duration: nil,
+                                        rpe: 8,
+                                        restTime: 90
+                                    ),
+                                    actual: nil
                                 )
                             ],
-                            weightUnit: "kg",
-                            warmUpTime: 0,
-                            restTime: 90
+                            bodyPart: BodyPart(
+                                main: .chest,
+                                detailed: nil,
+                                scientific: nil
+                            )
                         )
-                    ]
+                    ]]
                 )
             )
         )

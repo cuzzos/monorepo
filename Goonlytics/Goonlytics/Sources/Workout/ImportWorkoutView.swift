@@ -1,30 +1,60 @@
 import Dependencies
-import SwiftNavigation
+import SwiftUINavigation
 import SwiftUI
+import SharingGRDB
 
 @MainActor
 @Observable
-final class ImportWorkoutModel: HashableObject {
+final class ImportWorkoutModel: HashableObject, Identifiable {
     @ObservationIgnored
     @Dependency(\.apiClient) private var apiClient
+    
+    @ObservationIgnored
+    @Dependency(\.defaultDatabase) private var database
     
     var workoutText: String = ""
     var isImporting: Bool = false
     var isDismissed = false
+    var destination: Destination?
+    
+    @CasePathable
+    enum Destination {
+        case alert(AlertState<AlertAction>)
+    }
+    
+    enum AlertAction {
+        case done
+    }
     
     func importButtonTapped() async {
         isImporting = true
         defer { isImporting = false }
         
         do {
-            let workout = try await apiClient.apiRequest(
+            var workout = try await apiClient.apiRequest(
                 route: .currentWorkout(rawText: workoutText),
                 as: Workout.self
             )
-            print("Workout response:", workout)
-            isDismissed = true
+            
+            // Show alert
+            destination = .alert(.dataPreparation)
+            
+            // Save workout to database
+            try await database.write { db in
+                try workout.save(db)
+            }
+            
         } catch {
             print("Error:", error)
+        }
+    }
+    
+    func alertButtonTapped(_ action: AlertAction?) async {
+        switch action {
+        case .done:
+            isDismissed = true
+        case nil:
+            break
         }
     }
 }
@@ -70,7 +100,22 @@ struct ImportWorkoutView: View {
             .onChange(of: model.isDismissed) {
                 dismiss()
             }
+            .alert($model.destination.alert) { action in
+                await model.alertButtonTapped(action)
+            }
         }
+    }
+}
+
+extension AlertState where Action == ImportWorkoutModel.AlertAction {
+    static let dataPreparation = Self {
+        TextState("We're preparing your data")
+    } actions: {
+        ButtonState(action: .done) {
+            TextState("Done")
+        }
+    } message: {
+        TextState("You'll be notified once your data is downloaded")
     }
 }
 

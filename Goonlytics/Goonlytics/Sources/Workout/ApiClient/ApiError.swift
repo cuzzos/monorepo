@@ -1,3 +1,4 @@
+import CustomDump
 import Foundation
 
 public struct ApiError: Codable, Error, Equatable, LocalizedError {
@@ -12,7 +13,7 @@ public struct ApiError: Codable, Error, Equatable, LocalizedError {
     line: UInt = #line
   ) {
     var string = ""
-    dump(error, to: &string)
+    customDump(error, to: &string)
     self.errorDump = string
     self.file = String(describing: file)
     self.line = line

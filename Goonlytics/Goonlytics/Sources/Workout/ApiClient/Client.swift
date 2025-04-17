@@ -82,7 +82,11 @@ public struct ApiClient: Sendable {
   }
 }
 
-let jsonDecoder = JSONDecoder()
+let jsonDecoder: JSONDecoder = {
+    let decoder = JSONDecoder()
+    decoder.dateDecodingStrategy = .iso8601
+    return decoder
+}()
 
 extension Task where Failure == Never {
   /// An async function that never returns.

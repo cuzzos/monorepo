@@ -1,19 +1,32 @@
 import SwiftUI
-import SwiftNavigation
+import SwiftUINavigation
+import SharingGRDB
+import Dependencies
 
+@MainActor
 @Observable
-class HistoryModel {
-    var workouts: [Workout] = []
+final class HistoryModel: HashableObject {
     var destination: Destination?
+    @ObservationIgnored @SharedReader var workoutsData: WorkoutsRequest.Value
+    
+    @ObservationIgnored @Dependency(\.defaultDatabase) var database
     
     @CasePathable
     @dynamicMemberLookup
-    enum Destination: Hashable {
+    enum Destination {
         case detail(Workout)
+        case importWorkout(ImportWorkoutModel)
     }
     
-    init(workouts: [Workout] = []) {
-        self.workouts = workouts
+    init() {
+        _workoutsData = SharedReader(
+            wrappedValue: WorkoutsRequest.Value(),
+            .fetch(WorkoutsRequest(), animation: .default)
+        )
+    }
+    
+    var workouts: [Workout] {
+        return workoutsData.workouts
     }
 }
 
@@ -22,14 +35,14 @@ struct HistoryView: View {
     
     var body: some View {
         List {
-            ForEach(model.workouts) { workout in
+            ForEach(model.workouts, id: \.id) { workout in
                 Button {
                     model.destination = .detail(workout)
                 } label: {
                     VStack(alignment: .leading) {
                         Text(workout.name)
                             .font(.headline)
-                        Text(workout.date, style: .date)
+                        Text(workout.startTimestamp, style: .date)
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
@@ -37,9 +50,21 @@ struct HistoryView: View {
             }
         }
         .navigationTitle("History")
-        .navigationDestination(for: HistoryModel.Destination.self) { destination in
-            switch destination {
-            case let .detail(workout):
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button {
+                    model.destination = .importWorkout(ImportWorkoutModel())
+                } label: {
+                    Image(systemName: "square.and.arrow.down")
+                        .foregroundColor(.accentColor)
+                }
+            }
+        }
+        .sheet(item: $model.destination.importWorkout) { importModel in
+            ImportWorkoutView(model: importModel)
+        }
+        .background {
+            EmptyView().navigationDestination(item: $model.destination.detail) { $workout in
                 HistoryDetailView(model: HistoryDetailModel(workout: workout))
             }
         }
@@ -47,14 +72,13 @@ struct HistoryView: View {
 }
 
 #Preview {
-    NavigationStack {
+    let _ = try! prepareDependencies {
+        $0.defaultDatabase = try appDatabase()
+    }
+    
+    return NavigationStack {
         HistoryView(
-            model: HistoryModel(
-                workouts: [
-                    Workout(name: "Morning Run", date: .now),
-                    Workout(name: "Evening Workout", date: .now.addingTimeInterval(-86400))
-                ]
-            )
+            model: HistoryModel()
         )
     }
-} 
+}
