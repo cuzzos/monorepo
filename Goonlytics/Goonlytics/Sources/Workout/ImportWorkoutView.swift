@@ -39,9 +39,25 @@ final class ImportWorkoutModel: HashableObject, Identifiable {
             // Show alert
             destination = .alert(.dataPreparation)
             
-            // Save workout to database
+            // Save workout to database with all exercises and sets
             try await database.write { db in
+                // Save the workout first
                 try workout.save(db)
+                
+                // Save all exercises and their sets
+                for exerciseGroup in workout.exercises {
+                    for var exercise in exerciseGroup {
+                        try exercise.save(db)
+                        
+                        // Save all sets for this exercise
+                        for (index, var exerciseSet) in exercise.sets.enumerated() {
+                            // Make sure the set references this exercise and has the correct index
+                            exerciseSet.exerciseId = exercise.id
+                            exerciseSet.setIndex = index
+                            try exerciseSet.save(db)
+                        }
+                    }
+                }
             }
             
         } catch {

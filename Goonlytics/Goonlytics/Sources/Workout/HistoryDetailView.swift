@@ -130,40 +130,6 @@ final class HistoryDetailModel: HashableObject {
             }
         }
     }
-    
-    private func refreshWorkoutData() {
-        Task {
-            do {
-                @Dependency(\.defaultDatabase) var database
-                let workoutId = workout.id
-                
-                // Use our proper WorkoutRequest to get a complete workout with all exercises and sets
-                let workoutValue = try await database.read { db in
-                    try WorkoutRequest(id: workoutId).fetch(db)
-                }
-                
-                if let workoutFromDb = workoutValue.workout {
-                    // Update the workout with fresh data from database
-                    print("Refreshing workout data from database")
-                    await MainActor.run {
-                        self.workout = workoutFromDb
-                        print("Workout data refreshed with \(workoutFromDb.exercises.flatMap { $0 }.count) exercises")
-                        
-                        // Log the exercises and their sets for debugging
-                        for (groupIndex, group) in workoutFromDb.exercises.enumerated() {
-                            print("Group \(groupIndex+1): \(group.count) exercises")
-                            for (exerciseIndex, exercise) in group.enumerated() {
-                                print("  Exercise \(exerciseIndex+1): \(exercise.name)")
-                                print("  Sets: \(exercise.sets.count)")
-                            }
-                        }
-                    }
-                }
-            } catch {
-                print("Error refreshing workout data: \(error.localizedDescription)")
-            }
-        }
-    }
 }
 
 struct HistoryDetailView: View {
@@ -184,8 +150,7 @@ struct HistoryDetailView: View {
                 exercisesSection
                 
                 // Notes
-                let notes = "Workout Notes: did this workout with half of the intended rest times for most of the exercises"
-                notesSection(notes: notes)
+                notesSection(notes: model.workout.note ?? "")
             }
             .padding(.bottom, 32)
         }
@@ -288,37 +253,16 @@ struct HistoryDetailView: View {
     
     private func formattedSet(set: ExerciseSet, index: Int) -> String {
         var result = ""
-        let exercise = model.workout.exercises.flatMap { $0 }.first {
-            $0.sets.contains { $0 == set }
-        }
-        let exerciseName = exercise?.name ?? ""
-        
-        // For time-based exercises like Plank
-        if let reps = set.suggest?.reps, reps == 60 && exerciseName.contains("Plank") {
-            return "\(reps / 60):\(String(format: "%02d", reps % 60))"
-        }
         
         // For weighted exercises
-        if let weight = set.suggest?.weight {
-            let unit = set.weightUnit?.rawValue ?? exercise?.weightUnit?.rawValue ?? "lb"
+        if let weight = set.actual?.weight ?? set.suggest?.weight {
+            let unit = set.weightUnit?.rawValue ?? "lb"
             result += "\(weight) \(unit) × "
-        } else if exerciseName.contains("Bench Press") {
-            // Default weight for bench press if none specified
-            result += "135 lb × "
-        } else if exerciseName.contains("Pull Up") && set.suggest?.weight == nil {
-            // Default for pull ups with no weight
-            result += "BW × "
         }
         
         // Add reps
-        if let reps = set.suggest?.reps {
+        if let reps = set.actual?.reps ?? set.suggest?.reps {
             result += "\(reps) reps"
-        } else if exerciseName.contains("Bench Press") {
-            // Default reps for bench press
-            result += "8 reps"
-        } else if exerciseName.contains("Pull Up") {
-            // Default reps for pull ups
-            result += "10 reps"
         } else {
             result += "0 reps"
         }
@@ -385,327 +329,16 @@ struct ExerciseDetailView: View {
 }
 
 #Preview {
-    HistoryDetailView(
-            model: HistoryDetailModel(
-                workout: Workout(
-                    id: UUID().uuidString,
-                    name: "Hybrid Athlete 1.0; W7D5",
-                    note: nil,
-                    duration: nil,
-                    startTimestamp: Date(),
-                    endTimestamp: nil,
-                    exercises: [[
-                        Exercise(
-                            id: "1",
-                            workoutId: UUID().uuidString,
-                            name: "Plank",
-                            pinnedNotes: [],
-                            notes: [],
-                            duration: nil,
-                            type: .bodyweight,
-                            weightUnit: nil,
-                            defaultWarmUpTime: nil,
-                            defaultRestTime: nil,
-                            sets: [
-                                ExerciseSet(
-                                    type: .working,
-                                    weightUnit: nil,
-                                    suggest: SetSuggest(
-                                        weight: nil,
-                                        reps: 60,
-                                        repRange: nil,
-                                        duration: nil,
-                                        rpe: nil,
-                                        restTime: nil
-                                    ),
-                                    actual: nil
-                                ),
-                                ExerciseSet(
-                                    type: .working,
-                                    weightUnit: nil,
-                                    suggest: SetSuggest(
-                                        weight: nil,
-                                        reps: 60,
-                                        repRange: nil,
-                                        duration: nil,
-                                        rpe: nil,
-                                        restTime: nil
-                                    ),
-                                    actual: nil
-                                ),
-                                ExerciseSet(
-                                    type: .working,
-                                    weightUnit: nil,
-                                    suggest: SetSuggest(
-                                        weight: nil,
-                                        reps: 60,
-                                        repRange: nil,
-                                        duration: nil,
-                                        rpe: nil,
-                                        restTime: nil
-                                    ),
-                                    actual: nil
-                                )
-                            ],
-                            bodyPart: nil
-                        ),
-                        Exercise(
-                            id: "2",
-                            workoutId: UUID().uuidString,
-                            name: "Hanging Leg Raise",
-                            pinnedNotes: [],
-                            notes: [],
-                            duration: nil,
-                            type: .bodyweight,
-                            weightUnit: nil,
-                            defaultWarmUpTime: nil,
-                            defaultRestTime: nil,
-                            sets: [
-                                ExerciseSet(
-                                    type: .working,
-                                    weightUnit: nil,
-                                    suggest: SetSuggest(
-                                        weight: nil,
-                                        reps: 20,
-                                        repRange: nil,
-                                        duration: nil,
-                                        rpe: nil,
-                                        restTime: nil
-                                    ),
-                                    actual: nil
-                                ),
-                                ExerciseSet(
-                                    type: .working,
-                                    weightUnit: nil,
-                                    suggest: SetSuggest(
-                                        weight: nil,
-                                        reps: 20,
-                                        repRange: nil,
-                                        duration: nil,
-                                        rpe: nil,
-                                        restTime: nil
-                                    ),
-                                    actual: nil
-                                ),
-                                ExerciseSet(
-                                    type: .working,
-                                    weightUnit: nil,
-                                    suggest: SetSuggest(
-                                        weight: nil,
-                                        reps: 20,
-                                        repRange: nil,
-                                        duration: nil,
-                                        rpe: nil,
-                                        restTime: nil
-                                    ),
-                                    actual: nil
-                                )
-                            ],
-                            bodyPart: nil
-                        ),
-                        Exercise(
-                            id: "3",
-                            workoutId: UUID().uuidString,
-                            name: "Push Up",
-                            pinnedNotes: [],
-                            notes: [],
-                            duration: nil,
-                            type: .bodyweight,
-                            weightUnit: nil,
-                            defaultWarmUpTime: nil,
-                            defaultRestTime: nil,
-                            sets: [
-                                ExerciseSet(
-                                    type: .working,
-                                    weightUnit: nil,
-                                    suggest: SetSuggest(
-                                        weight: nil,
-                                        reps: 25,
-                                        repRange: nil,
-                                        duration: nil,
-                                        rpe: 8,
-                                        restTime: nil
-                                    ),
-                                    actual: nil
-                                ),
-                                ExerciseSet(
-                                    type: .working,
-                                    weightUnit: nil,
-                                    suggest: SetSuggest(
-                                        weight: nil,
-                                        reps: 25,
-                                        repRange: nil,
-                                        duration: nil,
-                                        rpe: 8.5,
-                                        restTime: nil
-                                    ),
-                                    actual: nil
-                                ),
-                                ExerciseSet(
-                                    type: .working,
-                                    weightUnit: nil,
-                                    suggest: SetSuggest(
-                                        weight: nil,
-                                        reps: 25,
-                                        repRange: nil,
-                                        duration: nil,
-                                        rpe: 8,
-                                        restTime: nil
-                                    ),
-                                    actual: nil
-                                ),
-                                ExerciseSet(
-                                    type: .working,
-                                    weightUnit: nil,
-                                    suggest: SetSuggest(
-                                        weight: nil,
-                                        reps: 25,
-                                        repRange: nil,
-                                        duration: nil,
-                                        rpe: nil,
-                                        restTime: nil
-                                    ),
-                                    actual: nil
-                                )
-                            ],
-                            bodyPart: nil
-                        ),
-                        Exercise(
-                            id: "4",
-                            workoutId: UUID().uuidString,
-                            name: "Pull Up",
-                            pinnedNotes: [],
-                            notes: [],
-                            duration: nil,
-                            type: .bodyweight,
-                            weightUnit: .lb,
-                            defaultWarmUpTime: nil,
-                            defaultRestTime: nil,
-                            sets: [
-                                ExerciseSet(
-                                    type: .working,
-                                    weightUnit: .lb,
-                                    suggest: SetSuggest(
-                                        weight: 5,
-                                        reps: 12,
-                                        repRange: nil,
-                                        duration: nil,
-                                        rpe: 8.5,
-                                        restTime: nil
-                                    ),
-                                    actual: nil
-                                ),
-                                ExerciseSet(
-                                    type: .working,
-                                    weightUnit: .lb,
-                                    suggest: SetSuggest(
-                                        weight: 5,
-                                        reps: 12,
-                                        repRange: nil,
-                                        duration: nil,
-                                        rpe: 8.5,
-                                        restTime: nil
-                                    ),
-                                    actual: nil
-                                ),
-                                ExerciseSet(
-                                    type: .working,
-                                    weightUnit: .lb,
-                                    suggest: SetSuggest(
-                                        weight: 5,
-                                        reps: 12,
-                                        repRange: nil,
-                                        duration: nil,
-                                        rpe: 9,
-                                        restTime: nil
-                                    ),
-                                    actual: nil
-                                ),
-                                ExerciseSet(
-                                    type: .working,
-                                    weightUnit: .lb,
-                                    suggest: SetSuggest(
-                                        weight: 5,
-                                        reps: 12,
-                                        repRange: nil,
-                                        duration: nil,
-                                        rpe: 8.5,
-                                        restTime: nil
-                                    ),
-                                    actual: nil
-                                )
-                            ],
-                            bodyPart: nil
-                        ),
-                        Exercise(
-                            id: "5",
-                            workoutId: UUID().uuidString,
-                            name: "Preacher Curl (Barbell)",
-                            pinnedNotes: [],
-                            notes: [],
-                            duration: nil,
-                            type: .barbell,
-                            weightUnit: .lb,
-                            defaultWarmUpTime: nil,
-                            defaultRestTime: nil,
-                            sets: [
-                                ExerciseSet(
-                                    type: .working,
-                                    weightUnit: .lb,
-                                    suggest: SetSuggest(
-                                        weight: 70,
-                                        reps: 12,
-                                        repRange: nil,
-                                        duration: nil,
-                                        rpe: 7.5,
-                                        restTime: nil
-                                    ),
-                                    actual: nil
-                                ),
-                                ExerciseSet(
-                                    type: .working,
-                                    weightUnit: .lb,
-                                    suggest: SetSuggest(
-                                        weight: 70,
-                                        reps: 12,
-                                        repRange: nil,
-                                        duration: nil,
-                                        rpe: 9,
-                                        restTime: nil
-                                    ),
-                                    actual: nil
-                                ),
-                                ExerciseSet(
-                                    type: .working,
-                                    weightUnit: .lb,
-                                    suggest: SetSuggest(
-                                        weight: 70,
-                                        reps: 12,
-                                        repRange: nil,
-                                        duration: nil,
-                                        rpe: 9.5,
-                                        restTime: nil
-                                    ),
-                                    actual: nil
-                                ),
-                                ExerciseSet(
-                                    type: .working,
-                                    weightUnit: .lb,
-                                    suggest: SetSuggest(
-                                        weight: 70,
-                                        reps: 12,
-                                        repRange: nil,
-                                        duration: nil,
-                                        rpe: 9,
-                                        restTime: nil
-                                    ),
-                                    actual: nil
-                                )
-                            ],
-                            bodyPart: nil
-                        )
-                    ]]
-                )
-            )
-    )
+    let _ = try! prepareDependencies {
+        $0.defaultDatabase = try appDatabase()
+    }
+    
+    @Dependency(\.defaultDatabase) var database
+    let workout = try! database.read { db in
+        try Workout.fetchOne(db)!
+    }
+    
+    return NavigationStack {
+        HistoryDetailView(model: .init(workout: workout))
+    }
 }
