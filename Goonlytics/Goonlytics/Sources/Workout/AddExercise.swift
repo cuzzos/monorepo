@@ -13,6 +13,7 @@ struct GlobalExercise: Identifiable, Hashable {
 
 struct AddExercise: View {
     @Environment(\.presentationMode) var presentationMode
+    var onAdd: (([GlobalExercise]) -> Void)? = nil
     @State private var searchText: String = ""
     @State private var selectedExercises: Set<GlobalExercise> = []
     @State private var allExercises: [GlobalExercise] = []
@@ -99,7 +100,7 @@ struct AddExercise: View {
                 // Add Button
                 if !selectedExercises.isEmpty {
                     Button(action: {
-                        // Handle adding selected exercises
+                        onAdd?(Array(selectedExercises))
                         presentationMode.wrappedValue.dismiss()
                     }) {
                         Text("Add \(selectedExercises.count) exercise\(selectedExercises.count > 1 ? "s" : "")")

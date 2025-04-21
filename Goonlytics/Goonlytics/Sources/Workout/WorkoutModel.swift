@@ -1,11 +1,14 @@
 import SwiftUI
 import Combine
+import SwiftUINavigation
 
 // MARK: - View Models
-class WorkoutModel: ObservableObject {
-    @Published var workout: Workout
-    @Published var elapsedTime: Int = 1476 // 24:36 in seconds
-    @Published var isTimerRunning: Bool = true
+@MainActor
+@Observable
+class WorkoutModel: HashableObject {
+    var workout: Workout
+    var elapsedTime: Int = 0
+    var isTimerRunning: Bool = true
     
     var exercises: [[Exercise]] {
         get {
@@ -111,6 +114,32 @@ class WorkoutModel: ObservableObject {
         }
     }
     
+    // Add a GlobalExercise as a new Exercise to the workout
+    func addExercise(from global: GlobalExercise) {
+        let newExercise = Exercise(
+            id: UUID().uuidString,
+            workoutId: workout.id,
+            name: global.name,
+            pinnedNotes: [],
+            notes: [],
+            duration: nil,
+            type: .init(rawValue: global.type) ?? .unknown,
+            weightUnit: .kg,
+            defaultWarmUpTime: 60,
+            defaultRestTime: 60,
+            sets: [ExerciseSet(
+                type: .working,
+                weightUnit: .kg,
+                suggest: SetSuggest(weight: 0, reps: 0, repRange: nil, duration: nil, rpe: nil, restTime: 60),
+                actual: nil
+            )],
+            bodyPart: nil,
+            groupIndex: 0
+        )
+        // Add as superset of 1
+        exercises.append([newExercise])
+    }
+    
     func importWorkout(from jsonData: Data) {
         do {
             let decoder = JSONDecoder()
@@ -143,5 +172,57 @@ class WorkoutModel: ObservableObject {
         } catch {
             print("Error loading workout file: \(error)")
         }
+    }
+    
+    // --- Set Editing Methods ---
+    func updateReps(for exerciseIndex: Int, setIndex: Int, reps: Int) {
+        guard exercises.indices.contains(exerciseIndex),
+              exercises[exerciseIndex].indices.contains(0),
+              exercises[exerciseIndex][0].sets.indices.contains(setIndex)
+        else { return }
+        let group = exerciseIndex
+        let exercise = 0
+        var set = exercises[group][exercise].sets[setIndex]
+        var actual = set.actual ?? SetActual()
+        actual.reps = reps
+        set.actual = actual
+        exercises[group][exercise].sets[setIndex] = set
+    }
+    
+    func updateRPE(for exerciseIndex: Int, setIndex: Int, rpe: Double) {
+        guard exercises.indices.contains(exerciseIndex),
+              exercises[exerciseIndex].indices.contains(0),
+              exercises[exerciseIndex][0].sets.indices.contains(setIndex)
+        else { return }
+        let group = exerciseIndex
+        let exercise = 0
+        var set = exercises[group][exercise].sets[setIndex]
+        var actual = set.actual ?? SetActual()
+        actual.rpe = rpe
+        set.actual = actual
+        exercises[group][exercise].sets[setIndex] = set
+    }
+    
+    func toggleSetCompleted(for exerciseIndex: Int, setIndex: Int) {
+        guard exercises.indices.contains(exerciseIndex),
+              exercises[exerciseIndex].indices.contains(0),
+              exercises[exerciseIndex][0].sets.indices.contains(setIndex)
+        else { return }
+        let group = exerciseIndex
+        let exercise = 0
+        exercises[group][exercise].sets[setIndex].isCompleted.toggle()
+    }
+    
+    // --- Computed Properties ---
+    var totalVolume: Int {
+        self.workout.exercises.flatMap { $0 }.flatMap { $0.sets }.reduce(0) { sum, set in
+            let reps = set.actual?.reps ?? set.suggest?.reps ?? 0
+            let weight = Int(set.actual?.weight ?? set.suggest?.weight ?? 0)
+            return sum + (reps * weight)
+        }
+    }
+
+    var totalSets: Int {
+        self.workout.exercises.flatMap { $0 }.flatMap { $0.sets }.count
     }
 }

@@ -115,7 +115,7 @@ struct ExerciseSet: Codable, Hashable {
     let type: SetType
     let weightUnit: WeightUnit?
     let suggest: SetSuggest?
-    let actual: SetActual?
+    var actual: SetActual?
     
     // Local state
     var isCompleted: Bool = false
@@ -160,11 +160,11 @@ struct SetSuggest: Codable, Hashable {
 }
 
 struct SetActual: Codable, Hashable {
-    let weight: Double?
-    let reps: Int?
-    let duration: Int?
-    let rpe: Double?
-    let actualRestTime: Int?
+    var weight: Double?
+    var reps: Int?
+    var duration: Int?
+    var rpe: Double?
+    var actualRestTime: Int?
     
     enum CodingKeys: String, CodingKey {
         case weight
