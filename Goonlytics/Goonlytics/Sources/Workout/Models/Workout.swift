@@ -54,7 +54,9 @@ struct Exercise: Identifiable, Codable, Hashable {
     }
 }
 
-enum ExerciseType: String, Codable, Hashable {
+enum ExerciseType: String, CaseIterable, Codable, Identifiable {
+    var id: String { self.rawValue }
+
     case dumbbell
     case kettlebell
     case barbell

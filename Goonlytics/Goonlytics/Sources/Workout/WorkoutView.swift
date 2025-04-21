@@ -4,6 +4,7 @@ import SwiftUI
 struct WorkoutView: View {
     @ObservedObject var viewModel: WorkoutModel
     @State private var showingImportSheet = false
+    @State private var showingAddExerciseSheet = false
     
     init(viewModel: WorkoutModel = WorkoutModel()) {
         self.viewModel = viewModel
@@ -30,7 +31,7 @@ struct WorkoutView: View {
                 }
                 
                 Button {
-                    viewModel.addExercise()
+                    showingAddExerciseSheet = true
                 } label: {
                     Text("+ Add Exercise")
                         .frame(maxWidth: .infinity)
@@ -40,6 +41,9 @@ struct WorkoutView: View {
         }
         .sheet(isPresented: $showingImportSheet) {
             ImportWorkoutView(model: ImportWorkoutModel())
+        }
+        .sheet(isPresented: $showingAddExerciseSheet) {
+            AddExercise()
         }
     }
     
