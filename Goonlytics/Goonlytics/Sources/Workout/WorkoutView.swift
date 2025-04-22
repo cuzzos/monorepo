@@ -80,11 +80,9 @@ struct WorkoutView: View {
             // --- Exercise List ---
             ScrollView {
                 LazyVStack(spacing: 20, pinnedViews: .sectionHeaders) {
-                    ForEach(model.exercises.indices, id: \ .self) { exerciseIdx in
-                        ForEach(model.exercises[exerciseIdx], id: \ .id) { exercise in
-                            exerciseSection(for: exercise, exerciseIdx: exerciseIdx)
-                                .id(exercise.id)
-                        }
+                    ForEach(model.exercises, id: \.id) { exercise in
+                        exerciseSection(for: exercise)
+                            .id(exercise.id)
                     }
                 }
             }
@@ -148,7 +146,7 @@ struct WorkoutView: View {
         }
     }
 
-    private func exerciseSection(for exercise: Exercise, exerciseIdx: Int) -> some View {
+    private func exerciseSection(for exercise: Exercise) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             // Exercise Header
             HStack {
@@ -187,8 +185,8 @@ struct WorkoutView: View {
             }
             .padding(.horizontal)
             // Sets
-            ForEach(exercise.sets.indices, id: \ .self) { setIdx in
-                SetRow(viewModel: model, set: exercise.sets[setIdx], setIndex: setIdx, exerciseIndex: exerciseIdx)
+            ForEach(exercise.sets.indices, id: \.self) { setIdx in
+                SetRow(model: model, exerciseId: exercise.id.uuidString, setIndex: setIdx)
             }
         }
         .background(Color(.systemBackground))

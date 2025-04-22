@@ -30,12 +30,11 @@ extension Workout: FetchableRecord, MutablePersistableRecord {
 
 extension Exercise: FetchableRecord, MutablePersistableRecord {
     static let workoutId = Column("workout_id")
-    static let groupIndex = Column("group_index")
     
     func encode(to container: inout PersistenceContainer) {
         container["id"] = id
         container["workout_id"] = workoutId
-        container["group_index"] = groupIndex
+        container["superset_id"] = supersetId
         container["name"] = name
         container["duration"] = duration
         container["type"] = type.rawValue
@@ -60,7 +59,7 @@ extension Exercise: FetchableRecord, MutablePersistableRecord {
     init(row: Row) throws {
         id = row["id"]
         workoutId = row["workout_id"]
-        groupIndex = row["group_index"]
+        supersetId = row["superset_id"]
         name = row["name"]
         duration = row["duration"]
         
@@ -204,7 +203,7 @@ func appDatabase() throws -> any DatabaseWriter {
             table.column("id", .text).primaryKey()
             table.column("workout_id", .text).notNull()
                 .references(Workout.databaseTableName, onDelete: .cascade)
-            table.column("group_index", .integer).notNull()
+            table.column("superset_id", .text)
             table.column("name", .text).notNull()
             table.column("pinned_notes", .blob)
             table.column("notes", .blob)
@@ -217,7 +216,7 @@ func appDatabase() throws -> any DatabaseWriter {
         }
         
         // Create index for exercises table
-        try db.create(indexOn: Exercise.databaseTableName, columns: ["workout_id", "group_index"])
+        try db.create(indexOn: Exercise.databaseTableName, columns: ["workout_id"])
         
         // Create exercise_sets table
         try db.create(table: ExerciseSet.databaseTableName) { table in
@@ -252,11 +251,6 @@ func appDatabase() throws -> any DatabaseWriter {
 extension Workout {
     static let exercises = hasMany(Exercise.self)
     
-    var exerciseGroups: QueryInterfaceRequest<Exercise> {
-        request(for: Workout.exercises)
-            .order(Exercise.groupIndex)
-    }
-    
     static func all() -> QueryInterfaceRequest<Workout> {
         return Workout.order(Column("start_timestamp").desc)
     }
@@ -277,7 +271,6 @@ extension Exercise {
     
     static func byWorkoutId(_ workoutId: String) -> QueryInterfaceRequest<Exercise> {
         return Exercise.filter(Exercise.workoutId == workoutId)
-            .order(Exercise.groupIndex)
     }
     
     static func byId(_ id: String) -> QueryInterfaceRequest<Exercise> {
@@ -297,93 +290,25 @@ struct WorkoutsRequest: FetchKeyRequest {
     }
     
     func fetch(_ db: Database) throws -> Value {
-        // Use GRDB's eager loading with associations for better performance
-        var workouts = try Workout.all()
-            .including(all: Workout.exercises.order(Exercise.groupIndex)
-            .including(all: Exercise.sets.order(ExerciseSet.setIndex)))
+        // Fetch workouts, most recent first
+        let workouts = try Workout
+            .all()
+            .order(Column("start_timestamp").desc)
+            .including(all: Workout.exercises.including(all: Exercise.sets))
             .fetchAll(db)
-        
-        // Process the fetched workouts to group exercises properly
-        for i in 0..<workouts.count {
-            let exercises = try workouts[i].request(for: Workout.exercises).fetchAll(db)
-            
-            // Group exercises by group_index
-            var groupedExercises: [[Exercise]] = []
-            let groupIndices = Set(exercises.map { $0.groupIndex }).sorted()
-            
-            for groupIndex in groupIndices {
-                var exercisesInGroup = exercises.filter { $0.groupIndex == groupIndex }
-                
-                // For each exercise, fetch and assign sets
-                for j in 0..<exercisesInGroup.count {
-                    let sets = try ExerciseSet.filter(ExerciseSet.exerciseId == exercisesInGroup[j].id)
-                        .order(ExerciseSet.setIndex)
-                        .fetchAll(db)
-                    exercisesInGroup[j].sets = sets
-                }
-                
-                groupedExercises.append(exercisesInGroup)
-            }
-            
-            // If no exercises were found, use an empty array with one empty group
-            if groupedExercises.isEmpty {
-                groupedExercises = [[]]
-            }
-            
-            // Update the workout in our array
-            workouts[i].exercises = groupedExercises
-        }
         
         return Value(workouts: workouts)
     }
 }
 
-struct WorkoutRequest: FetchKeyRequest {
-    let id: String
-    
-    struct Value {
-        var workout: Workout?
-    }
-    
-    func fetch(_ db: Database) throws -> Value {
-        // Fetch workout along with all exercises and their sets in a single request
-        let workout = try Workout.byId(id)
-            .including(all: Workout.exercises.order(Exercise.groupIndex)
-                .including(all: Exercise.sets.order(ExerciseSet.setIndex)))
-            .fetchOne(db)
-        
-        guard var workout = workout else {
-            return Value(workout: nil)
-        }
-        
-        // Group exercises by group_index
-        let exercises = try workout.request(for: Workout.exercises).fetchAll(db)
-        var groupedExercises: [[Exercise]] = []
-        let groupIndices = Set(exercises.map { $0.groupIndex }).sorted()
-        
-        for groupIndex in groupIndices {
-            // Each exercise already has its sets loaded from the eager loading
-            let exercisesInGroup = exercises.filter { $0.groupIndex == groupIndex }
-            groupedExercises.append(exercisesInGroup)
-        }
-        
-        // If no exercises were found, use an empty array with one empty group
-        if groupedExercises.isEmpty {
-            groupedExercises = [[]]
-        }
-        
-        workout.exercises = groupedExercises
-        return Value(workout: workout)
-    }
-}
 
 #if DEBUG
 extension Database {
     func insertSampleWorkoutData() throws {
         // Sample workout 1
-        let workout1ID = UUID().uuidString
-        let exercise1ID = UUID().uuidString
-        
+        let workout1ID = UUID()
+        let exercise1ID = UUID()
+
         // Create workout 1
         let workout1 = try Workout(
             id: workout1ID,
@@ -392,51 +317,51 @@ extension Database {
             duration: 1800, // 30 minutes
             startTimestamp: Date().addingTimeInterval(-86400), // Yesterday
             endTimestamp: Date().addingTimeInterval(-86400).addingTimeInterval(1800),
-            exercises: [[]]
+            exercises: [
+                Exercise(
+                    id: exercise1ID,
+                    supersetId: nil,
+                    workoutId: workout1ID,
+                    name: "Running",
+                    pinnedNotes: [],
+                    notes: ["Easy pace"],
+                    duration: 1800,
+                    type: .bodyweight,
+                    weightUnit: nil,
+                    defaultWarmUpTime: nil,
+                    defaultRestTime: nil,
+                    sets: [
+                        ExerciseSet(
+                            type: .working,
+                            weightUnit: nil,
+                            suggest: SetSuggest(
+                                weight: 0,
+                                reps: 30,
+                                repRange: nil,
+                                duration: 1800,
+                                rpe: 7.5,
+                                restTime: nil
+                            ),
+                            actual: SetActual(
+                                weight: 0,
+                                reps: 32,
+                                rpe: 8.0
+                            ),
+                            isCompleted: true,
+                            exerciseId: exercise1ID,
+                            setIndex: 0
+                        )
+                    ],
+                    bodyPart: nil
+                )
+            ]
         ).inserted(self)
-        
-        // Create exercise 1
-        let exercise1 = try Exercise(
-            id: exercise1ID,
-            workoutId: workout1.id,
-            name: "Running",
-            pinnedNotes: [],
-            notes: ["Easy pace"],
-            duration: 1800,
-            type: .bodyweight,
-            weightUnit: nil,
-            defaultWarmUpTime: nil,
-            defaultRestTime: nil,
-            sets: [],
-            bodyPart: nil,
-            groupIndex: 0
-        ).inserted(self)
-        
-        // Add set for exercise 1
-        let _ = try ExerciseSet(
-            type: .working,
-            weightUnit: nil,
-            suggest: SetSuggest(
-                weight: nil,
-                reps: 30,
-                repRange: nil,
-                duration: 1800,
-                rpe: 7.5,
-                restTime: nil
-            ),
-            actual: SetActual(
-                weight: nil,
-                reps: 32,
-                rpe: 8.0
-            ),
-            isCompleted: true,
-            exerciseId: exercise1.id,
-            setIndex: 0
-        ).inserted(self)
-        
+
         // Sample workout 2
-        let workout2ID = UUID().uuidString
-        
+        let workout2ID = UUID()
+        let exercise2ID = UUID()
+        let exercise3ID = UUID()
+
         // Create workout 2
         let workout2 = try Workout(
             id: workout2ID,
@@ -445,177 +370,168 @@ extension Database {
             duration: 3600, // 60 minutes
             startTimestamp: Date().addingTimeInterval(-172800), // 2 days ago
             endTimestamp: Date().addingTimeInterval(-172800).addingTimeInterval(3600),
-            exercises: [[]]
-        ).inserted(self)
-        
-        // Create exercise 2
-        let exercise2 = try Exercise(
-            id: UUID().uuidString,
-            workoutId: workout2.id,
-            name: "Bench Press",
-            pinnedNotes: [],
-            notes: ["Focus on form"],
-            duration: nil,
-            type: .barbell,
-            weightUnit: .lb,
-            defaultWarmUpTime: 60,
-            defaultRestTime: 90,
-            sets: [],
-            bodyPart: BodyPart(
-                main: .chest,
-                detailed: nil,
-                scientific: nil
-            ),
-            groupIndex: 0
-        ).inserted(self)
-        
-        // Add sets for exercise 2
-        let _ = try ExerciseSet(
-            type: .working,
-            weightUnit: .lb,
-            suggest: SetSuggest(
-                weight: 135,
-                reps: 10,
-                repRange: nil,
-                duration: nil,
-                rpe: 7.0,
-                restTime: 90
-            ),
-            actual: SetActual(
-                weight: 135,
-                reps: 12,
-                rpe: 7.5
-            ),
-            isCompleted: true,
-            exerciseId: exercise2.id,
-            setIndex: 0
-        ).inserted(self)
-        
-        let _ = try ExerciseSet(
-            type: .working,
-            weightUnit: .lb,
-            suggest: SetSuggest(
-                weight: 155,
-                reps: 8,
-                repRange: nil,
-                duration: nil,
-                rpe: 8.0,
-                restTime: 90
-            ),
-            actual: SetActual(
-                weight: 160,
-                reps: 8,
-                rpe: 8.5
-            ),
-            isCompleted: true,
-            exerciseId: exercise2.id,
-            setIndex: 1
-        ).inserted(self)
-        
-        let _ = try ExerciseSet(
-            type: .working,
-            weightUnit: .lb,
-            suggest: SetSuggest(
-                weight: 175,
-                reps: 6,
-                repRange: nil,
-                duration: nil,
-                rpe: 9.0,
-                restTime: 90
-            ),
-            actual: SetActual(
-                weight: 175,
-                reps: 5,
-                rpe: 9.5
-            ),
-            isCompleted: true,
-            exerciseId: exercise2.id,
-            setIndex: 2
-        ).inserted(self)
-        
-        // Create exercise 3
-        let exercise3 = try Exercise(
-            id: UUID().uuidString,
-            workoutId: workout2.id,
-            name: "Pull Up",
-            pinnedNotes: [],
-            notes: [],
-            duration: nil,
-            type: .bodyweight,
-            weightUnit: nil,
-            defaultWarmUpTime: 30,
-            defaultRestTime: 60,
-            sets: [],
-            bodyPart: BodyPart(
-                main: .back,
-                detailed: nil,
-                scientific: nil
-            ),
-            groupIndex: 0
-        ).inserted(self)
-        
-        // Add sets for exercise 3
-        let _ = try ExerciseSet(
-            type: .working,
-            weightUnit: nil,
-            suggest: SetSuggest(
-                weight: nil,
-                reps: 12,
-                repRange: nil,
-                duration: nil,
-                rpe: 8.0,
-                restTime: 60
-            ),
-            actual: SetActual(
-                weight: nil,
-                reps: 12,
-                rpe: 8.0
-            ),
-            isCompleted: true,
-            exerciseId: exercise3.id,
-            setIndex: 0
-        ).inserted(self)
-        
-        let _ = try ExerciseSet(
-            type: .working,
-            weightUnit: nil,
-            suggest: SetSuggest(
-                weight: nil,
-                reps: 10,
-                repRange: nil,
-                duration: nil,
-                rpe: 8.5,
-                restTime: 60
-            ),
-            actual: SetActual(
-                weight: nil,
-                reps: 8,
-                rpe: 8.5
-            ),
-            isCompleted: true,
-            exerciseId: exercise3.id,
-            setIndex: 1
-        ).inserted(self)
-        
-        let _ = try ExerciseSet(
-            type: .working,
-            weightUnit: nil,
-            suggest: SetSuggest(
-                weight: nil,
-                reps: 8,
-                repRange: nil,
-                duration: nil,
-                rpe: 9.0,
-                restTime: 60
-            ),
-            actual: SetActual(
-                weight: nil,
-                reps: 7,
-                rpe: 9.5
-            ),
-            isCompleted: true,
-            exerciseId: exercise3.id,
-            setIndex: 2
+            exercises: [
+                Exercise(
+                    id: exercise2ID,
+                    supersetId: nil,
+                    workoutId: workout2ID,
+                    name: "Bench Press",
+                    pinnedNotes: [],
+                    notes: ["Focus on form"],
+                    duration: nil,
+                    type: .barbell,
+                    weightUnit: .lb,
+                    defaultWarmUpTime: 60,
+                    defaultRestTime: 90,
+                    sets: [
+                        ExerciseSet(
+                            type: .working,
+                            weightUnit: .lb,
+                            suggest: SetSuggest(
+                                weight: 135,
+                                reps: 10,
+                                repRange: nil,
+                                duration: nil,
+                                rpe: 7.0,
+                                restTime: 90
+                            ),
+                            actual: SetActual(
+                                weight: 135,
+                                reps: 12,
+                                rpe: 7.5
+                            ),
+                            isCompleted: true,
+                            exerciseId: exercise2ID,
+                            setIndex: 0
+                        ),
+                        ExerciseSet(
+                            type: .working,
+                            weightUnit: .lb,
+                            suggest: SetSuggest(
+                                weight: 155,
+                                reps: 8,
+                                repRange: nil,
+                                duration: nil,
+                                rpe: 8.0,
+                                restTime: 90
+                            ),
+                            actual: SetActual(
+                                weight: 160,
+                                reps: 8,
+                                rpe: 8.5
+                            ),
+                            isCompleted: true,
+                            exerciseId: exercise2ID,
+                            setIndex: 1
+                        ),
+                        ExerciseSet(
+                            type: .working,
+                            weightUnit: .lb,
+                            suggest: SetSuggest(
+                                weight: 175,
+                                reps: 6,
+                                repRange: nil,
+                                duration: nil,
+                                rpe: 9.0,
+                                restTime: 90
+                            ),
+                            actual: SetActual(
+                                weight: 175,
+                                reps: 5,
+                                rpe: 9.5
+                            ),
+                            isCompleted: true,
+                            exerciseId: exercise2ID,
+                            setIndex: 2
+                        )
+                    ],
+                    bodyPart: BodyPart(
+                        main: .chest,
+                        detailed: nil,
+                        scientific: nil
+                    )
+                ),
+                Exercise(
+                    id: exercise3ID,
+                    supersetId: 0, // Example supersetId usage
+                    workoutId: workout2ID,
+                    name: "Pull Up",
+                    pinnedNotes: [],
+                    notes: [],
+                    duration: nil,
+                    type: .bodyweight,
+                    weightUnit: nil,
+                    defaultWarmUpTime: 60,
+                    defaultRestTime: 60,
+                    sets: [
+                        ExerciseSet(
+                            type: .working,
+                            weightUnit: nil,
+                            suggest: SetSuggest(
+                                weight: nil,
+                                reps: 12,
+                                repRange: nil,
+                                duration: nil,
+                                rpe: 8.0,
+                                restTime: 60
+                            ),
+                            actual: SetActual(
+                                weight: nil,
+                                reps: 12,
+                                rpe: 8.0
+                            ),
+                            isCompleted: true,
+                            exerciseId: exercise3ID,
+                            setIndex: 0
+                        ),
+                        ExerciseSet(
+                            type: .working,
+                            weightUnit: nil,
+                            suggest: SetSuggest(
+                                weight: nil,
+                                reps: 10,
+                                repRange: nil,
+                                duration: nil,
+                                rpe: 8.5,
+                                restTime: 60
+                            ),
+                            actual: SetActual(
+                                weight: nil,
+                                reps: 8,
+                                rpe: 8.5
+                            ),
+                            isCompleted: true,
+                            exerciseId: exercise3ID,
+                            setIndex: 1
+                        ),
+                        ExerciseSet(
+                            type: .working,
+                            weightUnit: nil,
+                            suggest: SetSuggest(
+                                weight: nil,
+                                reps: 8,
+                                repRange: nil,
+                                duration: nil,
+                                rpe: 9.0,
+                                restTime: 60
+                            ),
+                            actual: SetActual(
+                                weight: nil,
+                                reps: 7,
+                                rpe: 9.5
+                            ),
+                            isCompleted: true,
+                            exerciseId: exercise3ID,
+                            setIndex: 2
+                        )
+                    ],
+                    bodyPart: BodyPart(
+                        main: .back,
+                        detailed: nil,
+                        scientific: nil
+                    )
+                )
+            ]
         ).inserted(self)
     }
 }

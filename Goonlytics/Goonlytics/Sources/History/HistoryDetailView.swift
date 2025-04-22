@@ -57,7 +57,7 @@ final class HistoryDetailModel: HashableObject {
                         print("ID: \(exercise.id)")
                         print("Workout ID: \(exercise.workoutId)")
                         print("Name: \(exercise.name)")
-                        print("Group index: \(exercise.groupIndex)")
+                        print("Superset ID: \(exercise.supersetId)")
                         print("Type: \(exercise.type.rawValue)")
                         print("Weight unit: \(exercise.weightUnit?.rawValue ?? "None")")
                     }

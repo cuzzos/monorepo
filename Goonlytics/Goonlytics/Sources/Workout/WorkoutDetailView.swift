@@ -1,3 +1,4 @@
+import SharingGRDB
 import SwiftUI
 import SwiftUINavigation
 
@@ -26,11 +27,10 @@ struct WorkoutDetailView: View {
             }
             
             Section("Exercises") {
-                ForEach(model.workout.exercises.flatMap { $0 }, id: \.id) { exercise in
-                    VStack(alignment: .leading) {
+                ForEach(model.workout.exercises, id: \.id) { exercise in
+                    HStack {
                         Text(exercise.name)
                             .font(.headline)
-                        
                         if !exercise.sets.isEmpty {
                             Text("\(exercise.sets.count) sets")
                                 .font(.subheadline)
@@ -45,54 +45,16 @@ struct WorkoutDetailView: View {
 }
 
 #Preview {
-    let workoutId = UUID().uuidString
-    
-    NavigationStack {
-        WorkoutDetailView(
-            model: WorkoutDetailModel(
-                workout: Workout(
-                    id: workoutId,
-                    name: "Morning Workout",
-                    note: nil,
-                    duration: nil,
-                    startTimestamp: .now,
-                    endTimestamp: nil,
-                    exercises: [[
-                        Exercise(
-                            id: "1",
-                            workoutId: workoutId,
-                            name: "Bench Press",
-                            pinnedNotes: [],
-                            notes: [],
-                            duration: nil,
-                            type: .barbell,
-                            weightUnit: .kg,
-                            defaultWarmUpTime: 0,
-                            defaultRestTime: 90,
-                            sets: [
-                                ExerciseSet(
-                                    type: .working,
-                                    weightUnit: .kg,
-                                    suggest: SetSuggest(
-                                        weight: 60,
-                                        reps: 10,
-                                        repRange: nil,
-                                        duration: nil,
-                                        rpe: 8,
-                                        restTime: 90
-                                    ),
-                                    actual: nil
-                                )
-                            ],
-                            bodyPart: BodyPart(
-                                main: .chest,
-                                detailed: nil,
-                                scientific: nil
-                            )
-                        )
-                    ]]
-                )
-            )
-        )
+    let _ = try! prepareDependencies {
+        $0.defaultDatabase = try appDatabase()
     }
-} 
+    
+    @Dependency(\.defaultDatabase) var database
+    let workout = try! database.read { db in
+        try Workout.fetchOne(db)!
+    }
+    
+    return NavigationStack {
+        WorkoutDetailView(model: .init(workout: workout))
+    }
+}

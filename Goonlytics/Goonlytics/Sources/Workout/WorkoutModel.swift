@@ -10,24 +10,20 @@ class WorkoutModel: HashableObject {
     var elapsedTime: Int = 0
     var isTimerRunning: Bool = true
     
-    var exercises: [[Exercise]] {
-        get {
-            workout.exercises
-        }
-        set {
-            workout.exercises = newValue
-        }
+    var exercises: [Exercise] {
+        get { workout.exercises }
+        set { workout.exercises = newValue }
     }
     
     init(workout: Workout? = nil) {
         self.workout = workout ?? Workout(
-            id: UUID().uuidString,
+            id: UUID(),
             name: "New Workout",
             note: nil,
             duration: nil,
             startTimestamp: .now,
             endTimestamp: nil,
-            exercises: [[]]
+            exercises: []
         )
     }
     
@@ -47,9 +43,9 @@ class WorkoutModel: HashableObject {
     }
     
     func addSet(to exercise: Exercise) {
-        for (groupIndex, group) in exercises.enumerated() {
-            if let exerciseIndex = group.firstIndex(where: { $0.id == exercise.id }) {
-                let lastSet = exercises[groupIndex][exerciseIndex].sets.last
+        for (exerciseIndex, exercise) in exercises.enumerated() {
+            if exercise.id == exercise.id {
+                let lastSet = exercises[exerciseIndex].sets.last
                 
                 let newSuggest = SetSuggest(
                     weight: lastSet?.suggest?.weight ?? 0,
@@ -67,7 +63,7 @@ class WorkoutModel: HashableObject {
                     actual: nil
                 )
                 
-                exercises[groupIndex][exerciseIndex].sets.append(newSet)
+                exercises[exerciseIndex].sets.append(newSet)
                 break
             }
         }
@@ -85,7 +81,7 @@ class WorkoutModel: HashableObject {
         )
         
         let newExercise = Exercise(
-            id: UUID().uuidString,
+            id: UUID(),
             workoutId: workout.id,
             name: "New Exercise",
             pinnedNotes: [],
@@ -106,38 +102,28 @@ class WorkoutModel: HashableObject {
             bodyPart: nil
         )
         
-        // Add to the first group
-        if exercises.isEmpty {
-            exercises.append([newExercise])
-        } else {
-            exercises[0].append(newExercise)
-        }
+        exercises.append(newExercise)
     }
     
     // Add a GlobalExercise as a new Exercise to the workout
     func addExercise(from global: GlobalExercise) {
         let newExercise = Exercise(
-            id: UUID().uuidString,
-            workoutId: workout.id,
+            id: UUID(),
+            supersetId: 0,
+            workoutId: global.id,
             name: global.name,
             pinnedNotes: [],
             notes: [],
             duration: nil,
-            type: .init(rawValue: global.type) ?? .unknown,
+            type: .barbell,
             weightUnit: .kg,
             defaultWarmUpTime: 60,
             defaultRestTime: 60,
-            sets: [ExerciseSet(
-                type: .working,
-                weightUnit: .kg,
-                suggest: SetSuggest(weight: 0, reps: 0, repRange: nil, duration: nil, rpe: nil, restTime: 60),
-                actual: nil
-            )],
-            bodyPart: nil,
-            groupIndex: 0
+            sets: [],
+            bodyPart: nil
         )
-        // Add as superset of 1
-        exercises.append([newExercise])
+        // Add as flat exercise
+        exercises.append(newExercise)
     }
     
     func importWorkout(from jsonData: Data) {
@@ -177,52 +163,44 @@ class WorkoutModel: HashableObject {
     // --- Set Editing Methods ---
     func updateReps(for exerciseIndex: Int, setIndex: Int, reps: Int) {
         guard exercises.indices.contains(exerciseIndex),
-              exercises[exerciseIndex].indices.contains(0),
-              exercises[exerciseIndex][0].sets.indices.contains(setIndex)
-        else { return }
-        let group = exerciseIndex
-        let exercise = 0
-        var set = exercises[group][exercise].sets[setIndex]
+              exercises[exerciseIndex].sets.indices.contains(setIndex) else {
+            return
+        }
+        var set = exercises[exerciseIndex].sets[setIndex]
         var actual = set.actual ?? SetActual()
         actual.reps = reps
         set.actual = actual
-        exercises[group][exercise].sets[setIndex] = set
+        exercises[exerciseIndex].sets[setIndex] = set
     }
     
     func updateRPE(for exerciseIndex: Int, setIndex: Int, rpe: Double) {
         guard exercises.indices.contains(exerciseIndex),
-              exercises[exerciseIndex].indices.contains(0),
-              exercises[exerciseIndex][0].sets.indices.contains(setIndex)
-        else { return }
-        let group = exerciseIndex
-        let exercise = 0
-        var set = exercises[group][exercise].sets[setIndex]
+              exercises[exerciseIndex].sets.indices.contains(setIndex) else {
+            return
+        }
+        var set = exercises[exerciseIndex].sets[setIndex]
         var actual = set.actual ?? SetActual()
         actual.rpe = rpe
         set.actual = actual
-        exercises[group][exercise].sets[setIndex] = set
+        exercises[exerciseIndex].sets[setIndex] = set
     }
     
     func toggleSetCompleted(for exerciseIndex: Int, setIndex: Int) {
         guard exercises.indices.contains(exerciseIndex),
-              exercises[exerciseIndex].indices.contains(0),
-              exercises[exerciseIndex][0].sets.indices.contains(setIndex)
-        else { return }
-        let group = exerciseIndex
-        let exercise = 0
-        exercises[group][exercise].sets[setIndex].isCompleted.toggle()
+              exercises[exerciseIndex].sets.indices.contains(setIndex) else {
+            return
+        }
+        exercises[exerciseIndex].sets[setIndex].isCompleted.toggle()
     }
     
     // --- Computed Properties ---
     var totalVolume: Int {
-        self.workout.exercises.flatMap { $0 }.flatMap { $0.sets }.reduce(0) { sum, set in
-            let reps = set.actual?.reps ?? set.suggest?.reps ?? 0
-            let weight = Int(set.actual?.weight ?? set.suggest?.weight ?? 0)
-            return sum + (reps * weight)
+        self.workout.exercises.flatMap { $0.sets }.reduce(0) { sum, set in
+            sum + (set.actual?.reps ?? 0)
         }
     }
 
     var totalSets: Int {
-        self.workout.exercises.flatMap { $0 }.flatMap { $0.sets }.count
+        self.workout.exercises.flatMap { $0.sets }.count
     }
 }

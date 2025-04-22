@@ -152,6 +152,11 @@ struct AddExercise: View {
             GlobalExercise(id: UUID(), name: "Pull Up", type: "bodyweight", additionalFK: nil, muscleGroup: "Back", imageName: "pullup")
         ]
     }
+    
+    func addExercise(_ exercise: GlobalExercise) {
+        onAdd?([exercise])
+        presentationMode.wrappedValue.dismiss()
+    }
 }
 
 struct ExerciseRow: View {

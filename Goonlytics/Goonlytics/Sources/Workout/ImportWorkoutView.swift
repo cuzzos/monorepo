@@ -16,6 +16,7 @@ final class ImportWorkoutModel: HashableObject, Identifiable {
     var isImporting: Bool = false
     var isDismissed = false
     var destination: Destination?
+    var exercises: [Exercise] = []
     
     @CasePathable
     enum Destination {
@@ -45,17 +46,15 @@ final class ImportWorkoutModel: HashableObject, Identifiable {
                 try workout.save(db)
                 
                 // Save all exercises and their sets
-                for exerciseGroup in workout.exercises {
-                    for var exercise in exerciseGroup {
-                        try exercise.save(db)
-                        
-                        // Save all sets for this exercise
-                        for (index, var exerciseSet) in exercise.sets.enumerated() {
-                            // Make sure the set references this exercise and has the correct index
-                            exerciseSet.exerciseId = exercise.id
-                            exerciseSet.setIndex = index
-                            try exerciseSet.save(db)
-                        }
+                for var exercise in workout.exercises {
+                    try exercise.save(db)
+                    
+                    // Save all sets for this exercise
+                    for (index, var exerciseSet) in exercise.sets.enumerated() {
+                        // Make sure the set references this exercise and has the correct index
+                        exerciseSet.exerciseId = exercise.id
+                        exerciseSet.setIndex = index
+                        try exerciseSet.save(db)
                     }
                 }
             }

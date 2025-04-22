@@ -1,14 +1,14 @@
 import Foundation
 
 // MARK: - Models
-struct Workout: Codable, Hashable {
-    var id: String
-    let name: String
-    let note: String?
-    let duration: Int?
-    let startTimestamp: Date
-    let endTimestamp: Date?
-    var exercises: [[Exercise]]
+struct Workout: Codable, Hashable, Identifiable {
+    let id: UUID
+    var name: String
+    var note: String?
+    var duration: Int?
+    var startTimestamp: Date
+    var endTimestamp: Date?
+    var exercises: [Exercise]
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -21,9 +21,11 @@ struct Workout: Codable, Hashable {
     }
 }
 
+
 struct Exercise: Identifiable, Codable, Hashable {
-    let id: String
-    let workoutId: String
+    let id: UUID
+    var supersetId: Int?
+    let workoutId: UUID
     let name: String
     let pinnedNotes: [String]
     let notes: [String]
@@ -35,11 +37,9 @@ struct Exercise: Identifiable, Codable, Hashable {
     var sets: [ExerciseSet]
     let bodyPart: BodyPart?
     
-    // For database use
-    var groupIndex: Int = 0
-    
     enum CodingKeys: String, CodingKey {
         case id
+        case supersetId = "superset_id"
         case workoutId = "workout_id"
         case name
         case pinnedNotes = "pinned_notes"
@@ -121,7 +121,7 @@ struct ExerciseSet: Codable, Hashable {
     var isCompleted: Bool = false
     
     // For database use
-    var exerciseId: String = ""
+    var exerciseId: UUID = UUID()
     var setIndex: Int = 0
     
     enum CodingKeys: String, CodingKey {
