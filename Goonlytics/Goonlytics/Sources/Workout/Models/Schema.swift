@@ -121,8 +121,6 @@ extension ExerciseSet: FetchableRecord, MutablePersistableRecord {
         if let actualData = try? JSONEncoder().encode(actual) {
             container["actual"] = actualData
         }
-        
-        container["is_completed"] = isCompleted
     }
     
     init(row: Row) throws {
@@ -203,7 +201,7 @@ func appDatabase() throws -> any DatabaseWriter {
             table.column("id", .text).primaryKey()
             table.column("workout_id", .text).notNull()
                 .references(Workout.databaseTableName, onDelete: .cascade)
-            table.column("superset_id", .text)
+            table.column("superset_id", .integer)
             table.column("name", .text).notNull()
             table.column("pinned_notes", .blob)
             table.column("notes", .blob)
@@ -228,7 +226,6 @@ func appDatabase() throws -> any DatabaseWriter {
             table.column("weight_unit", .text)
             table.column("suggest", .blob)
             table.column("actual", .blob)
-            table.column("is_completed", .boolean).notNull().defaults(to: false)
         }
         
         // Create index for exercise_sets table
@@ -248,19 +245,11 @@ func appDatabase() throws -> any DatabaseWriter {
 
 // MARK: - Associations
 
-extension Workout {
+extension Workout: TableRecord {
     static let exercises = hasMany(Exercise.self)
-    
-    static func all() -> QueryInterfaceRequest<Workout> {
-        return Workout.order(Column("start_timestamp").desc)
-    }
-    
-    static func byId(_ id: String) -> QueryInterfaceRequest<Workout> {
-        return Workout.filter(Column("id") == id)
-    }
 }
 
-extension Exercise {
+extension Exercise: TableRecord {
     static let workout = belongsTo(Workout.self)
     static let sets = hasMany(ExerciseSet.self)
     
@@ -278,29 +267,9 @@ extension Exercise {
     }
 }
 
-extension ExerciseSet {
+extension ExerciseSet: TableRecord {
     static let exercise = belongsTo(Exercise.self)
 }
-
-// MARK: - Workout Fetch Key Request
-
-struct WorkoutsRequest: FetchKeyRequest {
-    struct Value {
-        var workouts: [Workout] = []
-    }
-    
-    func fetch(_ db: Database) throws -> Value {
-        // Fetch workouts, most recent first
-        let workouts = try Workout
-            .all()
-            .order(Column("start_timestamp").desc)
-            .including(all: Workout.exercises.including(all: Exercise.sets))
-            .fetchAll(db)
-        
-        return Value(workouts: workouts)
-    }
-}
-
 
 #if DEBUG
 extension Database {
@@ -356,6 +325,13 @@ extension Database {
                 )
             ]
         ).inserted(self)
+        
+        try workout1.exercises.forEach { exercise in
+            _ = try exercise.inserted(self)
+            _ = try exercise.sets.forEach {
+                _ = try $0.inserted(self)
+            }
+        }
 
         // Sample workout 2
         let workout2ID = UUID()
@@ -533,6 +509,13 @@ extension Database {
                 )
             ]
         ).inserted(self)
+        
+        try workout2.exercises.forEach { exercise in
+            _ = try exercise.inserted(self)
+            _ = try exercise.sets.forEach {
+                _ = try $0.inserted(self)
+            }
+        }
     }
 }
 #endif

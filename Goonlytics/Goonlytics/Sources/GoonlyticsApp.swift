@@ -68,7 +68,7 @@ struct AppView: View {
     var body: some View {
         TabView(selection: $model.selectedTab) {
             NavigationStack(path: $model.path) {
-                WorkoutView()
+                WorkoutView(model: .init())
                     .navigationDestination(for: AppModel.Path.self) { path in
                         switch path {
                         case let .workoutDetail(model):

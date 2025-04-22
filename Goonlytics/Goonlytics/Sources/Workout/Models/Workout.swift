@@ -112,16 +112,16 @@ enum BodyPartMain: String, Codable, Hashable {
 }
 
 struct ExerciseSet: Codable, Hashable {
-    let type: SetType
-    let weightUnit: WeightUnit?
-    let suggest: SetSuggest?
+    var type: SetType
+    var weightUnit: WeightUnit?
+    var suggest: SetSuggest?
     var actual: SetActual?
     
     // Local state
     var isCompleted: Bool = false
     
     // For database use
-    var exerciseId: UUID = UUID()
+    let exerciseId: UUID
     var setIndex: Int = 0
     
     enum CodingKeys: String, CodingKey {
@@ -129,6 +129,7 @@ struct ExerciseSet: Codable, Hashable {
         case weightUnit = "weight_unit"
         case suggest
         case actual
+        case exerciseId
     }
 }
 

@@ -1,13 +1,13 @@
 import SwiftUI
 import SwiftUINavigation
-import GRDB
+import SharingGRDB
 import Dependencies
 import UniformTypeIdentifiers
 
 @MainActor
 @Observable
 final class HistoryDetailModel: HashableObject {
-    var workout: Workout
+    @ObservationIgnored @SharedReader var details: Details.Value
     var showingNotes: Bool = false
     var showingExportAlert: Bool = false
     var exportMessage: String = ""
@@ -15,119 +15,27 @@ final class HistoryDetailModel: HashableObject {
     var isShowingShareSheet: Bool = false
     
     init(workout: Workout) {
-        self.workout = workout
-        logWorkoutData()
+        _details = SharedReader(
+            wrappedValue: Details.Value(workout: workout),
+            .fetch(Details(workout: workout), animation: .default)
+        )
     }
     
-    private func logWorkoutData() {
-        print("=== WORKOUT DATA LOADED ===")
-        print("Workout: \(workout.name)")
-        print("Start time: \(workout.startTimestamp)")
+    struct Details: FetchKeyRequest {
+        struct Value {
+            var exercises: [Exercise] = []
+            var workout: Workout
+        }
         
-        Task {
-            do {
-                @Dependency(\.defaultDatabase) var database
-                
-                // Query the entire database to see all records
-                print("\n=== DUMPING ENTIRE DATABASE CONTENT ===")
-                
-                try await database.read { db in
-                    // Get all workouts
-                    print("\n=== ALL WORKOUTS ===")
-                    let workouts = try Workout.fetchAll(db)
-                    print("Total workouts: \(workouts.count)")
-                    
-                    for (i, workout) in workouts.enumerated() {
-                        print("\n[Workout \(i+1)]")
-                        print("ID: \(workout.id)")
-                        print("Name: \(workout.name)")
-                        print("Start time: \(workout.startTimestamp)")
-                        print("End time: \(workout.endTimestamp ?? Date())")
-                        print("Duration: \(workout.duration ?? 0) seconds")
-                        print("Note: \(workout.note ?? "None")")
-                    }
-                    
-                    // Get all exercises
-                    print("\n=== ALL EXERCISES ===")
-                    let exercises = try Exercise.fetchAll(db)
-                    print("Total exercises: \(exercises.count)")
-                    
-                    for (i, exercise) in exercises.enumerated() {
-                        print("\n[Exercise \(i+1)]")
-                        print("ID: \(exercise.id)")
-                        print("Workout ID: \(exercise.workoutId)")
-                        print("Name: \(exercise.name)")
-                        print("Superset ID: \(exercise.supersetId)")
-                        print("Type: \(exercise.type.rawValue)")
-                        print("Weight unit: \(exercise.weightUnit?.rawValue ?? "None")")
-                    }
-                    
-                    // Get all exercise sets
-                    print("\n=== ALL EXERCISE SETS ===")
-                    let sets = try ExerciseSet.fetchAll(db)
-                    print("Total sets: \(sets.count)")
-                    
-                    for (i, set) in sets.enumerated() {
-                        print("\n[Set \(i+1)]")
-                        print("Exercise ID: \(set.exerciseId)")
-                        print("Set index: \(set.setIndex)")
-                        print("Type: \(set.type.rawValue)")
-                        print("Weight unit: \(set.weightUnit?.rawValue ?? "None")")
-                        
-                        if let suggest = set.suggest {
-                            print("Suggest - Weight: \(suggest.weight ?? 0)")
-                            print("Suggest - Reps: \(suggest.reps ?? 0)")
-                            print("Suggest - RPE: \(suggest.rpe ?? 0)")
-                        } else {
-                            print("Suggest: None")
-                        }
-                        
-                        print("Completed: \(set.isCompleted)")
-                    }
-                    
-                    // Print raw SQL query results for more detailed debugging
-                    print("\n=== RAW SQL QUERY RESULTS ===")
-                    
-                    print("\n[Workouts table]")
-                    let workoutsRows = try Row.fetchAll(db, sql: "SELECT * FROM workout")
-                    for row in workoutsRows {
-                        print(row.description)
-                    }
-                    
-                    print("\n[Exercises table]")
-                    let exercisesRows = try Row.fetchAll(db, sql: "SELECT * FROM exercise")
-                    for row in exercisesRows {
-                        print(row.description)
-                    }
-                    
-                    print("\n[Exercise sets table]")
-                    let setsRows = try Row.fetchAll(db, sql: "SELECT * FROM exerciseSet")
-                    for row in setsRows {
-                        print(row.description)
-                    }
-                }
-                
-                print("\n=== END OF DATABASE DUMP ===")
-                
-                // Original workout query code for comparison
-                let workoutId = workout.id
-                print("\nQuerying database for workout ID: \(workoutId)")
-                
-                let workoutQuery = try await database.read { db in
-                    try Workout.filter(Column("id") == workoutId).fetchOne(db)
-                }
-                
-                if let workoutQuery = workoutQuery {
-                    print("=== WORKOUT DATA FROM DATABASE ===")
-                    print("Workout ID: \(workoutQuery.id)")
-                    print("Workout Name: \(workoutQuery.name)")
-                    print("Number of exercise groups: \(workoutQuery.exercises.count)")
-                } else {
-                    print("ERROR: Could not find workout with ID \(workoutId) in database")
-                }
-            } catch {
-                print("ERROR querying database: \(error.localizedDescription)")
-            }
+        let workout: Workout
+        
+        func fetch(_ db: Database) throws -> Value {
+            try Value(
+                exercises: Exercise
+                    .filter(Column("workout_id") == workout.id)
+                    .fetchAll(db),
+                workout: Workout.fetchOne(db, key: workout.id) ?? workout
+            )
         }
     }
 }
@@ -150,11 +58,11 @@ struct HistoryDetailView: View {
                 exercisesSection
                 
                 // Notes
-                notesSection(notes: model.workout.note ?? "")
+                notesSection(notes: model.details.workout.note ?? "")
             }
             .padding(.bottom, 32)
         }
-        .navigationTitle(model.workout.name)
+        .navigationTitle(model.details.workout.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
@@ -167,7 +75,7 @@ struct HistoryDetailView: View {
     
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(model.workout.name)
+            Text(model.details.workout.name)
                 .font(.system(size: 24, weight: .bold, design: .default))
                 .foregroundColor(.primary)
                 .padding(.horizontal)
@@ -185,14 +93,14 @@ struct HistoryDetailView: View {
         let formatter = DateFormatter()
         formatter.dateStyle = .full
         formatter.timeStyle = .short
-        return formatter.string(from: model.workout.startTimestamp)
+        return formatter.string(from: model.details.workout.startTimestamp)
     }
     
     // MARK: - Exercises Section
     
     private var exercisesSection: some View {
         VStack(alignment: .leading, spacing: 24) {
-            ForEach(model.workout.exercises.flatMap { $0 }, id: \.id) { exercise in
+            ForEach(model.details.workout.exercises.compactMap { $0 }, id: \.id) { exercise in
                 exerciseCard(exercise: exercise)
             }
         }
@@ -335,8 +243,11 @@ struct ExerciseDetailView: View {
     
     @Dependency(\.defaultDatabase) var database
     let workout = try! database.read { db in
-        try Workout.fetchOne(db)!
+        try Workout
+            .including(all: Workout.exercises.including(all: Exercise.sets))
+            .fetchOne(db)!
     }
+
     
     return NavigationStack {
         HistoryDetailView(model: .init(workout: workout))

@@ -28,6 +28,25 @@ final class HistoryModel: HashableObject {
     var workouts: [Workout] {
         return workoutsData.workouts
     }
+    
+    // MARK: - Workout Fetch Key Request
+
+    struct WorkoutsRequest: FetchKeyRequest {
+        struct Value {
+            var workouts: [Workout] = []
+        }
+        
+        func fetch(_ db: Database) throws -> Value {
+            // Fetch workouts, most recent first
+            let workouts = try Workout
+                .all()
+                .order(Column("start_timestamp").desc)
+                .including(all: Workout.exercises.including(all: Exercise.sets))
+                .fetchAll(db)
+            
+            return Value(workouts: workouts)
+        }
+    }
 }
 
 struct HistoryView: View {

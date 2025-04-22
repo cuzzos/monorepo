@@ -1,3 +1,4 @@
+import Sharing
 import SwiftUI
 import Combine
 import SwiftUINavigation
@@ -6,24 +7,26 @@ import SwiftUINavigation
 @MainActor
 @Observable
 class WorkoutModel: HashableObject {
-    var workout: Workout
+    @ObservationIgnored @Shared var workout: Workout
     var elapsedTime: Int = 0
     var isTimerRunning: Bool = true
     
     var exercises: [Exercise] {
         get { workout.exercises }
-        set { workout.exercises = newValue }
+        set { $workout.withLock { $0.exercises = newValue } }
     }
     
-    init(workout: Workout? = nil) {
-        self.workout = workout ?? Workout(
-            id: UUID(),
-            name: "New Workout",
-            note: nil,
-            duration: nil,
-            startTimestamp: .now,
-            endTimestamp: nil,
-            exercises: []
+    init() {
+        _workout = Shared(
+            value: Workout(
+                id: UUID(),
+                name: "New Workout",
+                note: nil,
+                duration: nil,
+                startTimestamp: .now,
+                endTimestamp: nil,
+                exercises: []
+            )
         )
     }
     
@@ -60,7 +63,8 @@ class WorkoutModel: HashableObject {
                     type: .working,
                     weightUnit: lastSet?.weightUnit ?? .kg,
                     suggest: newSuggest,
-                    actual: nil
+                    actual: nil,
+                    exerciseId: exercise.id
                 )
                 
                 exercises[exerciseIndex].sets.append(newSet)
@@ -80,8 +84,9 @@ class WorkoutModel: HashableObject {
             restTime: 60
         )
         
+        let uuid = UUID()
         let newExercise = Exercise(
-            id: UUID(),
+            id: uuid,
             workoutId: workout.id,
             name: "New Exercise",
             pinnedNotes: [],
@@ -96,7 +101,8 @@ class WorkoutModel: HashableObject {
                     type: .working,
                     weightUnit: .kg,
                     suggest: suggest,
-                    actual: nil
+                    actual: nil,
+                    exerciseId: uuid
                 )
             ],
             bodyPart: nil
@@ -116,7 +122,7 @@ class WorkoutModel: HashableObject {
             notes: [],
             duration: nil,
             type: .barbell,
-            weightUnit: .kg,
+            weightUnit: .lb,
             defaultWarmUpTime: 60,
             defaultRestTime: 60,
             sets: [],
@@ -131,7 +137,7 @@ class WorkoutModel: HashableObject {
             let decoder = JSONDecoder()
             decoder.dateDecodingStrategy = .iso8601
             let importedWorkout = try decoder.decode(Workout.self, from: jsonData)
-            self.workout = importedWorkout
+            $workout.withLock { $0 = importedWorkout }
         } catch {
             print("Error importing workout:", error)
         }

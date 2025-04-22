@@ -1,9 +1,9 @@
 import SwiftUI
-import GRDB
+import SharingGRDB
 
 // MARK: - Views
 struct WorkoutView: View {
-    @State private var model = WorkoutModel()
+    @State var model: WorkoutModel
     @State private var showingImportSheet = false
     @State private var showingAddExerciseSheet = false
     @State private var showingStopwatch = false
@@ -185,8 +185,8 @@ struct WorkoutView: View {
             }
             .padding(.horizontal)
             // Sets
-            ForEach(exercise.sets.indices, id: \.self) { setIdx in
-                SetRow(model: model, exerciseId: exercise.id.uuidString, setIndex: setIdx)
+            ForEach(exercise.sets, id: \.self) { exerciseSet in
+                SetRow(model: .init(exerciseSet: exerciseSet))
             }
         }
         .background(Color(.systemBackground))
@@ -200,4 +200,17 @@ struct WorkoutView: View {
         restTimerDuration = duration
         showingRestTimer = true
     }
+}
+
+#Preview {
+    let _ = try! prepareDependencies {
+        $0.defaultDatabase = try appDatabase()
+    }
+    
+    @Dependency(\.defaultDatabase) var database
+    var workout = try! database.read { db in
+        try Workout.fetchOne(db)!
+    }
+    
+    WorkoutView(model: .init())
 }

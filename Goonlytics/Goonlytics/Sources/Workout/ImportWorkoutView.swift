@@ -52,7 +52,6 @@ final class ImportWorkoutModel: HashableObject, Identifiable {
                     // Save all sets for this exercise
                     for (index, var exerciseSet) in exercise.sets.enumerated() {
                         // Make sure the set references this exercise and has the correct index
-                        exerciseSet.exerciseId = exercise.id
                         exerciseSet.setIndex = index
                         try exerciseSet.save(db)
                     }

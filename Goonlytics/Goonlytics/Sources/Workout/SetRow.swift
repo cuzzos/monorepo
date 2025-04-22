@@ -1,42 +1,56 @@
 import SharingGRDB
 import SwiftUI
 
+@MainActor
+@Observable
+final class SetRowModel {
+    var exerciseSet: ExerciseSet
+    
+    init(exerciseSet: ExerciseSet) {
+        self.exerciseSet = exerciseSet
+    }
+    
+    func updateReps(_ reps: Int) {
+        exerciseSet.actual?.reps = reps
+    }
+    
+    func updateRPE(_ rpe: Double) {
+        exerciseSet.actual?.rpe = rpe
+    }
+    
+    func toggleSetCompleted() {
+        
+    }
+}
+
 struct SetRow: View {
-    @State var model: WorkoutModel
-    var exerciseId: String
-    var setIndex: Int
+    @State var model: SetRowModel
 
     var body: some View {
-        if let exerciseIndex = model.exercises.firstIndex(where: { $0.id.uuidString == exerciseId }),
-           model.exercises[exerciseIndex].sets.indices.contains(setIndex) {
-            let set = model.exercises[exerciseIndex].sets[setIndex]
-            HStack {
-                Text("\(setIndex + 1)")
-                    .font(.subheadline)
-                    .frame(width: 60, alignment: .leading)
-                TextField("Reps", value: Binding(
-                    get: { set.actual?.reps ?? set.suggest?.reps ?? 0 },
-                    set: { model.updateReps(for: exerciseIndex, setIndex: setIndex, reps: $0) }
-                ), formatter: NumberFormatter())
-                    .keyboardType(.numberPad)
-                    .frame(width: 60)
-                TextField("RPE", value: Binding(
-                    get: { set.actual?.rpe ?? set.suggest?.rpe ?? 0 },
-                    set: { model.updateRPE(for: exerciseIndex, setIndex: setIndex, rpe: $0) }
-                ), formatter: NumberFormatter())
-                    .keyboardType(.decimalPad)
-                    .frame(width: 60)
-                Button(action: {
-                    model.toggleSetCompleted(for: exerciseIndex, setIndex: setIndex)
-                }) {
-                    Image(systemName: set.isCompleted ? "checkmark.circle.fill" : "circle")
-                        .foregroundColor(set.isCompleted ? .green : .gray)
-                }
+        HStack {
+            Text("\(model.exerciseSet.setIndex + 1)")
+                .font(.subheadline)
+                .frame(width: 60, alignment: .leading)
+            TextField("Reps", value: Binding(
+                get: { model.exerciseSet.actual?.reps ?? model.exerciseSet.suggest?.reps ?? 0 },
+                set: { model.updateReps($0) }
+            ), formatter: NumberFormatter())
+                .keyboardType(.numberPad)
+                .frame(width: 60)
+            TextField("RPE", value: Binding(
+                get: { model.exerciseSet.actual?.rpe ?? model.exerciseSet.suggest?.rpe ?? 0 },
+                set: { model.updateRPE($0) }
+            ), formatter: NumberFormatter())
+                .keyboardType(.decimalPad)
+                .frame(width: 60)
+            Button(action: {
+                model.toggleSetCompleted()
+            }) {
+                Image(systemName: model.exerciseSet.isCompleted ? "checkmark.circle.fill" : "circle")
+                    .foregroundColor(model.exerciseSet.isCompleted ? .green : .gray)
             }
-            .padding(.vertical, 4)
-        } else {
-            EmptyView()
         }
+        .padding(.vertical, 4)
     }
 }
 
@@ -46,9 +60,9 @@ struct SetRow: View {
     }
     
     @Dependency(\.defaultDatabase) var database
-    let workout = try! database.read { db in
+    var workout = try! database.read { db in
         try Workout.fetchOne(db)!
     }
     
-    SetRow(model: .init(workout: workout), exerciseId: workout.exercises[0].id.uuidString, setIndex: 0)
+    SetRow(model: .init(exerciseSet: ExerciseSet(type: .working, exerciseId: UUID())))
 }
