@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftUINavigation
 import CustomDump
+import Dependencies
 
 struct GlobalExercise: Identifiable, Hashable {
     let id: UUID
@@ -11,7 +12,28 @@ struct GlobalExercise: Identifiable, Hashable {
     let imageName: String
 }
 
-struct AddExercise: View {
+@MainActor
+@Observable
+final class AddExerciseModel {
+    
+    @ObservationIgnored @Dependency(\.uuid) var uuid
+
+    func addExercise() {
+        // Add a new exercise with one empty set
+        let suggest = SetSuggest(
+            weight: 0,
+            reps: 0,
+            repRange: nil,
+            duration: nil,
+            rpe: nil,
+            restTime: 60
+        )
+        
+        // add to global exercise
+    }
+}
+
+struct AddExerciseView: View {
     @Environment(\.presentationMode) var presentationMode
     var onAdd: (([GlobalExercise]) -> Void)? = nil
     @State private var searchText: String = ""
@@ -219,7 +241,7 @@ struct ExerciseInfoView: View {
 }
 
 #Preview {
-    AddExercise()
+    AddExerciseView()
 }
 
 #Preview {

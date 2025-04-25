@@ -1,3 +1,4 @@
+import Dependencies
 import Sharing
 import SwiftUI
 import Combine
@@ -7,7 +8,9 @@ import SwiftUINavigation
 @MainActor
 @Observable
 class WorkoutModel: HashableObject {
-    @ObservationIgnored @Shared var workout: Workout
+    @ObservationIgnored @Shared(.workout) var workout: Workout
+    @ObservationIgnored @Dependency(\.uuid) var uuid
+    
     var elapsedTime: Int = 0
     var isTimerRunning: Bool = true
     
@@ -16,18 +19,11 @@ class WorkoutModel: HashableObject {
         set { $workout.withLock { $0.exercises = newValue } }
     }
     
-    init() {
-        _workout = Shared(
-            value: Workout(
-                id: UUID(),
-                name: "New Workout",
-                note: nil,
-                duration: nil,
-                startTimestamp: .now,
-                endTimestamp: nil,
-                exercises: []
-            )
-        )
+    init(workout: Shared<Workout>? = nil) {
+        @Dependency(\.uuid) var uuid
+        if let workout {
+            _workout = workout
+        }
     }
     
     func formatTime() -> String {
@@ -60,55 +56,19 @@ class WorkoutModel: HashableObject {
                 )
                 
                 let newSet = ExerciseSet(
+                    id: uuid(),
                     type: .working,
                     weightUnit: lastSet?.weightUnit ?? .kg,
                     suggest: newSuggest,
                     actual: nil,
-                    exerciseId: exercise.id
+                    exerciseId: exercise.id,
+                    workoutId: workout.id
                 )
                 
                 exercises[exerciseIndex].sets.append(newSet)
                 break
             }
         }
-    }
-    
-    func addExercise() {
-        // Add a new exercise with one empty set
-        let suggest = SetSuggest(
-            weight: 0,
-            reps: 0,
-            repRange: nil,
-            duration: nil,
-            rpe: nil,
-            restTime: 60
-        )
-        
-        let uuid = UUID()
-        let newExercise = Exercise(
-            id: uuid,
-            workoutId: workout.id,
-            name: "New Exercise",
-            pinnedNotes: [],
-            notes: [],
-            duration: nil,
-            type: .barbell,
-            weightUnit: .kg,
-            defaultWarmUpTime: 60,
-            defaultRestTime: 60,
-            sets: [
-                ExerciseSet(
-                    type: .working,
-                    weightUnit: .kg,
-                    suggest: suggest,
-                    actual: nil,
-                    exerciseId: uuid
-                )
-            ],
-            bodyPart: nil
-        )
-        
-        exercises.append(newExercise)
     }
     
     // Add a GlobalExercise as a new Exercise to the workout

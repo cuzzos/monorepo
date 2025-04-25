@@ -4,45 +4,87 @@ import SwiftUI
 @MainActor
 @Observable
 final class SetRowModel {
-    var exerciseSet: ExerciseSet
+    @ObservationIgnored @Shared(.workout) var workout: Workout
+    let exerciseIndex: Int
+    let setIndex: Int
+    var exerciseSet: ExerciseSet {
+        get { workout.exercises[exerciseIndex].sets[setIndex] }
+        set { $workout.withLock { $0.exercises[exerciseIndex].sets[setIndex] = newValue }
+        }
+    }
     
-    init(exerciseSet: ExerciseSet) {
-        self.exerciseSet = exerciseSet
+    init(exerciseIndex: Int,
+         setIndex: Int,
+         workout: Shared<Workout>) {
+        self.exerciseIndex = exerciseIndex
+        self.setIndex = setIndex
+        self._workout = workout
     }
     
     func updateReps(_ reps: Int) {
-        exerciseSet.actual?.reps = reps
+        $workout.withLock {
+            if $0.exercises[exerciseIndex].sets[setIndex].actual == nil {
+                $0.exercises[exerciseIndex].sets[setIndex].actual = .init()
+            }
+            $0.exercises[exerciseIndex].sets[setIndex].actual?.reps = reps
+        }
+    }
+    
+    func updateWeight(_ weight: Double) {
+        $workout.withLock {
+            if $0.exercises[exerciseIndex].sets[setIndex].actual == nil {
+                $0.exercises[exerciseIndex].sets[setIndex].actual = .init()
+            }
+            $0.exercises[exerciseIndex].sets[setIndex].actual?.weight = weight
+        }
     }
     
     func updateRPE(_ rpe: Double) {
-        exerciseSet.actual?.rpe = rpe
+        $workout.withLock {
+            if $0.exercises[exerciseIndex].sets[setIndex].actual == nil {
+                $0.exercises[exerciseIndex].sets[setIndex].actual = .init()
+            }
+                $0.exercises[exerciseIndex].sets[setIndex].actual?.rpe = rpe
+        }
     }
     
     func toggleSetCompleted() {
-        
+        $workout.withLock {
+            $0.exercises[exerciseIndex].sets[setIndex].isCompleted.toggle()
+        }
     }
 }
 
 struct SetRow: View {
-    @State var model: SetRowModel
+    @Bindable var model: SetRowModel
 
     var body: some View {
         HStack {
             Text("\(model.exerciseSet.setIndex + 1)")
                 .font(.subheadline)
-                .frame(width: 60, alignment: .leading)
+                .frame(width: 30, alignment: .leading)
+            TextField("Previous", text: $model.workout.name)
+                .frame(width: 100, alignment: .leading)
+
             TextField("Reps", value: Binding(
-                get: { model.exerciseSet.actual?.reps ?? model.exerciseSet.suggest?.reps ?? 0 },
+                get: { model.exerciseSet.actual?.reps ?? 0 },
                 set: { model.updateReps($0) }
             ), formatter: NumberFormatter())
                 .keyboardType(.numberPad)
-                .frame(width: 60)
+                .frame(width: 70)
+            
+            TextField("Weight", value: Binding(
+                get: { model.exerciseSet.actual?.weight ?? 0 },
+                set: { model.updateWeight($0) }
+            ), formatter: NumberFormatter())
+                .keyboardType(.decimalPad)
+                .frame(width: 50)
             TextField("RPE", value: Binding(
-                get: { model.exerciseSet.actual?.rpe ?? model.exerciseSet.suggest?.rpe ?? 0 },
+                get: { model.exerciseSet.actual?.rpe ?? 0 },
                 set: { model.updateRPE($0) }
             ), formatter: NumberFormatter())
                 .keyboardType(.decimalPad)
-                .frame(width: 60)
+                .frame(width: 50)
             Button(action: {
                 model.toggleSetCompleted()
             }) {
@@ -55,14 +97,5 @@ struct SetRow: View {
 }
 
 #Preview {
-    let _ = try! prepareDependencies {
-        $0.defaultDatabase = try appDatabase()
-    }
-    
-    @Dependency(\.defaultDatabase) var database
-    var workout = try! database.read { db in
-        try Workout.fetchOne(db)!
-    }
-    
-    SetRow(model: .init(exerciseSet: ExerciseSet(type: .working, exerciseId: UUID())))
+    SetRow(model: .init(exerciseIndex: 0, setIndex: 0, workout: Shared(value: .mock)))
 }

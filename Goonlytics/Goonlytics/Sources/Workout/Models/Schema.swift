@@ -124,8 +124,10 @@ extension ExerciseSet: FetchableRecord, MutablePersistableRecord {
     }
     
     init(row: Row) throws {
+        id = row["id"]
         exerciseId = row["exercise_id"]
         setIndex = row["set_index"]
+        workoutId = row["workout_id"]
         
         if let typeString = row["type"] as? String,
            let setType = SetType(rawValue: typeString) {
@@ -151,8 +153,6 @@ extension ExerciseSet: FetchableRecord, MutablePersistableRecord {
         } else {
             actual = nil
         }
-        
-        isCompleted = row["is_completed"] ?? false
     }
 }
 
@@ -272,14 +272,14 @@ extension ExerciseSet: TableRecord {
 }
 
 #if DEBUG
-extension Database {
-    func insertSampleWorkoutData() throws {
+extension Workout {
+    static let mock = {
+        @Dependency(\.uuid) var uuid
         // Sample workout 1
-        let workout1ID = UUID()
-        let exercise1ID = UUID()
-
-        // Create workout 1
-        let workout1 = try Workout(
+        let workout1ID = uuid()
+        let exercise1ID = uuid()
+        
+        return Workout(
             id: workout1ID,
             name: "Morning Run",
             note: "Felt good today",
@@ -301,6 +301,7 @@ extension Database {
                     defaultRestTime: nil,
                     sets: [
                         ExerciseSet(
+                            id: uuid(),
                             type: .working,
                             weightUnit: nil,
                             suggest: SetSuggest(
@@ -318,13 +319,23 @@ extension Database {
                             ),
                             isCompleted: true,
                             exerciseId: exercise1ID,
+                            workoutId: workout1ID,
                             setIndex: 0
                         )
                     ],
                     bodyPart: nil
                 )
             ]
-        ).inserted(self)
+        )
+    }()
+}
+
+extension Database {
+    func insertSampleWorkoutData() throws {
+        @Dependency(\.uuid) var uuid
+        // Sample workout 1
+        // Create workout 1
+        let workout1 = try Workout.mock.inserted(self)
         
         try workout1.exercises.forEach { exercise in
             _ = try exercise.inserted(self)
@@ -334,9 +345,9 @@ extension Database {
         }
 
         // Sample workout 2
-        let workout2ID = UUID()
-        let exercise2ID = UUID()
-        let exercise3ID = UUID()
+        let workout2ID = uuid()
+        let exercise2ID = uuid()
+        let exercise3ID = uuid()
 
         // Create workout 2
         let workout2 = try Workout(
@@ -361,6 +372,7 @@ extension Database {
                     defaultRestTime: 90,
                     sets: [
                         ExerciseSet(
+                            id: uuid(),
                             type: .working,
                             weightUnit: .lb,
                             suggest: SetSuggest(
@@ -378,9 +390,11 @@ extension Database {
                             ),
                             isCompleted: true,
                             exerciseId: exercise2ID,
+                            workoutId: workout2ID,
                             setIndex: 0
                         ),
                         ExerciseSet(
+                            id: uuid(),
                             type: .working,
                             weightUnit: .lb,
                             suggest: SetSuggest(
@@ -398,9 +412,11 @@ extension Database {
                             ),
                             isCompleted: true,
                             exerciseId: exercise2ID,
+                            workoutId: workout2ID,
                             setIndex: 1
                         ),
                         ExerciseSet(
+                            id: uuid(),
                             type: .working,
                             weightUnit: .lb,
                             suggest: SetSuggest(
@@ -418,6 +434,7 @@ extension Database {
                             ),
                             isCompleted: true,
                             exerciseId: exercise2ID,
+                            workoutId: workout2ID,
                             setIndex: 2
                         )
                     ],
@@ -441,6 +458,7 @@ extension Database {
                     defaultRestTime: 60,
                     sets: [
                         ExerciseSet(
+                            id: uuid(),
                             type: .working,
                             weightUnit: nil,
                             suggest: SetSuggest(
@@ -458,9 +476,11 @@ extension Database {
                             ),
                             isCompleted: true,
                             exerciseId: exercise3ID,
+                            workoutId: workout2ID,
                             setIndex: 0
                         ),
                         ExerciseSet(
+                            id: uuid(),
                             type: .working,
                             weightUnit: nil,
                             suggest: SetSuggest(
@@ -478,9 +498,11 @@ extension Database {
                             ),
                             isCompleted: true,
                             exerciseId: exercise3ID,
+                            workoutId: workout2ID,
                             setIndex: 1
                         ),
                         ExerciseSet(
+                            id: uuid(),
                             type: .working,
                             weightUnit: nil,
                             suggest: SetSuggest(
@@ -498,6 +520,7 @@ extension Database {
                             ),
                             isCompleted: true,
                             exerciseId: exercise3ID,
+                            workoutId: workout2ID,
                             setIndex: 2
                         )
                     ],

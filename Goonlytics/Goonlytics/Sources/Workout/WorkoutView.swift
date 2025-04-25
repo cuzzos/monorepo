@@ -80,8 +80,8 @@ struct WorkoutView: View {
             // --- Exercise List ---
             ScrollView {
                 LazyVStack(spacing: 20, pinnedViews: .sectionHeaders) {
-                    ForEach(model.exercises, id: \.id) { exercise in
-                        exerciseSection(for: exercise)
+                    ForEach(Array(model.exercises.enumerated()), id: \.element.id) { i, exercise in
+                        exerciseSection(for: i)
                             .id(exercise.id)
                     }
                 }
@@ -116,7 +116,7 @@ struct WorkoutView: View {
             ImportWorkoutView(model: ImportWorkoutModel())
         }
         .sheet(isPresented: $showingAddExerciseSheet) {
-            AddExercise { selectedExercises in
+            AddExerciseView { selectedExercises in
                 pendingExercisesToAdd = selectedExercises
             }
         }
@@ -146,8 +146,10 @@ struct WorkoutView: View {
         }
     }
 
-    private func exerciseSection(for exercise: Exercise) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+    private func exerciseSection(for exerciseIndex: Int) -> some View {
+        let exercise = model.exercises[exerciseIndex]
+        
+        return VStack(alignment: .leading, spacing: 8) {
             // Exercise Header
             HStack {
                 Text(exercise.name)
@@ -161,32 +163,33 @@ struct WorkoutView: View {
                         .font(.title3)
                 }
             }
-            .padding(.horizontal)
             .padding(.top, 8)
             // --- Exercise Headers ---
             HStack {
                 Text("SET")
                     .font(.caption)
                     .foregroundColor(.gray)
-                    .frame(width: 40, alignment: .leading)
+                    .frame(width: 30, alignment: .leading)
                 Text("PREVIOUS")
+                    .font(.caption)
+                    .foregroundColor(.gray)
+                    .frame(width: 100, alignment: .leading)
+                Text("WEIGHT")
                     .font(.caption)
                     .foregroundColor(.gray)
                     .frame(width: 70, alignment: .leading)
                 Text("REPS")
                     .font(.caption)
                     .foregroundColor(.gray)
-                    .frame(width: 40, alignment: .leading)
+                    .frame(width: 50, alignment: .leading)
                 Text("RPE")
                     .font(.caption)
                     .foregroundColor(.gray)
-                    .frame(width: 40, alignment: .leading)
-                Spacer()
+                    .frame(width: 50, alignment: .leading)
             }
-            .padding(.horizontal)
             // Sets
-            ForEach(exercise.sets, id: \.self) { exerciseSet in
-                SetRow(model: .init(exerciseSet: exerciseSet))
+            ForEach(exercise.sets.indices, id: \.self) { si in
+                SetRow(model: .init(exerciseIndex: exerciseIndex, setIndex: si, workout: model.$workout))
             }
         }
         .background(Color(.systemBackground))
@@ -202,15 +205,24 @@ struct WorkoutView: View {
     }
 }
 
+extension SharedReaderKey where Self == FileStorageKey<Workout>.Default {
+    static var workout: Self {
+        @Dependency(\.uuid) var uuid
+        return Self[
+            .fileStorage(dump(URL.documentsDirectory.appending(component: "current-workout.json"))),
+            default: isTesting || ProcessInfo.processInfo.environment["UI_TEST_NAME"] != nil ? .mock : Workout(
+                id: uuid(),
+                name: "New Workout",
+                note: nil,
+                duration: nil,
+                startTimestamp: .now,
+                endTimestamp: nil,
+                exercises: []
+            )
+        ]
+    }
+}
+
 #Preview {
-    let _ = try! prepareDependencies {
-        $0.defaultDatabase = try appDatabase()
-    }
-    
-    @Dependency(\.defaultDatabase) var database
-    var workout = try! database.read { db in
-        try Workout.fetchOne(db)!
-    }
-    
-    WorkoutView(model: .init())
+    WorkoutView(model: .init(workout: Shared(value: .mock)))
 }
