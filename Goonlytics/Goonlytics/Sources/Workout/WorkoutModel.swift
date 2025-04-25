@@ -42,32 +42,30 @@ class WorkoutModel: HashableObject {
     }
     
     func addSet(to exercise: Exercise) {
-        for (exerciseIndex, exercise) in exercises.enumerated() {
-            if exercise.id == exercise.id {
-                let lastSet = exercises[exerciseIndex].sets.last
-                
-                let newSuggest = SetSuggest(
-                    weight: lastSet?.suggest?.weight ?? 0,
-                    reps: lastSet?.suggest?.reps ?? 0,
-                    repRange: lastSet?.suggest?.repRange,
-                    duration: lastSet?.suggest?.duration,
-                    rpe: lastSet?.suggest?.rpe,
-                    restTime: lastSet?.suggest?.restTime
-                )
-                
-                let newSet = ExerciseSet(
-                    id: uuid(),
-                    type: .working,
-                    weightUnit: lastSet?.weightUnit ?? .kg,
-                    suggest: newSuggest,
-                    actual: nil,
-                    exerciseId: exercise.id,
-                    workoutId: workout.id
-                )
-                
-                exercises[exerciseIndex].sets.append(newSet)
-                break
-            }
+        for i in exercises.indices where exercises[i].id == exercise.id {
+            let lastSet = exercise.sets.last
+            
+            let newSuggest = SetSuggest(
+                weight: lastSet?.suggest?.weight ?? 0,
+                reps: lastSet?.suggest?.reps ?? 0,
+                repRange: lastSet?.suggest?.repRange,
+                duration: lastSet?.suggest?.duration,
+                rpe: lastSet?.suggest?.rpe,
+                restTime: lastSet?.suggest?.restTime
+            )
+            
+            let newSet = ExerciseSet(
+                id: uuid(),
+                type: .working,
+                weightUnit: lastSet?.weightUnit ?? .kg,
+                suggest: newSuggest,
+                actual: nil,
+                exerciseId: exercise.id,
+                workoutId: workout.id
+            )
+            
+            exercises[i].sets.append(newSet)
+            return
         }
     }
     

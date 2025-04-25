@@ -86,7 +86,6 @@ struct WorkoutView: View {
                     }
                 }
             }
-            .ignoresSafeArea(edges: .bottom)
         }
         .safeAreaInset(edge: .bottom) {
             HStack {
@@ -158,12 +157,16 @@ struct WorkoutView: View {
                 Button {
                     model.addSet(to: exercise)
                 } label: {
-                    Image(systemName: "plus.circle.fill")
-                        .foregroundColor(.blue)
-                        .font(.title3)
+                    Text("Add Set")
+                        .font(.caption)
+                        .foregroundStyle(.white)
+                        .padding(.horizontal)
+                        .padding(.vertical, 8)
+                        .background(Color(.blue))
+                        .cornerRadius(12)
+                        .shadow(radius: 1)
                 }
             }
-            .padding(.top, 8)
             // --- Exercise Headers ---
             HStack {
                 Text("SET")
@@ -192,10 +195,11 @@ struct WorkoutView: View {
                 SetRow(model: .init(exerciseIndex: exerciseIndex, setIndex: si, workout: model.$workout))
             }
         }
+        .padding()
         .background(Color(.systemBackground))
         .cornerRadius(12)
-        .shadow(radius: 2)
-        .padding(.horizontal)
+        .padding(8)
+        .shadow(radius: 1)
     }
 
     private func startRestTimer(for exerciseId: String, duration: Int = 60) {
