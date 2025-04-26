@@ -43,23 +43,12 @@ class WorkoutModel: HashableObject {
     
     func addSet(to exercise: Exercise) {
         for i in exercises.indices where exercises[i].id == exercise.id {
-            let lastSet = exercise.sets.last
-            
-            let newSuggest = SetSuggest(
-                weight: lastSet?.suggest?.weight ?? 0,
-                reps: lastSet?.suggest?.reps ?? 0,
-                repRange: lastSet?.suggest?.repRange,
-                duration: lastSet?.suggest?.duration,
-                rpe: lastSet?.suggest?.rpe,
-                restTime: lastSet?.suggest?.restTime
-            )
-            
             let newSet = ExerciseSet(
                 id: uuid(),
                 type: .working,
-                weightUnit: lastSet?.weightUnit ?? .kg,
-                suggest: newSuggest,
-                actual: nil,
+                weightUnit: .lb,
+                suggest: .init(),
+                actual: .init(),
                 exerciseId: exercise.id,
                 workoutId: workout.id
             )
@@ -124,43 +113,10 @@ class WorkoutModel: HashableObject {
         }
     }
     
-    // --- Set Editing Methods ---
-    func updateReps(for exerciseIndex: Int, setIndex: Int, reps: Int) {
-        guard exercises.indices.contains(exerciseIndex),
-              exercises[exerciseIndex].sets.indices.contains(setIndex) else {
-            return
-        }
-        var set = exercises[exerciseIndex].sets[setIndex]
-        var actual = set.actual ?? SetActual()
-        actual.reps = reps
-        set.actual = actual
-        exercises[exerciseIndex].sets[setIndex] = set
-    }
-    
-    func updateRPE(for exerciseIndex: Int, setIndex: Int, rpe: Double) {
-        guard exercises.indices.contains(exerciseIndex),
-              exercises[exerciseIndex].sets.indices.contains(setIndex) else {
-            return
-        }
-        var set = exercises[exerciseIndex].sets[setIndex]
-        var actual = set.actual ?? SetActual()
-        actual.rpe = rpe
-        set.actual = actual
-        exercises[exerciseIndex].sets[setIndex] = set
-    }
-    
-    func toggleSetCompleted(for exerciseIndex: Int, setIndex: Int) {
-        guard exercises.indices.contains(exerciseIndex),
-              exercises[exerciseIndex].sets.indices.contains(setIndex) else {
-            return
-        }
-        exercises[exerciseIndex].sets[setIndex].isCompleted.toggle()
-    }
-    
     // --- Computed Properties ---
     var totalVolume: Int {
         self.workout.exercises.flatMap { $0.sets }.reduce(0) { sum, set in
-            sum + (set.actual?.reps ?? 0)
+            sum + (set.actual.reps ?? 0)
         }
     }
 

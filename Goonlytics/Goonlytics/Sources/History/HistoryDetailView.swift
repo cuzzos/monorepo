@@ -119,7 +119,7 @@ struct HistoryDetailView: View {
                     print("Displaying exercise: \(exercise.name)")
                     print("Number of sets: \(exercise.sets.count)")
                     for (i, set) in exercise.sets.enumerated() {
-                        print("Set \(i+1) details: weight=\(set.suggest?.weight ?? 0), reps=\(set.suggest?.reps ?? 0)")
+                        print("Set \(i+1) details: weight=\(set.suggest.weight ?? 0), reps=\(set.suggest.reps ?? 0)")
                     }
                 }
             
@@ -141,7 +141,7 @@ struct HistoryDetailView: View {
                         
                         Spacer()
                         
-                        if let rpe = set.suggest?.rpe {
+                        if let rpe = set.suggest.rpe {
                             Text("@ \(String(format: "%.1f", Double(rpe)))")
                                 .font(.system(size: 16, weight: .medium, design: .default))
                                 .foregroundColor(.orange)
@@ -163,13 +163,13 @@ struct HistoryDetailView: View {
         var result = ""
         
         // For weighted exercises
-        if let weight = set.actual?.weight ?? set.suggest?.weight {
+        if let weight = set.actual.weight ?? set.suggest.weight {
             let unit = set.weightUnit?.rawValue ?? "lb"
             result += "\(weight) \(unit) × "
         }
         
         // Add reps
-        if let reps = set.actual?.reps ?? set.suggest?.reps {
+        if let reps = set.actual.reps ?? set.suggest.reps {
             result += "\(reps) reps"
         } else {
             result += "0 reps"
@@ -220,11 +220,11 @@ struct ExerciseDetailView: View {
                     HStack {
                         Text("Set \(index + 1)")
                         Spacer()
-                        Text("\(set.suggest?.reps ?? 0) reps")
-                        if let weight = set.suggest?.weight {
+                        Text("\(set.suggest.reps ?? 0) reps")
+                        if let weight = set.suggest.weight {
                             Text("\(weight) \(set.weightUnit?.rawValue ?? exercise.weightUnit?.rawValue ?? "")")
                         }
-                        if let rpe = set.suggest?.rpe {
+                        if let rpe = set.suggest.rpe {
                             Text("RPE: \(rpe)")
                                 .foregroundColor(.orange)
                         }

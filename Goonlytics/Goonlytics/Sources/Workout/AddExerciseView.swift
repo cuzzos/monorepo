@@ -20,7 +20,7 @@ final class AddExerciseModel {
 
     func addExercise() {
         // Add a new exercise with one empty set
-        let suggest = SetSuggest(
+        let suggest: ExerciseSet.Suggest = .init(
             weight: 0,
             reps: 0,
             repRange: nil,

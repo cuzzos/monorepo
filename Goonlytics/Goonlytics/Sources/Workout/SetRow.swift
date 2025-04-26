@@ -23,28 +23,19 @@ final class SetRowModel {
     
     func updateReps(_ reps: Int) {
         $workout.withLock {
-            if $0.exercises[exerciseIndex].sets[setIndex].actual == nil {
-                $0.exercises[exerciseIndex].sets[setIndex].actual = .init()
-            }
-            $0.exercises[exerciseIndex].sets[setIndex].actual?.reps = reps
+            $0.exercises[exerciseIndex].sets[setIndex].actual.reps = reps
         }
     }
     
     func updateWeight(_ weight: Double) {
         $workout.withLock {
-            if $0.exercises[exerciseIndex].sets[setIndex].actual == nil {
-                $0.exercises[exerciseIndex].sets[setIndex].actual = .init()
-            }
-            $0.exercises[exerciseIndex].sets[setIndex].actual?.weight = weight
+            $0.exercises[exerciseIndex].sets[setIndex].actual.weight = weight
         }
     }
     
     func updateRPE(_ rpe: Double) {
         $workout.withLock {
-            if $0.exercises[exerciseIndex].sets[setIndex].actual == nil {
-                $0.exercises[exerciseIndex].sets[setIndex].actual = .init()
-            }
-                $0.exercises[exerciseIndex].sets[setIndex].actual?.rpe = rpe
+            $0.exercises[exerciseIndex].sets[setIndex].actual.rpe = rpe
         }
     }
     
@@ -67,20 +58,20 @@ struct SetRow: View {
                 .frame(width: 100, alignment: .leading)
 
             TextField("Reps", value: Binding(
-                get: { model.exerciseSet.actual?.reps ?? 0 },
+                get: { model.exerciseSet.actual.reps ?? 0 },
                 set: { model.updateReps($0) }
             ), formatter: NumberFormatter())
                 .keyboardType(.numberPad)
                 .frame(width: 70)
             
             TextField("Weight", value: Binding(
-                get: { model.exerciseSet.actual?.weight ?? 0 },
+                get: { model.exerciseSet.actual.weight ?? 0 },
                 set: { model.updateWeight($0) }
             ), formatter: NumberFormatter())
                 .keyboardType(.decimalPad)
                 .frame(width: 50)
             TextField("RPE", value: Binding(
-                get: { model.exerciseSet.actual?.rpe ?? 0 },
+                get: { model.exerciseSet.actual.rpe ?? 0 },
                 set: { model.updateRPE($0) }
             ), formatter: NumberFormatter())
                 .keyboardType(.decimalPad)

@@ -142,17 +142,8 @@ extension ExerciseSet: FetchableRecord, MutablePersistableRecord {
             weightUnit = nil
         }
         
-        if let suggestData = row["suggest"] as? Data {
-            suggest = try? JSONDecoder().decode(SetSuggest.self, from: suggestData)
-        } else {
-            suggest = nil
-        }
-        
-        if let actualData = row["actual"] as? Data {
-            actual = try? JSONDecoder().decode(SetActual.self, from: actualData)
-        } else {
-            actual = nil
-        }
+        suggest = (try? JSONDecoder().decode(ExerciseSet.Suggest.self, from: row["suggest"])) ?? .init()
+        actual = (try? JSONDecoder().decode(ExerciseSet.Actual.self, from: row["actual"])) ?? .init()
     }
 }
 
@@ -304,7 +295,7 @@ extension Workout {
                             id: uuid(),
                             type: .working,
                             weightUnit: nil,
-                            suggest: SetSuggest(
+                            suggest: .init(
                                 weight: 0,
                                 reps: 30,
                                 repRange: nil,
@@ -312,7 +303,7 @@ extension Workout {
                                 rpe: 7.5,
                                 restTime: nil
                             ),
-                            actual: SetActual(
+                            actual: .init(
                                 weight: 0,
                                 reps: 32,
                                 rpe: 8.0
@@ -375,7 +366,7 @@ extension Database {
                             id: uuid(),
                             type: .working,
                             weightUnit: .lb,
-                            suggest: SetSuggest(
+                            suggest: .init(
                                 weight: 135,
                                 reps: 10,
                                 repRange: nil,
@@ -383,7 +374,7 @@ extension Database {
                                 rpe: 7.0,
                                 restTime: 90
                             ),
-                            actual: SetActual(
+                            actual: .init(
                                 weight: 135,
                                 reps: 12,
                                 rpe: 7.5
@@ -397,7 +388,7 @@ extension Database {
                             id: uuid(),
                             type: .working,
                             weightUnit: .lb,
-                            suggest: SetSuggest(
+                            suggest: .init(
                                 weight: 155,
                                 reps: 8,
                                 repRange: nil,
@@ -405,7 +396,7 @@ extension Database {
                                 rpe: 8.0,
                                 restTime: 90
                             ),
-                            actual: SetActual(
+                            actual: .init(
                                 weight: 160,
                                 reps: 8,
                                 rpe: 8.5
@@ -419,7 +410,7 @@ extension Database {
                             id: uuid(),
                             type: .working,
                             weightUnit: .lb,
-                            suggest: SetSuggest(
+                            suggest: .init(
                                 weight: 175,
                                 reps: 6,
                                 repRange: nil,
@@ -427,7 +418,7 @@ extension Database {
                                 rpe: 9.0,
                                 restTime: 90
                             ),
-                            actual: SetActual(
+                            actual: .init(
                                 weight: 175,
                                 reps: 5,
                                 rpe: 9.5
@@ -461,7 +452,7 @@ extension Database {
                             id: uuid(),
                             type: .working,
                             weightUnit: nil,
-                            suggest: SetSuggest(
+                            suggest: .init(
                                 weight: nil,
                                 reps: 12,
                                 repRange: nil,
@@ -469,7 +460,7 @@ extension Database {
                                 rpe: 8.0,
                                 restTime: 60
                             ),
-                            actual: SetActual(
+                            actual: .init(
                                 weight: nil,
                                 reps: 12,
                                 rpe: 8.0
@@ -483,7 +474,7 @@ extension Database {
                             id: uuid(),
                             type: .working,
                             weightUnit: nil,
-                            suggest: SetSuggest(
+                            suggest: .init(
                                 weight: nil,
                                 reps: 10,
                                 repRange: nil,
@@ -491,7 +482,7 @@ extension Database {
                                 rpe: 8.5,
                                 restTime: 60
                             ),
-                            actual: SetActual(
+                            actual: .init(
                                 weight: nil,
                                 reps: 8,
                                 rpe: 8.5
@@ -505,7 +496,7 @@ extension Database {
                             id: uuid(),
                             type: .working,
                             weightUnit: nil,
-                            suggest: SetSuggest(
+                            suggest: .init(
                                 weight: nil,
                                 reps: 8,
                                 repRange: nil,
@@ -513,7 +504,7 @@ extension Database {
                                 rpe: 9.0,
                                 restTime: 60
                             ),
-                            actual: SetActual(
+                            actual: .init(
                                 weight: nil,
                                 reps: 7,
                                 rpe: 9.5

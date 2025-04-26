@@ -112,11 +112,62 @@ enum BodyPartMain: String, Codable, Hashable {
 }
 
 struct ExerciseSet: Codable, Hashable {
+    struct Suggest: Codable, Hashable {
+        let weight: Double?
+        let reps: Int?
+        let repRange: Int?
+        let duration: Int?
+        let rpe: Double?
+        let restTime: Int?
+        
+        enum CodingKeys: String, CodingKey {
+            case weight
+            case reps
+            case repRange = "rep_range"
+            case duration
+            case rpe
+            case restTime = "rest_time"
+        }
+        
+        init(weight: Double? = nil, reps: Int? = nil, repRange: Int? = nil, duration: Int? = nil, rpe: Double? = nil, restTime: Int? = nil) {
+            self.weight = weight
+            self.reps = reps
+            self.repRange = repRange
+            self.duration = duration
+            self.rpe = rpe
+            self.restTime = restTime
+        }
+    }
+    
+    struct Actual: Codable, Hashable {
+        var weight: Double?
+        var reps: Int?
+        var duration: Int?
+        var rpe: Double?
+        var actualRestTime: Int?
+        
+        enum CodingKeys: String, CodingKey {
+            case weight
+            case reps
+            case duration
+            case rpe
+            case actualRestTime = "actual_rest_time"
+        }
+        
+        init(weight: Double? = nil, reps: Int? = nil, duration: Int? = nil, rpe: Double? = nil, actualRestTime: Int? = nil) {
+            self.weight = weight
+            self.reps = reps
+            self.duration = duration
+            self.rpe = rpe
+            self.actualRestTime = actualRestTime
+        }
+    }
+    
     let id: UUID
     var type: SetType
     var weightUnit: WeightUnit?
-    var suggest: SetSuggest?
-    var actual: SetActual?
+    var suggest: Suggest
+    var actual: Actual
     
     // Local state
     var isCompleted: Bool = false
@@ -134,57 +185,6 @@ struct ExerciseSet: Codable, Hashable {
         case actual
         case exerciseId
         case workoutId
-    }
-}
-
-struct SetSuggest: Codable, Hashable {
-    let weight: Double?
-    let reps: Int?
-    let repRange: Int?
-    let duration: Int?
-    let rpe: Double?
-    let restTime: Int?
-    
-    enum CodingKeys: String, CodingKey {
-        case weight
-        case reps
-        case repRange = "rep_range"
-        case duration
-        case rpe
-        case restTime = "rest_time"
-    }
-    
-    init(weight: Double? = nil, reps: Int? = nil, repRange: Int? = nil, duration: Int? = nil, rpe: Double? = nil, restTime: Int? = nil) {
-        self.weight = weight
-        self.reps = reps
-        self.repRange = repRange
-        self.duration = duration
-        self.rpe = rpe
-        self.restTime = restTime
-    }
-}
-
-struct SetActual: Codable, Hashable {
-    var weight: Double?
-    var reps: Int?
-    var duration: Int?
-    var rpe: Double?
-    var actualRestTime: Int?
-    
-    enum CodingKeys: String, CodingKey {
-        case weight
-        case reps
-        case duration
-        case rpe
-        case actualRestTime = "actual_rest_time"
-    }
-    
-    init(weight: Double? = nil, reps: Int? = nil, duration: Int? = nil, rpe: Double? = nil, actualRestTime: Int? = nil) {
-        self.weight = weight
-        self.reps = reps
-        self.duration = duration
-        self.rpe = rpe
-        self.actualRestTime = actualRestTime
     }
 }
 
