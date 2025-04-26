@@ -180,7 +180,7 @@ struct WorkoutView: View {
                 Text("WEIGHT")
                     .font(.caption)
                     .foregroundColor(.gray)
-                    .frame(width: 70, alignment: .leading)
+                    .frame(width: 50, alignment: .leading)
                 Text("REPS")
                     .font(.caption)
                     .foregroundColor(.gray)

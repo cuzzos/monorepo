@@ -9,7 +9,10 @@ final class SetRowModel {
     let setIndex: Int
     var exerciseSet: ExerciseSet {
         get { workout.exercises[exerciseIndex].sets[setIndex] }
-        set { $workout.withLock { $0.exercises[exerciseIndex].sets[setIndex] = newValue }
+        set {
+            $workout.withLock {
+                $0.exercises[exerciseIndex].sets[setIndex] = newValue
+            }
         }
     }
     
@@ -21,28 +24,20 @@ final class SetRowModel {
         self._workout = workout
     }
     
-    func updateReps(_ reps: Int) {
-        $workout.withLock {
-            $0.exercises[exerciseIndex].sets[setIndex].actual.reps = reps
-        }
+    func updateWeight(_ weight: Double) {
+        exerciseSet.actual.weight = weight
     }
     
-    func updateWeight(_ weight: Double) {
-        $workout.withLock {
-            $0.exercises[exerciseIndex].sets[setIndex].actual.weight = weight
-        }
+    func updateReps(_ reps: Int) {
+        exerciseSet.actual.reps = reps
     }
     
     func updateRPE(_ rpe: Double) {
-        $workout.withLock {
-            $0.exercises[exerciseIndex].sets[setIndex].actual.rpe = rpe
-        }
+        exerciseSet.actual.rpe = rpe
     }
     
     func toggleSetCompleted() {
-        $workout.withLock {
-            $0.exercises[exerciseIndex].sets[setIndex].isCompleted.toggle()
-        }
+        exerciseSet.isCompleted.toggle()
     }
 }
 
@@ -54,15 +49,9 @@ struct SetRow: View {
             Text("\(model.exerciseSet.setIndex + 1)")
                 .font(.subheadline)
                 .frame(width: 30, alignment: .leading)
+            
             TextField("Previous", text: $model.workout.name)
                 .frame(width: 100, alignment: .leading)
-
-            TextField("Reps", value: Binding(
-                get: { model.exerciseSet.actual.reps ?? 0 },
-                set: { model.updateReps($0) }
-            ), formatter: NumberFormatter())
-                .keyboardType(.numberPad)
-                .frame(width: 70)
             
             TextField("Weight", value: Binding(
                 get: { model.exerciseSet.actual.weight ?? 0 },
@@ -70,6 +59,14 @@ struct SetRow: View {
             ), formatter: NumberFormatter())
                 .keyboardType(.decimalPad)
                 .frame(width: 50)
+
+            TextField("Reps", value: Binding(
+                get: { model.exerciseSet.actual.reps ?? 0 },
+                set: { model.updateReps($0) }
+            ), formatter: NumberFormatter())
+                .keyboardType(.numberPad)
+                .frame(width: 50)
+            
             TextField("RPE", value: Binding(
                 get: { model.exerciseSet.actual.rpe ?? 0 },
                 set: { model.updateRPE($0) }
