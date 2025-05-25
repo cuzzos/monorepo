@@ -137,7 +137,7 @@ struct WorkoutView: View {
         .onAppear {
             startTime = Date()
             timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
-                model.elapsedTime += 1
+//                model.elapsedTime += 1
             }
         }
         .onDisappear {

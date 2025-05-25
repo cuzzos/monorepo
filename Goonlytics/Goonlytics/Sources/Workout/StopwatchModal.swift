@@ -2,21 +2,26 @@ import SwiftUI
 
 struct StopwatchModal: View {
     @Binding var isPresented: Bool
-    @State private var elapsedTime: Int = 0
-    @State private var timer: Timer? = nil
+    @State private var startTime: Date? = nil
+    @State private var isRunning: Bool = false
 
     var body: some View {
         VStack(spacing: 24) {
             Text("Stopwatch")
                 .font(.title)
                 .padding(.top)
-            Text(String(format: "%d:%02d", elapsedTime / 60, elapsedTime % 60))
-                .font(.system(size: 48, weight: .bold, design: .monospaced))
+
+            TimelineView(.periodic(from: .now, by: 1)) { context in
+                let elapsedSeconds = startTime.map { Calendar.current.dateComponents([.second], from: $0, to: context.date).second ?? 0 } ?? 0
+                Text(String(format: "%d:%02d", elapsedSeconds / 60, elapsedSeconds % 60))
+                    .font(.system(size: 48, weight: .bold, design: .monospaced))
+            }
+
             HStack(spacing: 32) {
                 Button(action: start) {
-                    Image(systemName: "play.fill")
+                    Image(systemName: isRunning ? "pause.fill" : "play.fill")
                         .font(.largeTitle)
-                        .foregroundColor(.green)
+                        .foregroundColor(isRunning ? .orange : .green)
                 }
                 Button(action: stop) {
                     Image(systemName: "stop.fill")
@@ -36,24 +41,24 @@ struct StopwatchModal: View {
             .padding()
         }
         .padding()
-        .onAppear(perform: start)
-        .onDisappear(perform: stop)
     }
 
     private func start() {
-        if timer == nil {
-            timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
-                elapsedTime += 1
-            }
+        if !isRunning {
+            startTime = Date()
+            isRunning = true
         }
     }
 
     private func stop() {
-        timer?.invalidate()
-        timer = nil
+        if isRunning {
+            isRunning = false
+            startTime = nil
+        }
     }
 
     private func reset() {
-        elapsedTime = 0
+        isRunning = false
+        startTime = nil
     }
 }
