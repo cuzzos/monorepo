@@ -77,9 +77,9 @@ struct WorkoutView: View {
             .padding(.vertical, 8)
             .background(Color(.black))
 
-//            TextField("Workout Name", text: $model.workout.name)
-//                .font(.title)
-//                .padding(.horizontal)
+            TextField("Workout Name", text: $model.workout.name)
+                .font(.title)
+                .padding(.horizontal)
             
             // --- Exercise List ---
             ScrollView {
