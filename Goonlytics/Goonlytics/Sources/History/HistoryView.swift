@@ -6,8 +6,14 @@ import Dependencies
 @MainActor
 @Observable
 final class HistoryModel: HashableObject {
+    
     var destination: Destination?
-    @ObservationIgnored @SharedReader var workoutsData: WorkoutsRequest.Value
+    @ObservationIgnored
+    @FetchAll(
+        Workout
+            .order { $0.startTimestamp.desc() }
+    )
+    var workouts: [Workout]
     
     @ObservationIgnored @Dependency(\.defaultDatabase) var database
     
@@ -18,35 +24,7 @@ final class HistoryModel: HashableObject {
         case importWorkout(ImportWorkoutModel)
     }
     
-    init() {
-        _workoutsData = SharedReader(
-            wrappedValue: WorkoutsRequest.Value(),
-            .fetch(WorkoutsRequest(), animation: .default)
-        )
-    }
-    
-    var workouts: [Workout] {
-        return workoutsData.workouts
-    }
-    
-    // MARK: - Workout Fetch Key Request
-
-    struct WorkoutsRequest: FetchKeyRequest {
-        struct Value {
-            var workouts: [Workout] = []
-        }
-        
-        func fetch(_ db: Database) throws -> Value {
-            // Fetch workouts, most recent first
-            let workouts = try Workout
-                .all()
-                .order(Column("start_timestamp").desc)
-                .including(all: Workout.exercises.including(all: Exercise.sets))
-                .fetchAll(db)
-            
-            return Value(workouts: workouts)
-        }
-    }
+    init() {}
 }
 
 struct HistoryView: View {

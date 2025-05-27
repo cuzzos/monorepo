@@ -1,60 +1,57 @@
 import Foundation
+import IdentifiedCollections
+import SharingGRDB
+
+extension UUID: QueryExpression {
+    public typealias QueryValue = UUID.LowercasedRepresentation
+    
+    public var queryFragment: QueryFragment {
+        QueryFragment(stringLiteral: self.uuidString.lowercased())
+    }
+}
 
 // MARK: - Models
+@Table
 struct Workout: Codable, Hashable, Identifiable {
+    static let databaseTableName = "workouts"
+    @Column(as: UUID.LowercasedRepresentation.self)
     let id: UUID
     var name: String
     var note: String?
     var duration: Int?
+    @Column(as: Date.ISO8601Representation.self)
     var startTimestamp: Date
+    @Column(as: Date.ISO8601Representation?.self)
     var endTimestamp: Date?
-    var exercises: [Exercise]
-    
-    enum CodingKeys: String, CodingKey {
-        case id
-        case name
-        case note
-        case duration
-        case startTimestamp = "start_timestamp"
-        case endTimestamp = "end_timestamp"
-        case exercises
-    }
+    @Ephemeral
+    var exercises: IdentifiedArrayOf<Exercise> = []
 }
 
-
+@Table
 struct Exercise: Identifiable, Codable, Hashable {
+    static let databaseTableName = "exercises"
+    @Column(as: UUID.LowercasedRepresentation.self)
     let id: UUID
     var supersetId: Int?
+    @Column(as: UUID.LowercasedRepresentation.self)
     let workoutId: UUID
     let name: String
+    @Column(as: [String].JSONRepresentation.self)
     let pinnedNotes: [String]
+    @Column(as: [String].JSONRepresentation.self)
     let notes: [String]
     let duration: Int?
     let type: ExerciseType
     let weightUnit: WeightUnit?
     let defaultWarmUpTime: Int?
     let defaultRestTime: Int?
-    var sets: [ExerciseSet]
+    @Ephemeral
+    var sets: IdentifiedArrayOf<ExerciseSet> = []
+    @Column(as: BodyPart.JSONRepresentation?.self)
     let bodyPart: BodyPart?
-    
-    enum CodingKeys: String, CodingKey {
-        case id
-        case supersetId = "superset_id"
-        case workoutId = "workout_id"
-        case name
-        case pinnedNotes = "pinned_notes"
-        case notes
-        case duration
-        case type
-        case weightUnit = "weight_unit"
-        case defaultWarmUpTime = "default_warm_up_time"
-        case defaultRestTime = "default_rest_time"
-        case sets
-        case bodyPart = "body_part"
-    }
 }
 
-enum ExerciseType: String, CaseIterable, Codable, Identifiable {
+enum ExerciseType: String, CaseIterable, Codable, Identifiable, QueryBindable {
     var id: String { self.rawValue }
 
     case dumbbell
@@ -66,16 +63,16 @@ enum ExerciseType: String, CaseIterable, Codable, Identifiable {
     case unknown
 }
 
-enum WeightUnit: String, Codable, Hashable {
+enum WeightUnit: String, Codable, Hashable, QueryBindable, DatabaseValueConvertible {
     case kg
     case lb
     case bodyweight
 }
 
-enum SetType: String, Codable, Hashable {
-    case warmUp = "warm_up"
+enum SetType: String, Codable, Hashable, QueryBindable, DatabaseValueConvertible {
+    case warmUp
     case working
-    case dropSet = "drop_set"
+    case dropSet
     case amrap
     case failure
 }
@@ -107,11 +104,13 @@ enum BodyPartMain: String, Codable, Hashable {
     case shoulders
     case core
     case cardio
-    case fullBody = "full_body"
+    case fullBody
     case other
 }
 
-struct ExerciseSet: Codable, Hashable {
+@Table
+struct ExerciseSet: Codable, Hashable, Identifiable {
+    static let databaseTableName = "exerciseSets"
     struct Suggest: Codable, Hashable {
         let weight: Double?
         let reps: Int?
@@ -119,15 +118,6 @@ struct ExerciseSet: Codable, Hashable {
         let duration: Int?
         let rpe: Double?
         let restTime: Int?
-        
-        enum CodingKeys: String, CodingKey {
-            case weight
-            case reps
-            case repRange = "rep_range"
-            case duration
-            case rpe
-            case restTime = "rest_time"
-        }
         
         init(weight: Double? = nil, reps: Int? = nil, repRange: Int? = nil, duration: Int? = nil, rpe: Double? = nil, restTime: Int? = nil) {
             self.weight = weight
@@ -145,15 +135,7 @@ struct ExerciseSet: Codable, Hashable {
         var duration: Int?
         var rpe: Double?
         var actualRestTime: Int?
-        
-        enum CodingKeys: String, CodingKey {
-            case weight
-            case reps
-            case duration
-            case rpe
-            case actualRestTime = "actual_rest_time"
-        }
-        
+
         init(weight: Double? = nil, reps: Int? = nil, duration: Int? = nil, rpe: Double? = nil, actualRestTime: Int? = nil) {
             self.weight = weight
             self.reps = reps
@@ -162,30 +144,24 @@ struct ExerciseSet: Codable, Hashable {
             self.actualRestTime = actualRestTime
         }
     }
-    
+    @Column(as: UUID.LowercasedRepresentation.self)
     let id: UUID
     var type: SetType
     var weightUnit: WeightUnit?
+    @Column(as: Suggest.JSONRepresentation.self)
     var suggest: Suggest
+    @Column(as: Actual.JSONRepresentation.self)
     var actual: Actual
     
-    // Local state
+    @Ephemeral
     var isCompleted: Bool = false
     
     // For database use
+    @Column(as: UUID.LowercasedRepresentation.self)
     let exerciseId: UUID
+    @Column(as: UUID.LowercasedRepresentation.self)
     let workoutId: UUID
     var setIndex: Int = 0
-    
-    enum CodingKeys: String, CodingKey {
-        case id
-        case type
-        case weightUnit = "weight_unit"
-        case suggest
-        case actual
-        case exerciseId
-        case workoutId
-    }
 }
 
 // MARK: - Extensions

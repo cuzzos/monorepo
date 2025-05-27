@@ -1,13 +1,13 @@
+import IdentifiedCollections
 import SwiftUI
 import SwiftUINavigation
+import StructuredQueriesCore
 import SharingGRDB
-import Dependencies
-import UniformTypeIdentifiers
 
 @MainActor
 @Observable
 final class HistoryDetailModel: HashableObject {
-    @ObservationIgnored @SharedReader var details: Details.Value
+    @ObservationIgnored @Fetch var details: Details.Value
     var showingNotes: Bool = false
     var showingExportAlert: Bool = false
     var exportMessage: String = ""
@@ -15,26 +15,43 @@ final class HistoryDetailModel: HashableObject {
     var isShowingShareSheet: Bool = false
     
     init(workout: Workout) {
-        _details = SharedReader(
+        _details = Fetch(
             wrappedValue: Details.Value(workout: workout),
-            .fetch(Details(workout: workout), animation: .default)
+            Details(workout: workout),
+            animation: .default
         )
     }
     
     struct Details: FetchKeyRequest {
         struct Value {
-            var exercises: [Exercise] = []
             var workout: Workout
         }
-        
+
         let workout: Workout
         
         func fetch(_ db: Database) throws -> Value {
-            try Value(
-                exercises: Exercise
-                    .filter(Column("workout_id") == workout.id)
-                    .fetchAll(db),
-                workout: Workout.fetchOne(db, key: workout.id) ?? workout
+            guard var workoutResult = try Workout
+                .where({ $0.id == #bind(workout.id) })
+                .fetchOne(db)
+            else { throw NotFound() }
+            
+            let query = try Exercise
+                .where { $0.workoutId == #bind(workoutResult.id) }
+                .join(ExerciseSet.all) { $0.id.eq($1.exerciseId) }
+                .fetchAll(db)
+
+            var exercises = query.map(\.0).reduce(into: [UUID: Exercise]()) { dict, exercise in
+                dict[exercise.id] = exercise
+            }
+            let sets = query.map(\.1)
+            sets.forEach { s in
+                exercises[s.exerciseId]?.sets.append(contentsOf: [s])
+            }
+            
+            workoutResult.exercises = IdentifiedArray(uniqueElements: exercises.values)
+            
+            return Value(
+                workout: workoutResult
             )
         }
     }
@@ -100,7 +117,7 @@ struct HistoryDetailView: View {
     
     private var exercisesSection: some View {
         VStack(alignment: .leading, spacing: 24) {
-            ForEach(model.details.workout.exercises.compactMap { $0 }, id: \.id) { exercise in
+            ForEach(model.details.workout.exercises, id: \.id) { exercise in
                 exerciseCard(exercise: exercise)
             }
         }
@@ -236,20 +253,19 @@ struct ExerciseDetailView: View {
     }
 }
 
-#Preview {
-    let _ = try! prepareDependencies {
-        $0.defaultDatabase = try appDatabase()
-    }
-    
-    @Dependency(\.defaultDatabase) var database
-    let workout = try! database.read { db in
-        try Workout
-            .including(all: Workout.exercises.including(all: Exercise.sets))
-            .fetchOne(db)!
-    }
-
-    
-    return NavigationStack {
-        HistoryDetailView(model: .init(workout: workout))
-    }
-}
+//#Preview {
+//    let _ = try! prepareDependencies {
+//        $0.defaultDatabase = try appDatabase()
+//    }
+//    
+//    @Dependency(\.defaultDatabase) var database
+//    let workout = try! database.read { db in
+//        let select: SelectOf<Workout> = Workout.limit(1)
+//        try select.fetchOne(db)!
+//    }
+//
+//    
+//    NavigationStack {
+//        HistoryDetailView(model: .init(workout: workout))
+//    }
+//}

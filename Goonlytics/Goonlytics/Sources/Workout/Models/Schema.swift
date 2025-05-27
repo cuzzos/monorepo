@@ -3,151 +3,6 @@ import Foundation
 import GRDB
 import SharingGRDB
 
-// MARK: - Workout Database Model
-
-extension Workout: FetchableRecord, MutablePersistableRecord {    
-    func encode(to container: inout PersistenceContainer) {
-        container["id"] = id
-        container["name"] = name
-        container["start_timestamp"] = startTimestamp
-        container["note"] = note
-        container["duration"] = duration
-        container["end_timestamp"] = endTimestamp
-    }
-    
-    init(row: Row) throws {
-        id = row["id"]
-        name = row["name"]
-        startTimestamp = row["start_timestamp"]
-        note = row["note"]
-        duration = row["duration"]
-        endTimestamp = row["end_timestamp"]
-        exercises = []
-    }
-}
-
-// MARK: - Exercise Database Model
-
-extension Exercise: FetchableRecord, MutablePersistableRecord {
-    static let workoutId = Column("workout_id")
-    
-    func encode(to container: inout PersistenceContainer) {
-        container["id"] = id
-        container["workout_id"] = workoutId
-        container["superset_id"] = supersetId
-        container["name"] = name
-        container["duration"] = duration
-        container["type"] = type.rawValue
-        container["weight_unit"] = weightUnit?.rawValue
-        container["default_warm_up_time"] = defaultWarmUpTime
-        container["default_rest_time"] = defaultRestTime
-        
-        // Encode arrays as JSON
-        if let pinnedNotesData = try? JSONEncoder().encode(pinnedNotes) {
-            container["pinned_notes"] = pinnedNotesData
-        }
-        
-        if let notesData = try? JSONEncoder().encode(notes) {
-            container["notes"] = notesData
-        }
-        
-        if let bodyPartData = try? JSONEncoder().encode(bodyPart) {
-            container["body_part"] = bodyPartData
-        }
-    }
-    
-    init(row: Row) throws {
-        id = row["id"]
-        workoutId = row["workout_id"]
-        supersetId = row["superset_id"]
-        name = row["name"]
-        duration = row["duration"]
-        
-        if let typeString = row["type"] as? String,
-           let exerciseType = ExerciseType(rawValue: typeString) {
-            type = exerciseType
-        } else {
-            type = .bodyweight
-        }
-        
-        if let weightUnitString = row["weight_unit"] as? String {
-            weightUnit = WeightUnit(rawValue: weightUnitString)
-        } else {
-            weightUnit = nil
-        }
-        
-        defaultWarmUpTime = row["default_warm_up_time"]
-        defaultRestTime = row["default_rest_time"]
-        
-        // Decode arrays from JSON
-        if let pinnedNotesData = row["pinned_notes"] as? Data {
-            pinnedNotes = (try? JSONDecoder().decode([String].self, from: pinnedNotesData)) ?? []
-        } else {
-            pinnedNotes = []
-        }
-        
-        if let notesData = row["notes"] as? Data {
-            notes = (try? JSONDecoder().decode([String].self, from: notesData)) ?? []
-        } else {
-            notes = []
-        }
-        
-        if let bodyPartData = row["body_part"] as? Data {
-            bodyPart = try? JSONDecoder().decode(BodyPart.self, from: bodyPartData)
-        } else {
-            bodyPart = nil
-        }
-        
-        sets = [] // Will be populated by associations
-    }
-}
-
-// MARK: - ExerciseSet Database Model
-
-extension ExerciseSet: FetchableRecord, MutablePersistableRecord {
-    static let exerciseId = Column("exercise_id")
-    static let setIndex = Column("set_index")
-    
-    func encode(to container: inout PersistenceContainer) {
-        container["exercise_id"] = exerciseId
-        container["set_index"] = setIndex
-        container["type"] = type.rawValue
-        container["weight_unit"] = weightUnit?.rawValue
-        
-        if let suggestData = try? JSONEncoder().encode(suggest) {
-            container["suggest"] = suggestData
-        }
-        
-        if let actualData = try? JSONEncoder().encode(actual) {
-            container["actual"] = actualData
-        }
-    }
-    
-    init(row: Row) throws {
-        id = row["id"]
-        exerciseId = row["exercise_id"]
-        setIndex = row["set_index"]
-        workoutId = row["workout_id"]
-        
-        if let typeString = row["type"] as? String,
-           let setType = SetType(rawValue: typeString) {
-            type = setType
-        } else {
-            type = .working
-        }
-        
-        if let weightUnitString = row["weight_unit"] as? String {
-            weightUnit = WeightUnit(rawValue: weightUnitString)
-        } else {
-            weightUnit = nil
-        }
-        
-        suggest = (try? JSONDecoder().decode(ExerciseSet.Suggest.self, from: row["suggest"])) ?? .init()
-        actual = (try? JSONDecoder().decode(ExerciseSet.Actual.self, from: row["actual"])) ?? .init()
-    }
-}
-
-
 // MARK: - Database Setup
 
 func appDatabase() throws -> any DatabaseWriter {
@@ -164,7 +19,7 @@ func appDatabase() throws -> any DatabaseWriter {
     
     @Dependency(\.context) var context
     if context == .live {
-        let path = URL.documentsDirectory.appending(component: "workouts.sqlite").path()
+        let path = URL.documentsDirectory.appending(component: "db.sqlite").path()
         print("open", path)
         database = try DatabasePool(path: path, configuration: configuration)
     } else {
@@ -177,50 +32,58 @@ func appDatabase() throws -> any DatabaseWriter {
     #endif
     
     migrator.registerMigration("Create tables") { db in
-        // Create workouts table
-        try db.create(table: Workout.databaseTableName) { table in
-            table.column("id", .text).primaryKey()
-            table.column("name", .text).notNull()
-            table.column("start_timestamp", .datetime).notNull()
-            table.column("note", .text)
-            table.column("duration", .integer)
-            table.column("end_timestamp", .datetime)
-        }
+        try #sql("""
+            CREATE TABLE "workouts" (
+                "id" TEXT PRIMARY KEY,
+                "name" TEXT NOT NULL,
+                "startTimestamp" DATETIME NOT NULL,
+                "note" TEXT,
+                "duration" INTEGER,
+                "endTimestamp" DATETIME
+            )
+        """).execute(db)
         
-        // Create exercises table
-        try db.create(table: Exercise.databaseTableName) { table in
-            table.column("id", .text).primaryKey()
-            table.column("workout_id", .text).notNull()
-                .references(Workout.databaseTableName, onDelete: .cascade)
-            table.column("superset_id", .integer)
-            table.column("name", .text).notNull()
-            table.column("pinned_notes", .blob)
-            table.column("notes", .blob)
-            table.column("duration", .integer)
-            table.column("type", .text).notNull()
-            table.column("weight_unit", .text)
-            table.column("default_warm_up_time", .integer)
-            table.column("default_rest_time", .integer)
-            table.column("body_part", .blob)
-        }
+        try #sql("""
+            CREATE TABLE "exercises" (
+                "id" TEXT PRIMARY KEY,
+                "workoutId" TEXT NOT NULL,
+                "supersetId" INTEGER,
+                "name" TEXT NOT NULL,
+                "pinnedNotes" BLOB,
+                "notes" BLOB,
+                "duration" INTEGER,
+                "type" TEXT NOT NULL,
+                "weightUnit" TEXT,
+                "defaultWarmUpTime" INTEGER,
+                "defaultRestTime" INTEGER,
+                "bodyPart" TEXT,
+                
+                FOREIGN KEY("workoutId") REFERENCES "workouts"("id") ON DELETE CASCADE
+            )
+        """).execute(db)
         
-        // Create index for exercises table
-        try db.create(indexOn: Exercise.databaseTableName, columns: ["workout_id"])
+        try #sql("""
+            CREATE INDEX "exercises_workoutId" ON "exercises"("workoutId")
+        """).execute(db)
         
-        // Create exercise_sets table
-        try db.create(table: ExerciseSet.databaseTableName) { table in
-            table.autoIncrementedPrimaryKey("id")
-            table.column("exercise_id", .text).notNull()
-                .references(Exercise.databaseTableName, onDelete: .cascade)
-            table.column("set_index", .integer).notNull()
-            table.column("type", .text).notNull()
-            table.column("weight_unit", .text)
-            table.column("suggest", .blob)
-            table.column("actual", .blob)
-        }
+        try #sql("""
+            CREATE TABLE "exerciseSets" (
+                "id" TEXT PRIMARY KEY,
+                "exerciseId" TEXT NOT NULL,
+                "workoutId" TEXT NOT NULL,
+                "setIndex" INTEGER NOT NULL,
+                "type" TEXT NOT NULL,
+                "weightUnit" TEXT,
+                "suggest" TEXT,
+                "actual" TEXT,
+                
+                FOREIGN KEY("exerciseId") REFERENCES "exercises"("id") ON DELETE CASCADE
+            )
+        """).execute(db)
         
-        // Create index for exercise_sets table
-        try db.create(indexOn: ExerciseSet.databaseTableName, columns: ["exercise_id", "set_index"])
+//        try #sql("""
+//            CREATE INDEX "exerciseSetsExerciseIdSetIndex" ON "exerciseSets"("exerciseId", "setIndex")
+//        """).execute(db)
     }
     
     #if DEBUG
@@ -232,34 +95,6 @@ func appDatabase() throws -> any DatabaseWriter {
     try migrator.migrate(database)
     
     return database
-}
-
-// MARK: - Associations
-
-extension Workout: TableRecord {
-    static let exercises = hasMany(Exercise.self)
-}
-
-extension Exercise: TableRecord {
-    static let workout = belongsTo(Workout.self)
-    static let sets = hasMany(ExerciseSet.self)
-    
-    var exerciseSets: QueryInterfaceRequest<ExerciseSet> {
-        request(for: Exercise.sets)
-            .order(ExerciseSet.setIndex)
-    }
-    
-    static func byWorkoutId(_ workoutId: String) -> QueryInterfaceRequest<Exercise> {
-        return Exercise.filter(Exercise.workoutId == workoutId)
-    }
-    
-    static func byId(_ id: String) -> QueryInterfaceRequest<Exercise> {
-        return Exercise.filter(Column("id") == id)
-    }
-}
-
-extension ExerciseSet: TableRecord {
-    static let exercise = belongsTo(Exercise.self)
 }
 
 #if DEBUG
@@ -326,22 +161,15 @@ extension Database {
         @Dependency(\.uuid) var uuid
         // Sample workout 1
         // Create workout 1
-        let workout1 = try Workout.mock.inserted(self)
-        
-        try workout1.exercises.forEach { exercise in
-            _ = try exercise.inserted(self)
-            _ = try exercise.sets.forEach {
-                _ = try $0.inserted(self)
-            }
-        }
-
+        let workout1 = try Workout.mock
+    
         // Sample workout 2
         let workout2ID = uuid()
         let exercise2ID = uuid()
         let exercise3ID = uuid()
 
         // Create workout 2
-        let workout2 = try Workout(
+        let workout2 = Workout(
             id: workout2ID,
             name: "Evening Strength",
             note: "Good session, increased weight on bench",
@@ -522,12 +350,18 @@ extension Database {
                     )
                 )
             ]
-        ).inserted(self)
+        )
         
-        try workout2.exercises.forEach { exercise in
-            _ = try exercise.inserted(self)
-            _ = try exercise.sets.forEach {
-                _ = try $0.inserted(self)
+        
+        try seed {
+            for workout in [workout1, workout2] {
+                workout
+                for exercise in workout.exercises {
+                    exercise
+                    for exerciseSet in exercise.sets {
+                        exerciseSet
+                    }
+                }
             }
         }
     }

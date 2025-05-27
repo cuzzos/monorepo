@@ -51,7 +51,7 @@ struct WorkoutDetailView: View {
     
     @Dependency(\.defaultDatabase) var database
     let workout = try! database.read { db in
-        try Workout.fetchOne(db)!
+        try Workout.limit(1).fetchOne(db)!
     }
     
     return NavigationStack {

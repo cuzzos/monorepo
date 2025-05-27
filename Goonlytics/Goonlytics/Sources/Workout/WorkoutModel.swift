@@ -1,8 +1,10 @@
 import Dependencies
+import IdentifiedCollections
 import Sharing
 import SwiftUI
 import Combine
 import SwiftUINavigation
+import SharingGRDB
 
 // MARK: - View Models
 @MainActor
@@ -10,11 +12,12 @@ import SwiftUINavigation
 class WorkoutModel: HashableObject {
     @ObservationIgnored @Shared(.workout) var workout: Workout
     @ObservationIgnored @Dependency(\.uuid) var uuid
+    @ObservationIgnored @Dependency(\.defaultDatabase) var database
     
     var elapsedTime: Int = 0
     var isTimerRunning: Bool = true
     
-    var exercises: [Exercise] {
+    var exercises: IdentifiedArrayOf<Exercise> {
         get { workout.exercises }
         set { $workout.withLock { $0.exercises = newValue } }
     }
@@ -37,12 +40,43 @@ class WorkoutModel: HashableObject {
     }
     
     func finishWorkout() {
-        // Handle workout completion
-        print("Workout finished")
+        // Set end timestamp and final duration
+        let endTime = Date()
+        $workout.withLock { workout in
+            workout.endTimestamp = endTime
+            workout.duration = elapsedTime
+        }
+        
+        // Save workout to database
+        withErrorReporting {
+            try database.write { db in
+                // Debug: Print the workout ID
+                print("Inserting workout with ID: \(workout.id)")
+                
+                // Save the workout first
+                try Workout.insert(workout).execute(db)
+                
+                // Save all exercises and their sets
+                for exercise in workout.exercises {
+                    print("Inserting exercise with workoutId: \(exercise.workoutId), workout.id: \(workout.id)")
+                    try Exercise.insert(exercise).execute(db)
+                    
+                    // Save all sets for this exercise
+                    for exerciseSet in exercise.sets {
+                        try ExerciseSet.insert(exerciseSet).execute(db)
+                    }
+                }
+            }
+        }
+        
+        print("Workout finished and saved to database")
+        
+        
     }
     
     func addSet(to exercise: Exercise) {
         for i in exercises.indices where exercises[i].id == exercise.id {
+            let setIndex = exercises[i].sets.count
             let newSet = ExerciseSet(
                 id: uuid(),
                 type: .working,
@@ -50,7 +84,8 @@ class WorkoutModel: HashableObject {
                 suggest: .init(),
                 actual: .init(),
                 exerciseId: exercise.id,
-                workoutId: workout.id
+                workoutId: workout.id,
+                setIndex: setIndex
             )
             
             exercises[i].sets.append(newSet)
@@ -58,12 +93,23 @@ class WorkoutModel: HashableObject {
         }
     }
     
+    func deleteSet(exercise: Exercise, at offsets: IndexSet) {
+        $workout.withLock {
+            $0.exercises[id: exercise.id]?.sets.remove(atOffsets: offsets)
+        }
+    }
+    
+    func deleteExercise(exerciseId: UUID) {
+        $workout.withLock { $0.exercises.removeAll { $0.id == exerciseId } }
+        
+    }
+    
     // Add a GlobalExercise as a new Exercise to the workout
     func addExercise(from global: GlobalExercise) {
         let newExercise = Exercise(
             id: UUID(),
             supersetId: 0,
-            workoutId: global.id,
+            workoutId: workout.id,
             name: global.name,
             pinnedNotes: [],
             notes: [],

@@ -3,7 +3,7 @@ import SharingGRDB
 
 // MARK: - Views
 struct WorkoutView: View {
-    @State var model: WorkoutModel
+    @Bindable var model: WorkoutModel
     @State private var showingImportSheet = false
     @State private var showingAddExerciseSheet = false
     @State private var showingStopwatch = false
@@ -13,7 +13,7 @@ struct WorkoutView: View {
     @State private var timer: Timer? = nil
     @State private var startTime: Date? = nil
     @State private var pendingExercisesToAdd: [GlobalExercise]? = nil
-
+    
     var body: some View {
         VStack(spacing: 0) {
             // --- Custom Top Bar ---
@@ -44,7 +44,7 @@ struct WorkoutView: View {
             .padding(.horizontal)
             .padding(.top, 8)
             .background(Color(.black))
-
+            
             // --- Workout Stats ---
             HStack(spacing: 24) {
                 VStack(alignment: .leading) {
@@ -77,12 +77,15 @@ struct WorkoutView: View {
             .padding(.vertical, 8)
             .background(Color(.black))
 
+//            TextField("Workout Name", text: $model.workout.name)
+//                .font(.title)
+//                .padding(.horizontal)
+            
             // --- Exercise List ---
             ScrollView {
                 LazyVStack(spacing: 20, pinnedViews: .sectionHeaders) {
-                    ForEach(Array(model.exercises.enumerated()), id: \.element.id) { i, exercise in
-                        exerciseSection(for: i)
-                            .id(exercise.id)
+                    ForEach(model.exercises) { e in
+                        exerciseSection(for: e)
                     }
                 }
             }
@@ -103,12 +106,12 @@ struct WorkoutView: View {
                         .frame(maxWidth: .infinity)
                         .padding()
                 }
-//                Button(action: $model.discardWorkout) {
-                    Text("Discard Workout")
-                        .foregroundColor(.red)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-//                }
+                //                Button(action: $model.discardWorkout) {
+                Text("Discard Workout")
+                    .foregroundColor(.red)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                //                }
             }
         }
         .sheet(isPresented: $showingImportSheet) {
@@ -119,7 +122,7 @@ struct WorkoutView: View {
                 pendingExercisesToAdd = selectedExercises
             }
         }
-        .onChange(of: pendingExercisesToAdd) { newExercises in
+        .onChange(of: pendingExercisesToAdd) { _, newExercises in
             guard let exercises = newExercises else { return }
             for exercise in exercises {
                 model.addExercise(from: exercise)
@@ -137,23 +140,31 @@ struct WorkoutView: View {
         .onAppear {
             startTime = Date()
             timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
-//                model.elapsedTime += 1
+                //                model.elapsedTime += 1
             }
         }
         .onDisappear {
             timer?.invalidate()
         }
     }
-
-    private func exerciseSection(for exerciseIndex: Int) -> some View {
-        let exercise = model.exercises[exerciseIndex]
-        
+    
+    private func exerciseSection(for exercise: Exercise) -> some View {
         return VStack(alignment: .leading, spacing: 8) {
             // Exercise Header
             HStack {
                 Text(exercise.name)
                     .font(.headline)
                 Spacer()
+                Button {
+                    model.deleteExercise(exerciseId: exercise.id)
+                } label: {
+                    Image(systemName: "trash")
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                        .padding(8)
+                        .background(Color(.systemGray6))
+                        .cornerRadius(8)
+                }
                 Button {
                     model.addSet(to: exercise)
                 } label: {
@@ -191,8 +202,10 @@ struct WorkoutView: View {
                     .frame(width: 50, alignment: .leading)
             }
             // Sets
-            ForEach(exercise.sets.indices, id: \.self) { si in
-                SetRow(model: .init(exerciseIndex: exerciseIndex, setIndex: si, workout: model.$workout))
+            ForEach(exercise.sets) { exerciseSet in
+                SetRow(model: .init(exerciseSet: exerciseSet))
+            }.onDelete { indexSet in
+                model.deleteSet(exercise: exercise, at: indexSet)
             }
         }
         .padding()
@@ -201,7 +214,7 @@ struct WorkoutView: View {
         .padding(8)
         .shadow(radius: 1)
     }
-
+        
     private func startRestTimer(for exerciseId: String, duration: Int = 60) {
         restTimerForExerciseId = exerciseId
         restTimerDuration = duration
@@ -230,3 +243,4 @@ extension SharedReaderKey where Self == FileStorageKey<Workout>.Default {
 #Preview {
     WorkoutView(model: .init(workout: Shared(value: .mock)))
 }
+

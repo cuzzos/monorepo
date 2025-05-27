@@ -28,7 +28,8 @@ let project = Project(
                 .external(name: "DependenciesMacros"),
                 .external(name: "SwiftUINavigation"),
                 .external(name: "SharingGRDB"),
-                .external(name: "CustomDump")
+                .external(name: "CustomDump"),
+                .external(name: "IssueReporting")
             ],
 //            settings: .settings(base: [
 ////                "CODE_SIGN_STYLE": "Manual",

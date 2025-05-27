@@ -165,13 +165,13 @@ struct AddExerciseView: View {
     func loadExercises() {
         // TODO: Load from local DB or static list for now
         allExercises = [
-            GlobalExercise(id: UUID(), name: "Squat (Bodyweight)", type: "bodyweight", additionalFK: nil, muscleGroup: "Quadriceps", imageName: "squat_bodyweight"),
-            GlobalExercise(id: UUID(), name: "Squat (Barbell)", type: "barbell", additionalFK: nil, muscleGroup: "Quadriceps", imageName: "squat_barbell"),
-            GlobalExercise(id: UUID(), name: "Bench Press (Dumbbell)", type: "dumbbell", additionalFK: nil, muscleGroup: "Chest", imageName: "benchpress_dumbbell"),
-            GlobalExercise(id: UUID(), name: "Plank", type: "bodyweight", additionalFK: nil, muscleGroup: "Abdominals", imageName: "plank"),
-            GlobalExercise(id: UUID(), name: "Hanging Leg Raise", type: "bodyweight", additionalFK: nil, muscleGroup: "Abdominals", imageName: "hanging_leg_raise"),
-            GlobalExercise(id: UUID(), name: "Push Up", type: "bodyweight", additionalFK: nil, muscleGroup: "Chest", imageName: "pushup"),
-            GlobalExercise(id: UUID(), name: "Pull Up", type: "bodyweight", additionalFK: nil, muscleGroup: "Back", imageName: "pullup")
+            GlobalExercise(id: UUID(uuidString: "00000000-0000-0000-0000-000000000001")!, name: "Squat (Bodyweight)", type: "bodyweight", additionalFK: nil, muscleGroup: "Quadriceps", imageName: "squat_bodyweight"),
+            GlobalExercise(id: UUID(uuidString: "00000000-0000-0000-0000-000000000002")!, name: "Squat (Barbell)", type: "barbell", additionalFK: nil, muscleGroup: "Quadriceps", imageName: "squat_barbell"),
+            GlobalExercise(id: UUID(uuidString: "00000000-0000-0000-0000-000000000003")!, name: "Bench Press (Dumbbell)", type: "dumbbell", additionalFK: nil, muscleGroup: "Chest", imageName: "benchpress_dumbbell"),
+            GlobalExercise(id: UUID(uuidString: "00000000-0000-0000-0000-000000000004")!, name: "Plank", type: "bodyweight", additionalFK: nil, muscleGroup: "Abdominals", imageName: "plank"),
+            GlobalExercise(id: UUID(uuidString: "00000000-0000-0000-0000-000000000005")!, name: "Hanging Leg Raise", type: "bodyweight", additionalFK: nil, muscleGroup: "Abdominals", imageName: "hanging_leg_raise"),
+            GlobalExercise(id: UUID(uuidString: "00000000-0000-0000-0000-000000000006")!, name: "Push Up", type: "bodyweight", additionalFK: nil, muscleGroup: "Chest", imageName: "pushup"),
+            GlobalExercise(id: UUID(uuidString: "00000000-0000-0000-0000-000000000007")!, name: "Pull Up", type: "bodyweight", additionalFK: nil, muscleGroup: "Back", imageName: "pullup")
         ]
     }
     

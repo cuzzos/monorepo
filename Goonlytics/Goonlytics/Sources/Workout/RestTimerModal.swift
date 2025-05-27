@@ -1,16 +1,18 @@
 import SwiftUI
+import Dependencies
 
 struct RestTimerModal: View {
     @Binding var isPresented: Bool
     var onComplete: (() -> Void)? = nil
 
-    @State private var endDate: Date
-    @State private var timeRemaining: Int
+    @State private var endDate: Date = .now
+    @State private var timeRemaining: Int = 0
+    @Dependency(\.date) var date
 
-    init(isPresented: Binding<Bool>, duration: Int, onComplete: (() -> Void)? = nil, endDate: Date) {
+    init(isPresented: Binding<Bool>, duration: Int, onComplete: (() -> Void)? = nil) {
         self._isPresented = isPresented
         self.onComplete = onComplete
-        self.endDate = endDate
+        self.endDate = date.now + TimeInterval(duration)
         self.timeRemaining = duration
     }
 
@@ -32,7 +34,7 @@ struct RestTimerModal: View {
                         if timeRemaining > 0 {
                             timeRemaining -= 1
                         } else {
-                            print("done")
+                            onComplete?()
                         }
                     }
             }

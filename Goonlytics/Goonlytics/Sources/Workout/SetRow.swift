@@ -3,25 +3,11 @@ import SwiftUI
 
 @MainActor
 @Observable
-final class SetRowModel {
-    @ObservationIgnored @Shared(.workout) var workout: Workout
-    let exerciseIndex: Int
-    let setIndex: Int
-    var exerciseSet: ExerciseSet {
-        get { workout.exercises[exerciseIndex].sets[setIndex] }
-        set {
-            $workout.withLock {
-                $0.exercises[exerciseIndex].sets[setIndex] = newValue
-            }
-        }
-    }
+final class SetRowModel {    
+    var exerciseSet: ExerciseSet
     
-    init(exerciseIndex: Int,
-         setIndex: Int,
-         workout: Shared<Workout>) {
-        self.exerciseIndex = exerciseIndex
-        self.setIndex = setIndex
-        self._workout = workout
+    init(exerciseSet: ExerciseSet) {
+        self.exerciseSet = exerciseSet
     }
     
     func updateWeight(_ weight: Double) {
@@ -50,7 +36,8 @@ struct SetRow: View {
                 .font(.subheadline)
                 .frame(width: 30, alignment: .leading)
             
-            TextField("Previous", text: $model.workout.name)
+//            TextField("Previous", text: <#Binding<String>#>)
+            Text("Previous")
                 .frame(width: 100, alignment: .leading)
             
             TextField("Weight", value: Binding(
@@ -84,6 +71,6 @@ struct SetRow: View {
     }
 }
 
-#Preview {
-    SetRow(model: .init(exerciseIndex: 0, setIndex: 0, workout: Shared(value: .mock)))
-}
+//#Preview {
+//    SetRow(model: .init(workout: Shared(value: .mock)))
+//}
