@@ -10,8 +10,6 @@ struct WorkoutView: View {
     @State private var showingRestTimer = false
     @State private var restTimerDuration: Int = 60
     @State private var restTimerForExerciseId: String? = nil
-    @State private var timer: Timer? = nil
-    @State private var startTime: Date? = nil
     @State private var pendingExercisesToAdd: [GlobalExercise]? = nil
     
     var body: some View {
@@ -106,12 +104,12 @@ struct WorkoutView: View {
                         .frame(maxWidth: .infinity)
                         .padding()
                 }
-                //                Button(action: $model.discardWorkout) {
-                Text("Discard Workout")
-                    .foregroundColor(.red)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                //                }
+                Button(action: model.discardWorkout) {
+                    Text("Discard Workout")
+                        .foregroundColor(.red)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                }
             }
         }
         .sheet(isPresented: $showingImportSheet) {
@@ -138,13 +136,10 @@ struct WorkoutView: View {
             }
         }
         .onAppear {
-            startTime = Date()
-            timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
-                //                model.elapsedTime += 1
-            }
+            model.startTimer()
         }
         .onDisappear {
-            timer?.invalidate()
+            model.stopTimer()
         }
     }
     

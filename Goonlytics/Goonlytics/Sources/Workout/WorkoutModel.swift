@@ -13,14 +13,18 @@ class WorkoutModel: HashableObject {
     @ObservationIgnored @Shared(.workout) var workout: Workout
     @ObservationIgnored @Dependency(\.uuid) var uuid
     @ObservationIgnored @Dependency(\.defaultDatabase) var database
+    @ObservationIgnored @Dependency(\.continuousClock) var clock
+    @ObservationIgnored @Dependency(\.date.now) var now
     
-    var elapsedTime: Int = 0
     var isTimerRunning: Bool = true
+    private var timerTask: Task<Void, Never>?
     
     var exercises: IdentifiedArrayOf<Exercise> {
         get { workout.exercises }
         set { $workout.withLock { $0.exercises = newValue } }
     }
+    
+    var secondsElapsed: Int = 0
     
     init(workout: Shared<Workout>? = nil) {
         @Dependency(\.uuid) var uuid
@@ -28,23 +32,45 @@ class WorkoutModel: HashableObject {
             _workout = workout
         }
     }
-    
+
     func formatTime() -> String {
-        let minutes = elapsedTime / 60
-        let seconds = elapsedTime % 60
+        let minutes = secondsElapsed / 60
+        let seconds = secondsElapsed % 60
         return String(format: "%d:%02d", minutes, seconds)
     }
     
+    func startTimer() {
+        guard timerTask == nil else { return }
+        isTimerRunning = true
+        
+        timerTask = Task { @MainActor in
+            for await _ in clock.timer(interval: .seconds(1)) {
+                guard isTimerRunning else { break }
+                secondsElapsed += 1
+                $workout.withLock {
+                    $0.duration = secondsElapsed
+                }
+            }
+        }
+    }
+    
+    func stopTimer() {
+        isTimerRunning = false
+        timerTask?.cancel()
+        timerTask = nil
+    }
+    
     func toggleTimer() {
-        isTimerRunning.toggle()
+        if isTimerRunning {
+            stopTimer()
+        } else {
+            startTimer()
+        }
     }
     
     func finishWorkout() {
-        // Set end timestamp and final duration
-        let endTime = Date()
         $workout.withLock { workout in
-            workout.endTimestamp = endTime
-            workout.duration = elapsedTime
+            workout.endTimestamp = now
         }
         
         // Save workout to database
@@ -71,6 +97,20 @@ class WorkoutModel: HashableObject {
         
         print("Workout finished and saved to database")
         
+        // Clear the current workout
+        clearCurrentWorkout()
+    }
+    
+    func discardWorkout() {
+        // Simply clear the current workout without saving to database
+        clearCurrentWorkout()
+        print("Workout discarded")
+    }
+    
+    private func clearCurrentWorkout() {
+        // Stop the timer
+        stopTimer()
+        
         // Delete the current workout JSON file from filesystem
         let workoutFileURL = URL.documentsDirectory.appending(component: "current-workout.json")
         do {
@@ -81,9 +121,6 @@ class WorkoutModel: HashableObject {
         } catch {
             print("Error deleting current workout file: \(error)")
         }
-        
-        // Reset elapsed time
-        elapsedTime = 0
     }
     
     func addSet(to exercise: Exercise) {
