@@ -71,7 +71,19 @@ class WorkoutModel: HashableObject {
         
         print("Workout finished and saved to database")
         
+        // Delete the current workout JSON file from filesystem
+        let workoutFileURL = URL.documentsDirectory.appending(component: "current-workout.json")
+        do {
+            if FileManager.default.fileExists(atPath: workoutFileURL.path) {
+                try FileManager.default.removeItem(at: workoutFileURL)
+                print("Current workout file deleted from filesystem")
+            }
+        } catch {
+            print("Error deleting current workout file: \(error)")
+        }
         
+        // Reset elapsed time
+        elapsedTime = 0
     }
     
     func addSet(to exercise: Exercise) {

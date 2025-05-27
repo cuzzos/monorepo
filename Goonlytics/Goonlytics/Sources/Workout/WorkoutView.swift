@@ -229,7 +229,7 @@ extension SharedReaderKey where Self == FileStorageKey<Workout>.Default {
             .fileStorage(dump(URL.documentsDirectory.appending(component: "current-workout.json"))),
             default: isTesting || ProcessInfo.processInfo.environment["UI_TEST_NAME"] != nil ? .mock : Workout(
                 id: uuid(),
-                name: "New Workout",
+                name: "",
                 note: nil,
                 duration: nil,
                 startTimestamp: .now,
