@@ -220,22 +220,34 @@ struct WorkoutView: View {
 extension SharedReaderKey where Self == FileStorageKey<Workout>.Default {
     static var workout: Self {
         @Dependency(\.uuid) var uuid
+        let emptyWorkout = Workout(
+            id: uuid(),
+            name: "",
+            note: nil,
+            duration: nil,
+            startTimestamp: .now,
+            endTimestamp: nil,
+            exercises: []
+        )
+#if DEBUG
         return Self[
             .fileStorage(dump(URL.documentsDirectory.appending(component: "current-workout.json"))),
-            default: isTesting || ProcessInfo.processInfo.environment["UI_TEST_NAME"] != nil ? .mock : Workout(
-                id: uuid(),
-                name: "",
-                note: nil,
-                duration: nil,
-                startTimestamp: .now,
-                endTimestamp: nil,
-                exercises: []
-            )
+            default:
+                isTesting || ProcessInfo.processInfo.environment["UI_TEST_NAME"] != nil ? .mock :
+                emptyWorkout
         ]
+#else
+        return Self[
+            .fileStorage(dump(URL.documentsDirectory.appending(component: "current-workout.json"))),
+            default: emptyWorkout]
+#endif
+
     }
 }
 
+#if DEBUG
 #Preview {
     WorkoutView(model: .init(workout: Shared(value: .mock)))
 }
 
+#endif

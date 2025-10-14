@@ -5,21 +5,33 @@ import SwiftUI
 @Observable
 final class SetRowModel {    
     var exerciseSet: ExerciseSet
+    var focus: Field?
+    var weightSelection: TextSelection?
+    var repsSelection: TextSelection?
+    var rpeSelection: TextSelection?
+    
+    var weightBinding: Binding<String> {
+        Binding(
+            get: { self.exerciseSet.actual.weight?.description ?? "" },
+            set: { self.exerciseSet.actual.weight = Double($0) }
+        )
+    }
+
+    var rpeBinding: Binding<String> {
+        Binding(
+            get: { self.exerciseSet.actual.rpe?.description ?? "" },
+            set: { self.exerciseSet.actual.rpe = Double($0) }
+        )
+    }
+    
+    enum Field: Hashable {
+        case weight
+        case reps
+        case rpe
+    }
     
     init(exerciseSet: ExerciseSet) {
         self.exerciseSet = exerciseSet
-    }
-    
-    func updateWeight(_ weight: Double) {
-        exerciseSet.actual.weight = weight
-    }
-    
-    func updateReps(_ reps: Int) {
-        exerciseSet.actual.reps = reps
-    }
-    
-    func updateRPE(_ rpe: Double) {
-        exerciseSet.actual.rpe = rpe
     }
     
     func toggleSetCompleted() {
@@ -29,6 +41,7 @@ final class SetRowModel {
 
 struct SetRow: View {
     @Bindable var model: SetRowModel
+    @FocusState var focus: SetRowModel.Field?
 
     var body: some View {
         HStack {
@@ -40,26 +53,23 @@ struct SetRow: View {
             Text("Previous")
                 .frame(width: 100, alignment: .leading)
             
-            TextField("Weight", value: Binding(
-                get: { model.exerciseSet.actual.weight ?? 0 },
-                set: { model.updateWeight($0) }
-            ), formatter: NumberFormatter())
-                .keyboardType(.decimalPad)
-                .frame(width: 50)
-
-            TextField("Reps", value: Binding(
-                get: { model.exerciseSet.actual.reps ?? 0 },
-                set: { model.updateReps($0) }
-            ), formatter: NumberFormatter())
-                .keyboardType(.numberPad)
-                .frame(width: 50)
+            TextField("Weight", text: model.weightBinding, selection: $model.weightSelection)
+            .focused($focus, equals: .weight)
+            .keyboardType(.decimalPad)
+            .frame(width: 50)
             
-            TextField("RPE", value: Binding(
-                get: { model.exerciseSet.actual.rpe ?? 0 },
-                set: { model.updateRPE($0) }
-            ), formatter: NumberFormatter())
-                .keyboardType(.decimalPad)
-                .frame(width: 50)
+            TextField("Reps", text: Binding(
+                get: { model.exerciseSet.actual.reps?.description ?? "" },
+                set: { model.exerciseSet.actual.reps = Int($0) }
+            ), selection: $model.repsSelection)
+            .focused($focus, equals: .reps)
+            .keyboardType(.numberPad)
+            .frame(width: 50)
+            
+            TextField("RPE", text: model.rpeBinding, selection: $model.rpeSelection)
+            .focused($focus, equals: .rpe)
+            .keyboardType(.decimalPad)
+            .frame(width: 50)
             Button(action: {
                 model.toggleSetCompleted()
             }) {
@@ -67,10 +77,30 @@ struct SetRow: View {
                     .foregroundColor(model.exerciseSet.isCompleted ? .green : .gray)
             }
         }
+        .bind($model.focus, to: $focus)
+        .onChange(of: focus) { _, newFocus in
+            if let newFocus {
+                switch newFocus {
+                case .weight:
+                    if !model.weightBinding.wrappedValue.isEmpty {
+                        model.weightSelection = .init(range: model.weightBinding.wrappedValue.startIndex..<model.weightBinding.wrappedValue.endIndex)
+                    }
+                case .reps:
+                    if !(model.exerciseSet.actual.reps?.description ?? "").isEmpty {
+                        model.repsSelection = .init(range: (model.exerciseSet.actual.reps?.description ?? "").startIndex..<(model.exerciseSet.actual.reps?.description ?? "").endIndex)
+                    }
+                case .rpe:
+                    if !model.rpeBinding.wrappedValue.isEmpty {
+                        model.rpeSelection = .init(range: model.rpeBinding.wrappedValue.startIndex..<model.rpeBinding.wrappedValue.endIndex)
+                    }
+                }
+            }
+        }
         .padding(.vertical, 4)
     }
 }
 
 //#Preview {
-//    SetRow(model: .init(workout: Shared(value: .mock)))
+//    SetRow(model: .init(exerciseSet: Workout.mock.exercises[0].sets[0]))
 //}
+// todo: on change of textfield, sync with shared model

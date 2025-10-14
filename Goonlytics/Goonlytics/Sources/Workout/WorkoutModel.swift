@@ -124,22 +124,22 @@ class WorkoutModel: HashableObject {
     }
     
     func addSet(to exercise: Exercise) {
-        for i in exercises.indices where exercises[i].id == exercise.id {
-            let setIndex = exercises[i].sets.count
-            let newSet = ExerciseSet(
-                id: uuid(),
-                type: .working,
-                weightUnit: .lb,
-                suggest: .init(),
-                actual: .init(),
-                exerciseId: exercise.id,
-                workoutId: workout.id,
-                setIndex: setIndex
-            )
-            
-            exercises[i].sets.append(newSet)
+        guard let exercise = exercises[id: exercise.id] else {
+            assertionFailure("couldn't find exercise")
             return
         }
+        let newSet = ExerciseSet(
+            id: uuid(),
+            type: .working,
+            weightUnit: .lb,
+            suggest: .init(),
+            actual: .init(),
+            exerciseId: exercise.id,
+            workoutId: workout.id,
+            setIndex: exercise.sets.count
+        )
+        
+        exercises[id: exercise.id]?.sets.append(newSet)
     }
     
     func deleteSet(exercise: Exercise, at offsets: IndexSet) {
