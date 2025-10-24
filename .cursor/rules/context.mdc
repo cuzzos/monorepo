@@ -1,0 +1,97 @@
+---
+description: wholistic analyses of the codebase and searching how classes interact with each other
+alwaysApply: false
+---
+
+# WARP.md
+
+This file provides guidance to WARP (warp.dev) when working with code in this repository.
+
+## Project Overview
+
+Goonlytics is an iOS fitness tracking application built with SwiftUI and managed by Tuist. The app allows users to track workouts, manage exercise sets, view workout history, and calculate plate loading for barbells.
+
+## Common Development Commands
+
+### Project Management
+- **Generate Xcode project**: `tuist generate --path Goonlytics/`
+- **Clean and regenerate**: `tuist clean --path Goonlytics/ && tuist generate --path Goonlytics/`
+- **Install dependencies**: `tuist install --path Goonlytics/`
+
+### Building and Running
+- **Build project**: `xcodebuild -project Goonlytics/Goonlytics.xcodeproj -scheme Goonlytics -destination 'platform=iOS Simulator,name=iPhone 16' build`
+- **Run tests**: `xcodebuild test -project Goonlytics/Goonlytics.xcodeproj -scheme Goonlytics -destination 'platform=iOS Simulator,name=iPhone 16'`
+- **Run single test**: `xcodebuild test -project Goonlytics/Goonlytics.xcodeproj -scheme Goonlytics -destination 'platform=iOS Simulator,name=iPhone 16' -only-testing:GoonlyticsTests/GoonlyticsTests/test_name`
+
+### Development Tools
+- **Open in Xcode**: `open Goonlytics/Goonlytics.xcodeproj`
+- **Check Tuist version**: `tuist version`
+
+## Code Architecture
+
+### High-Level Structure
+The app follows a modular SwiftUI architecture with dependency injection using Swift Dependencies and persistent storage with GRDB:
+
+- **Main App Layer**: `GoonlyticsApp.swift` contains the main app entry point with a tab-based navigation structure
+- **Feature Modules**: 
+  - `Workout/` - Core workout tracking functionality
+  - `History/` - Workout history and viewing past workouts
+  - `ApiClient/` - Network layer (structured but currently unused)
+- **Data Layer**: SQLite database using GRDB with custom sharing/persistence layer
+
+### Key Architectural Patterns
+
+#### Dependency Injection & State Management
+- Uses `@Dependency` from Swift Dependencies for dependency injection
+- State management with `@Shared` for persistent workout state across app lifecycle
+- `@Observable` models for view state management
+- Database persistence handled through `SharingGRDB` integration
+
+#### Navigation Pattern
+- SwiftUI NavigationStack with programmatic navigation
+- Centralized `AppModel` manages navigation paths and tab selection
+- Uses `@CasePathable` for type-safe navigation destinations
+
+#### Database Schema
+Three main entities with foreign key relationships:
+- **Workouts**: Primary container with timing and metadata
+- **Exercises**: Belong to workouts, contain exercise configuration
+- **ExerciseSets**: Belong to exercises, track individual set performance
+
+### Core Dependencies
+- **Swift Dependencies**: Dependency injection framework
+- **SwiftUINavigation**: Enhanced SwiftUI navigation utilities  
+- **SharingGRDB**: Shared state management with SQLite persistence
+- **CustomDump**: Better debugging output
+- **IssueReporting**: Error handling and reporting
+
+### Data Flow
+1. **Workout Creation**: New workouts start with shared state using `@Shared(.workout)`
+2. **Real-time Updates**: Timer updates workout duration continuously during active sessions
+3. **Persistence**: Completed workouts saved to SQLite database with full exercise/set hierarchy
+4. **History Access**: Database queries through `@FetchAll` property wrapper for reactive UI updates
+
+### Key Features Implementation
+- **Plate Calculator**: Standalone utility for barbell loading calculations with visual representation
+- **Import/Export**: JSON-based workout templates and data exchange
+- **Timer Integration**: Built-in workout timing with pause/resume functionality
+- **Offline-First**: All data stored locally with no cloud dependency
+
+## Project Structure Notes
+
+- `Goonlytics/Goonlytics/` - Main source directory
+- `Goonlytics/Tuist/` - Dependency management via Swift Package Manager
+- `Derived/` - Tuist-generated asset files (do not edit manually)
+- Database file located at: `~/Documents/db.sqlite` in live environment
+- Current workout state persisted as JSON file during active sessions
+
+## Development Context
+
+### Debug Features
+- Database query tracing enabled in debug builds
+- Sample data injection for development/testing
+- Schema migrations with automatic database recreation in debug builds
+
+### Code Signing
+- Configured for Apple Development with team ID: WGS9LUKK32
+- iOS target with minimum deployment requirements

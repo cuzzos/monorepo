@@ -12,9 +12,11 @@ let project = Project(
             name: "Goonlytics",
             destinations: .iOS,
             product: .app,
-            bundleId: "io.tuist.Goonlytics",
+            bundleId: "com.thiccc.Thiccc",
             infoPlist: .extendingDefault(
                 with: [
+                    "CFBundleShortVersionString": "0.1.0",
+                    "CFBundleVersion": "1",
                     "UILaunchScreen": [
                         "UIColorName": "",
                         "UIImageName": "",
@@ -39,8 +41,7 @@ let project = Project(
             ///(WGS9LUKK32)
 //            ], )
             settings: .settings(base: [
-                "CODE_SIGN_IDENTITY": "Apple Development",
-                "CODE_SIGNING_REQUIRED": "YES",
+                "CODE_SIGN_STYLE": "Automatic",
                 "DEVELOPMENT_TEAM": "WGS9LUKK32"
             ])
         ),
@@ -48,7 +49,7 @@ let project = Project(
             name: "GoonlyticsTests",
             destinations: .iOS,
             product: .unitTests,
-            bundleId: "io.tuist.GoonlyticsTests",
+            bundleId: "com.thiccc.ThicccTests",
             infoPlist: .default,
             sources: ["Goonlytics/Tests/**"],
             resources: [],

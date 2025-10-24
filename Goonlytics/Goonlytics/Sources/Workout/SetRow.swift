@@ -100,7 +100,9 @@ struct SetRow: View {
     }
 }
 
-//#Preview {
-//    SetRow(model: .init(exerciseSet: Workout.mock.exercises[0].sets[0]))
-//}
+#if DEBUG
+#Preview {
+    SetRow(model: .init(exerciseSet: Workout.mock.exercises[0].sets[0]))
+}
+#endif
 // todo: on change of textfield, sync with shared model
