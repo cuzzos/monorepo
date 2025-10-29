@@ -12,8 +12,19 @@ final class SetRowModel {
     
     var weightBinding: Binding<String> {
         Binding(
-            get: { self.exerciseSet.actual.weight?.description ?? "" },
-            set: { self.exerciseSet.actual.weight = Double($0) }
+            get: { 
+                if let weight = self.exerciseSet.actual.weight, weight > 0 {
+                    return String(Int(weight))
+                }
+                return ""
+            },
+            set: { newValue in
+                if newValue.isEmpty {
+                    self.exerciseSet.actual.weight = nil
+                } else {
+                    self.exerciseSet.actual.weight = Double(newValue)
+                }
+            }
         )
     }
 
@@ -53,14 +64,25 @@ struct SetRow: View {
             Text("Previous")
                 .frame(width: 100, alignment: .leading)
             
-            TextField("Weight", text: model.weightBinding, selection: $model.weightSelection)
+            TextField("0", text: model.weightBinding, selection: $model.weightSelection)
             .focused($focus, equals: .weight)
             .keyboardType(.decimalPad)
             .frame(width: 50)
             
-            TextField("Reps", text: Binding(
-                get: { model.exerciseSet.actual.reps?.description ?? "" },
-                set: { model.exerciseSet.actual.reps = Int($0) }
+            TextField("0", text: Binding(
+                get: { 
+                    if let reps = model.exerciseSet.actual.reps, reps > 0 {
+                        return String(reps)
+                    }
+                    return ""
+                },
+                set: { newValue in
+                    if newValue.isEmpty {
+                        model.exerciseSet.actual.reps = nil
+                    } else {
+                        model.exerciseSet.actual.reps = Int(newValue)
+                    }
+                }
             ), selection: $model.repsSelection)
             .focused($focus, equals: .reps)
             .keyboardType(.numberPad)
@@ -86,8 +108,9 @@ struct SetRow: View {
                         model.weightSelection = .init(range: model.weightBinding.wrappedValue.startIndex..<model.weightBinding.wrappedValue.endIndex)
                     }
                 case .reps:
-                    if !(model.exerciseSet.actual.reps?.description ?? "").isEmpty {
-                        model.repsSelection = .init(range: (model.exerciseSet.actual.reps?.description ?? "").startIndex..<(model.exerciseSet.actual.reps?.description ?? "").endIndex)
+                    if let reps = model.exerciseSet.actual.reps, reps > 0 {
+                        let repsString = String(reps)
+                        model.repsSelection = .init(range: repsString.startIndex..<repsString.endIndex)
                     }
                 case .rpe:
                     if !model.rpeBinding.wrappedValue.isEmpty {
