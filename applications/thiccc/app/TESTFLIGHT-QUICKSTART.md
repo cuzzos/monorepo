@@ -19,9 +19,23 @@ A condensed checklist to get your app to TestFlight fast.
 
 ### 1️⃣ Xcode Setup (15 minutes)
 
+**First, create the Xcode project (one-time setup):**
+
 ```bash
 # On your Mac
 cd /path/to/thiccc/app/ios
+
+# Option A: Automatic (requires XcodeGen)
+brew install xcodegen
+xcodegen generate
+
+# Option B: Manual setup
+# Follow instructions in ios/CREATE-XCODE-PROJECT.md
+```
+
+**Then open the project:**
+
+```bash
 open thiccc.xcodeproj
 ```
 
