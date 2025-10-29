@@ -1,0 +1,50 @@
+FROM rust:1.90.0-trixie
+ENV TZ=America/New_York
+# ENV PRE_COMMIT_HOME="/workspaces/monorepo/.general/.pre-commit"
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && \
+    echo $TZ > /etc/timezone && \
+    export LC_ALL=en_US.UTF-8 && \
+    export LANG=en_US.UTF-8 && \
+    export LANGUAGE=en_US.UTF-8
+
+# Ensure repositories are up to date
+RUN apt-get update && \
+    apt-get --fix-missing update && \
+    apt-get install -y \
+        git vim
+
+RUN apt-get install -y \
+        build-essential \
+        wget \
+        libssl-dev \
+        zlib1g-dev \
+        libbz2-dev \
+        libreadline-dev \
+        libsqlite3-dev \
+        libncursesw5-dev \
+        xz-utils \
+        tk-dev \
+        libxml2-dev \
+        libxmlsec1-dev \
+        libffi-dev \
+        liblzma-dev \
+        python3-virtualenv && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Build and install Python 3.14 from source (without optimizations for faster build)
+RUN wget https://www.python.org/ftp/python/3.14.0/Python-3.14.0a7.tar.xz && \
+    tar -xf Python-3.14.0a7.tar.xz && \
+    cd Python-3.14.0a7 && \
+    ./configure --with-ensurepip=install && \
+    make -j$(nproc) && \
+    make altinstall && \
+    cd .. && \
+    rm -rf Python-3.14.0a7 Python-3.14.0a7.tar.xz && \
+    ln -sf /usr/local/bin/python3.14 /usr/local/bin/python3 && \
+    ln -sf /usr/local/bin/python3.14 /usr/local/bin/python && \
+    ln -sf /usr/local/bin/pip3.14 /usr/local/bin/pip3 && \
+    ln -sf /usr/local/bin/pip3.14 /usr/local/bin/pip
+
+# Install pre-commit using Python 3.14
+RUN pip3.14 install --no-cache-dir pre-commit

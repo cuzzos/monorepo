@@ -1,0 +1,25 @@
+{
+	"name": "snaplapse-api__rust",
+    "build": {
+        "dockerfile": "Dockerfile.dev",
+        "args": {},
+        "context": "../"
+    },
+    "runArgs": ["--name=snaplapse-api__rust", "--rm"],
+    "remoteEnv": {},
+    "customizations": {
+        "vscode": {
+            "settings": {},
+            "extensions": [
+                "rust-lang.rust-analyzer",
+                "vadimcn.vscode-lldb",
+                "tamasfe.even-better-toml",
+                "serayuzgur.crates",
+                "swellaby.vscode-rust-test-adapter",
+                "usernamehw.errorlens",
+                "eamodio.gitlens"
+            ]
+        }
+    },
+    "features": {}
+}
