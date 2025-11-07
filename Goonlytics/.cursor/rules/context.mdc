@@ -3,10 +3,6 @@ description: wholistic analyses of the codebase and searching how classes intera
 alwaysApply: false
 ---
 
-# WARP.md
-
-This file provides guidance to WARP (warp.dev) when working with code in this repository.
-
 ## Project Overview
 
 Goonlytics is an iOS fitness tracking application built with SwiftUI and managed by Tuist. The app allows users to track workouts, manage exercise sets, view workout history, and calculate plate loading for barbells.
