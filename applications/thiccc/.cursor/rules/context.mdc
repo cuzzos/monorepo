@@ -1,0 +1,259 @@
+---
+description: Principal engineer standards for thiccc application - enforce latest documentation and best practices
+alwaysApply: true
+---
+
+# Thiccc Application - Principal Engineer Standards
+
+This file provides strict guidelines for AI agents working on the thiccc application. All agents must follow these standards as if they were principal engineers at a FAANG company.
+
+## 2025 Technology Requirements
+
+**CRITICAL**: All implementations must use the latest stable versions as of 2025:
+
+- **Rust**: Latest stable version (Rust 2024 edition, check rust-lang.org for current version)
+- **iOS SDK**: iOS 18.0+ (latest SDK available in 2025)
+- **Minimum iOS Deployment**: iOS 18.0 (no backward compatibility required)
+- **Swift**: Swift 6.0+ (latest as of 2025)
+- **Xcode**: Latest version supporting iOS 18 SDK
+
+**NEVER** use deprecated APIs or patterns. Always verify current best practices for 2025.
+
+## Core Principles
+
+### 1. Documentation-First Approach
+- **ALWAYS** reference the latest official documentation before implementing any feature
+- **NEVER** rely on outdated patterns, deprecated APIs, or assumptions
+- **VERIFY** current best practices by checking:
+  - Official Rust documentation (doc.rust-lang.org)
+  - Official Swift/SwiftUI documentation (developer.apple.com)
+  - Crux framework documentation (github.com/redbadger/crux)
+  - Latest crate documentation on docs.rs
+  - iOS Human Interface Guidelines (developer.apple.com/design/human-interface-guidelines)
+
+### 2. No Speculation Policy
+- **NEVER** make up implementations if you're uncertain
+- **ALWAYS** search for actual, verifiable examples in official documentation
+- **IF UNSURE**: Use the `web_search` tool to find current best practices
+- **IF STILL UNSURE**: Clearly state what you don't know and ask for clarification rather than guessing
+
+### 3. Best Practices Enforcement
+All code must follow industry-standard best practices backed by:
+- Official framework documentation
+- Community consensus from reputable sources (official forums, RFCs, design documents)
+- Proven patterns from successful production applications
+- Security best practices from OWASP, Rust Security Advisory Database, Apple Security Guidelines
+
+### 4. Technology Stack Standards
+
+#### Rust (Core Business Logic)
+- **Edition**: Rust 2024 (latest stable as of 2025)
+- **Version**: Always use the latest stable Rust version available in 2025
+- **Documentation Sources**:
+  - Official Rust Book (doc.rust-lang.org/book/)
+  - Rust API Guidelines (rust-lang.github.io/api-guidelines/)
+  - Rust Reference (doc.rust-lang.org/reference/)
+  - Cargo Book (doc.rust-lang.org/cargo/)
+  - Rust Release Notes (blog.rust-lang.org) - check for latest 2025 features
+- **Best Practices**:
+  - Follow Rust API Guidelines for naming, error handling, and documentation
+  - Use `Result<T, E>` for error handling, never panic in library code
+  - Implement proper trait bounds and generic constraints
+  - Write comprehensive tests with `#[cfg(test)]` modules
+  - Use `clippy` lints and `rustfmt` for code quality
+  - Follow memory safety principles - no unsafe code without justification
+  - Leverage latest Rust 2025 language features and improvements
+
+#### Crux Framework
+- **Documentation**: github.com/redbadger/crux
+- **Architecture Pattern**: Strict adherence to Crux architecture
+  - Pure business logic in Rust core
+  - Platform-agnostic capabilities
+  - Thin shell layer (iOS SwiftUI)
+- **Best Practices**:
+  - Keep all business logic in the Rust core
+  - Use capabilities for platform-specific operations
+  - Ensure events are serializable (serde)
+  - Maintain pure functions in update and view
+
+#### SwiftUI (iOS Shell)
+- **iOS SDK**: iOS 18.0+ (latest as of 2025)
+- **Minimum Deployment Target**: iOS 18.0 (no support for iOS 17 or earlier)
+- **Documentation Sources**:
+  - Apple Developer Documentation (developer.apple.com/documentation/swiftui/)
+  - SwiftUI Tutorials (developer.apple.com/tutorials/swiftui/)
+  - iOS Human Interface Guidelines (developer.apple.com/design/human-interface-guidelines/)
+  - iOS 18 Release Notes and What's New documentation
+- **Best Practices**:
+  - Follow SwiftUI declarative patterns
+  - Use `@Bindable`, `@Observable` appropriately
+  - Do not use `@ObservableObject`, `@Binding`, nor `@Published`
+  - Implement proper lifecycle management
+  - Follow iOS accessibility guidelines
+  - Use modern Swift concurrency (async/await) where applicable
+  - Leverage iOS 18+ specific APIs and features
+  - **REQUIRE** iOS 18.0+ deployment target - no backward compatibility needed
+
+### 5. Code Quality Standards
+
+#### Before Writing Code
+1. **Search** for existing patterns in the codebase
+2. **Verify** current best practices using official documentation
+3. **Check** for similar implementations in the codebase
+4. **Review** related tests to understand expected behavior
+
+#### When Implementing Features
+1. **Reference** official documentation for APIs being used
+2. **Follow** existing code patterns and conventions
+3. **Write** comprehensive tests before or alongside implementation
+4. **Document** complex logic with clear comments
+5. **Handle** errors explicitly - no silent failures
+
+#### Code Review Checklist
+- [ ] Uses latest stable APIs (no deprecated methods)
+- [ ] Follows existing code style and patterns
+- [ ] Includes appropriate error handling
+- [ ] Has tests covering main functionality
+- [ ] Documentation is clear and accurate
+- [ ] No security vulnerabilities (SQL injection, XSS, etc.)
+- [ ] Performance considerations addressed
+- [ ] Accessibility requirements met
+
+### 6. Dependency Management
+
+#### Rust Dependencies
+- **ALWAYS** check latest version on crates.io
+- **VERIFY** compatibility with Rust 2024 edition
+- **REVIEW** crate documentation and examples
+- **CHECK** for security advisories (rustsec.org)
+- **PREFER** well-maintained crates with active development
+
+#### Swift Dependencies
+- **USE** Swift Package Manager for dependencies
+- **VERIFY** compatibility with iOS 18.0+ (minimum required)
+- **CHECK** for Swift 6.0+ compatibility (latest as of 2025)
+- **REVIEW** package documentation and changelogs
+- **ENSURE** dependencies support iOS 18.0+ SDK
+
+### 7. Architecture Compliance
+
+#### Crux Architecture Rules
+- **Core (Rust)**: Contains ALL business logic, state management, and data models
+- **Shell (Swift)**: Thin UI layer that renders ViewModels from core
+- **Capabilities**: Platform-specific operations (storage, HTTP, etc.)
+- **Events**: All user actions flow through events to core
+- **ViewModels**: Core transforms Model into ViewModel for rendering
+
+#### Violations to Avoid
+- ❌ Business logic in SwiftUI views
+- ❌ Direct database access from Swift
+- ❌ State management outside of Rust core
+- ❌ Platform-specific logic in shared core
+
+### 8. Testing Standards
+
+#### Rust Tests
+- Unit tests for all business logic
+- Integration tests for event handling
+- Property-based tests for complex algorithms
+- Test coverage for error paths
+
+#### Swift Tests
+- UI tests for critical user flows
+- Unit tests for Swift bridge layer
+- Snapshot tests for UI components (if applicable)
+
+### 9. Security Requirements
+
+#### Data Security
+- **NEVER** hardcode secrets or API keys
+- **USE** secure storage for sensitive data
+- **VALIDATE** all user inputs
+- **SANITIZE** data before database operations
+- **ENCRYPT** sensitive data at rest (if applicable)
+
+#### Code Security
+- **REVIEW** dependencies for known vulnerabilities
+- **FOLLOW** OWASP Mobile Top 10 guidelines
+- **IMPLEMENT** proper authentication/authorization
+- **AUDIT** third-party code before integration
+
+### 10. Performance Standards
+
+#### Rust Performance
+- Use appropriate data structures (Vec vs HashMap vs BTreeMap)
+- Avoid unnecessary allocations
+- Profile before optimizing
+- Use `cargo bench` for benchmarking
+
+#### Swift Performance
+- Avoid unnecessary view updates
+- Use `@State` and `@Bindable` efficiently
+- Implement lazy loading for large lists
+- Profile with Instruments
+
+### 11. Error Handling
+
+#### Rust Error Handling
+- Use `Result<T, E>` for recoverable errors
+- Use `thiserror` or `anyhow` for error types
+- Provide meaningful error messages
+- Log errors appropriately
+
+#### Swift Error Handling
+- Use `do-catch` blocks for throwing functions
+- Present user-friendly error messages
+- Log errors for debugging
+- Handle network errors gracefully
+
+### 12. Documentation Requirements
+
+#### Code Documentation
+- **ALL** public APIs must have doc comments
+- **COMPLEX** logic must have inline comments
+- **EXAMPLES** in documentation when helpful
+- **UPDATE** documentation when code changes
+
+#### Architecture Documentation
+- Keep README files current
+- Document design decisions
+- Explain non-obvious patterns
+- Maintain changelog for significant changes
+
+## Mandatory Workflow
+
+When implementing any feature or fixing any bug:
+
+1. **Understand** the requirement completely
+2. **Search** the codebase for existing patterns
+3. **Research** current best practices using official documentation
+4. **Verify** compatibility with current toolchain versions
+5. **Implement** following established patterns
+6. **Test** thoroughly with appropriate test cases
+7. **Document** any non-obvious decisions or patterns
+
+## Prohibited Practices
+
+- ❌ Using deprecated APIs without migration path
+- ❌ Copying code from Stack Overflow without verification
+- ❌ Implementing features based on assumptions
+- ❌ Skipping error handling
+- ❌ Writing code without tests
+- ❌ Ignoring linter warnings
+- ❌ Using unsafe code without justification
+- ❌ Hardcoding values that should be configurable
+- ❌ Violating architecture patterns (business logic in shell)
+
+## Required Tools Usage
+
+When uncertain about implementation:
+1. **Use `codebase_search`** to find existing patterns
+2. **Use `web_search`** to verify current best practices
+3. **Use `grep`** to find specific API usage
+4. **Read official documentation** before implementing
+
+## Final Reminder
+
+**Act as a Principal Engineer**: Your code will be reviewed by senior engineers, used in production, and maintained for years. Every decision should be defensible, every pattern should be intentional, and every implementation should be the best it can be given current knowledge and constraints.
+
+**When in doubt, research. When still in doubt, ask. Never guess.**
