@@ -27,6 +27,418 @@
 		335573E52EB2CB5B00E26543 /* Thiccc.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Thiccc.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		335573F62EB2CB5C00E26543 /* ThicccTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ThicccTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		335574002EB2CB5C00E26543 /* ThicccUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ThicccUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		336116D92EC3C3720064B9FA /* libshared.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libshared.a; path = "../../shared/target/aarch64-apple-ios/release/libshared.a"; sourceTree = "<group>"; };
+		336116DA2EC3C3950064B9FA /* dep-lib-ahash */ = {isa = PBXFileReference; lastKnownFileType = file; path = "dep-lib-ahash"; sourceTree = "<group>"; };
+		336116DB2EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		336116DC2EC3C3950064B9FA /* lib-ahash */ = {isa = PBXFileReference; lastKnownFileType = text; path = "lib-ahash"; sourceTree = "<group>"; };
+		336116DD2EC3C3950064B9FA /* lib-ahash.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "lib-ahash.json"; sourceTree = "<group>"; };
+		336116DF2EC3C3950064B9FA /* run-build-script-build-script-build */ = {isa = PBXFileReference; lastKnownFileType = text; path = "run-build-script-build-script-build"; sourceTree = "<group>"; };
+		336116E02EC3C3950064B9FA /* run-build-script-build-script-build.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "run-build-script-build-script-build.json"; sourceTree = "<group>"; };
+		336116E22EC3C3950064B9FA /* dep-lib-anyhow */ = {isa = PBXFileReference; lastKnownFileType = file; path = "dep-lib-anyhow"; sourceTree = "<group>"; };
+		336116E32EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		336116E42EC3C3950064B9FA /* lib-anyhow */ = {isa = PBXFileReference; lastKnownFileType = text; path = "lib-anyhow"; sourceTree = "<group>"; };
+		336116E52EC3C3950064B9FA /* lib-anyhow.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "lib-anyhow.json"; sourceTree = "<group>"; };
+		336116E72EC3C3950064B9FA /* run-build-script-build-script-build */ = {isa = PBXFileReference; lastKnownFileType = text; path = "run-build-script-build-script-build"; sourceTree = "<group>"; };
+		336116E82EC3C3950064B9FA /* run-build-script-build-script-build.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "run-build-script-build-script-build.json"; sourceTree = "<group>"; };
+		336116EA2EC3C3950064B9FA /* dep-lib-bincode */ = {isa = PBXFileReference; lastKnownFileType = file; path = "dep-lib-bincode"; sourceTree = "<group>"; };
+		336116EB2EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		336116EC2EC3C3950064B9FA /* lib-bincode */ = {isa = PBXFileReference; lastKnownFileType = text; path = "lib-bincode"; sourceTree = "<group>"; };
+		336116ED2EC3C3950064B9FA /* lib-bincode.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "lib-bincode.json"; sourceTree = "<group>"; };
+		336116EF2EC3C3950064B9FA /* dep-lib-bitflags */ = {isa = PBXFileReference; lastKnownFileType = file; path = "dep-lib-bitflags"; sourceTree = "<group>"; };
+		336116F02EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		336116F12EC3C3950064B9FA /* lib-bitflags */ = {isa = PBXFileReference; lastKnownFileType = text; path = "lib-bitflags"; sourceTree = "<group>"; };
+		336116F22EC3C3950064B9FA /* lib-bitflags.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "lib-bitflags.json"; sourceTree = "<group>"; };
+		336116F42EC3C3950064B9FA /* dep-lib-cfg_if */ = {isa = PBXFileReference; lastKnownFileType = file; path = "dep-lib-cfg_if"; sourceTree = "<group>"; };
+		336116F52EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		336116F62EC3C3950064B9FA /* lib-cfg_if */ = {isa = PBXFileReference; lastKnownFileType = text; path = "lib-cfg_if"; sourceTree = "<group>"; };
+		336116F72EC3C3950064B9FA /* lib-cfg_if.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "lib-cfg_if.json"; sourceTree = "<group>"; };
+		336116F92EC3C3950064B9FA /* dep-lib-chrono */ = {isa = PBXFileReference; lastKnownFileType = file; path = "dep-lib-chrono"; sourceTree = "<group>"; };
+		336116FA2EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		336116FB2EC3C3950064B9FA /* lib-chrono */ = {isa = PBXFileReference; lastKnownFileType = text; path = "lib-chrono"; sourceTree = "<group>"; };
+		336116FC2EC3C3950064B9FA /* lib-chrono.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "lib-chrono.json"; sourceTree = "<group>"; };
+		336116FE2EC3C3950064B9FA /* dep-lib-core_foundation_sys */ = {isa = PBXFileReference; lastKnownFileType = file; path = "dep-lib-core_foundation_sys"; sourceTree = "<group>"; };
+		336116FF2EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		336117002EC3C3950064B9FA /* lib-core_foundation_sys */ = {isa = PBXFileReference; lastKnownFileType = text; path = "lib-core_foundation_sys"; sourceTree = "<group>"; };
+		336117012EC3C3950064B9FA /* lib-core_foundation_sys.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "lib-core_foundation_sys.json"; sourceTree = "<group>"; };
+		336117032EC3C3950064B9FA /* dep-lib-crossbeam_channel */ = {isa = PBXFileReference; lastKnownFileType = file; path = "dep-lib-crossbeam_channel"; sourceTree = "<group>"; };
+		336117042EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		336117052EC3C3950064B9FA /* lib-crossbeam_channel */ = {isa = PBXFileReference; lastKnownFileType = text; path = "lib-crossbeam_channel"; sourceTree = "<group>"; };
+		336117062EC3C3950064B9FA /* lib-crossbeam_channel.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "lib-crossbeam_channel.json"; sourceTree = "<group>"; };
+		336117082EC3C3950064B9FA /* dep-lib-crossbeam_utils */ = {isa = PBXFileReference; lastKnownFileType = file; path = "dep-lib-crossbeam_utils"; sourceTree = "<group>"; };
+		336117092EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		3361170A2EC3C3950064B9FA /* lib-crossbeam_utils */ = {isa = PBXFileReference; lastKnownFileType = text; path = "lib-crossbeam_utils"; sourceTree = "<group>"; };
+		3361170B2EC3C3950064B9FA /* lib-crossbeam_utils.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "lib-crossbeam_utils.json"; sourceTree = "<group>"; };
+		3361170D2EC3C3950064B9FA /* run-build-script-build-script-build */ = {isa = PBXFileReference; lastKnownFileType = text; path = "run-build-script-build-script-build"; sourceTree = "<group>"; };
+		3361170E2EC3C3950064B9FA /* run-build-script-build-script-build.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "run-build-script-build-script-build.json"; sourceTree = "<group>"; };
+		336117102EC3C3950064B9FA /* dep-lib-crux_core */ = {isa = PBXFileReference; lastKnownFileType = file; path = "dep-lib-crux_core"; sourceTree = "<group>"; };
+		336117112EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		336117122EC3C3950064B9FA /* lib-crux_core */ = {isa = PBXFileReference; lastKnownFileType = text; path = "lib-crux_core"; sourceTree = "<group>"; };
+		336117132EC3C3950064B9FA /* lib-crux_core.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "lib-crux_core.json"; sourceTree = "<group>"; };
+		336117152EC3C3950064B9FA /* run-build-script-build-script-build */ = {isa = PBXFileReference; lastKnownFileType = text; path = "run-build-script-build-script-build"; sourceTree = "<group>"; };
+		336117162EC3C3950064B9FA /* run-build-script-build-script-build.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "run-build-script-build-script-build.json"; sourceTree = "<group>"; };
+		336117182EC3C3950064B9FA /* dep-lib-erased_serde */ = {isa = PBXFileReference; lastKnownFileType = file; path = "dep-lib-erased_serde"; sourceTree = "<group>"; };
+		336117192EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		3361171A2EC3C3950064B9FA /* lib-erased_serde */ = {isa = PBXFileReference; lastKnownFileType = text; path = "lib-erased_serde"; sourceTree = "<group>"; };
+		3361171B2EC3C3950064B9FA /* lib-erased_serde.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "lib-erased_serde.json"; sourceTree = "<group>"; };
+		3361171D2EC3C3950064B9FA /* dep-lib-fallible_iterator */ = {isa = PBXFileReference; lastKnownFileType = file; path = "dep-lib-fallible_iterator"; sourceTree = "<group>"; };
+		3361171E2EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		3361171F2EC3C3950064B9FA /* lib-fallible_iterator */ = {isa = PBXFileReference; lastKnownFileType = text; path = "lib-fallible_iterator"; sourceTree = "<group>"; };
+		336117202EC3C3950064B9FA /* lib-fallible_iterator.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "lib-fallible_iterator.json"; sourceTree = "<group>"; };
+		336117222EC3C3950064B9FA /* dep-lib-fallible_streaming_iterator */ = {isa = PBXFileReference; lastKnownFileType = file; path = "dep-lib-fallible_streaming_iterator"; sourceTree = "<group>"; };
+		336117232EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		336117242EC3C3950064B9FA /* lib-fallible_streaming_iterator */ = {isa = PBXFileReference; lastKnownFileType = text; path = "lib-fallible_streaming_iterator"; sourceTree = "<group>"; };
+		336117252EC3C3950064B9FA /* lib-fallible_streaming_iterator.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "lib-fallible_streaming_iterator.json"; sourceTree = "<group>"; };
+		336117272EC3C3950064B9FA /* dep-lib-futures */ = {isa = PBXFileReference; lastKnownFileType = file; path = "dep-lib-futures"; sourceTree = "<group>"; };
+		336117282EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		336117292EC3C3950064B9FA /* lib-futures */ = {isa = PBXFileReference; lastKnownFileType = text; path = "lib-futures"; sourceTree = "<group>"; };
+		3361172A2EC3C3950064B9FA /* lib-futures.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "lib-futures.json"; sourceTree = "<group>"; };
+		3361172C2EC3C3950064B9FA /* dep-lib-futures_channel */ = {isa = PBXFileReference; lastKnownFileType = file; path = "dep-lib-futures_channel"; sourceTree = "<group>"; };
+		3361172D2EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		3361172E2EC3C3950064B9FA /* lib-futures_channel */ = {isa = PBXFileReference; lastKnownFileType = text; path = "lib-futures_channel"; sourceTree = "<group>"; };
+		3361172F2EC3C3950064B9FA /* lib-futures_channel.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "lib-futures_channel.json"; sourceTree = "<group>"; };
+		336117312EC3C3950064B9FA /* dep-lib-futures_core */ = {isa = PBXFileReference; lastKnownFileType = file; path = "dep-lib-futures_core"; sourceTree = "<group>"; };
+		336117322EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		336117332EC3C3950064B9FA /* lib-futures_core */ = {isa = PBXFileReference; lastKnownFileType = text; path = "lib-futures_core"; sourceTree = "<group>"; };
+		336117342EC3C3950064B9FA /* lib-futures_core.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "lib-futures_core.json"; sourceTree = "<group>"; };
+		336117362EC3C3950064B9FA /* dep-lib-futures_executor */ = {isa = PBXFileReference; lastKnownFileType = file; path = "dep-lib-futures_executor"; sourceTree = "<group>"; };
+		336117372EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		336117382EC3C3950064B9FA /* lib-futures_executor */ = {isa = PBXFileReference; lastKnownFileType = text; path = "lib-futures_executor"; sourceTree = "<group>"; };
+		336117392EC3C3950064B9FA /* lib-futures_executor.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "lib-futures_executor.json"; sourceTree = "<group>"; };
+		3361173B2EC3C3950064B9FA /* dep-lib-futures_io */ = {isa = PBXFileReference; lastKnownFileType = file; path = "dep-lib-futures_io"; sourceTree = "<group>"; };
+		3361173C2EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		3361173D2EC3C3950064B9FA /* lib-futures_io */ = {isa = PBXFileReference; lastKnownFileType = text; path = "lib-futures_io"; sourceTree = "<group>"; };
+		3361173E2EC3C3950064B9FA /* lib-futures_io.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "lib-futures_io.json"; sourceTree = "<group>"; };
+		336117402EC3C3950064B9FA /* dep-lib-futures_sink */ = {isa = PBXFileReference; lastKnownFileType = file; path = "dep-lib-futures_sink"; sourceTree = "<group>"; };
+		336117412EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		336117422EC3C3950064B9FA /* lib-futures_sink */ = {isa = PBXFileReference; lastKnownFileType = text; path = "lib-futures_sink"; sourceTree = "<group>"; };
+		336117432EC3C3950064B9FA /* lib-futures_sink.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "lib-futures_sink.json"; sourceTree = "<group>"; };
+		336117452EC3C3950064B9FA /* dep-lib-futures_task */ = {isa = PBXFileReference; lastKnownFileType = file; path = "dep-lib-futures_task"; sourceTree = "<group>"; };
+		336117462EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		336117472EC3C3950064B9FA /* lib-futures_task */ = {isa = PBXFileReference; lastKnownFileType = text; path = "lib-futures_task"; sourceTree = "<group>"; };
+		336117482EC3C3950064B9FA /* lib-futures_task.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "lib-futures_task.json"; sourceTree = "<group>"; };
+		3361174A2EC3C3950064B9FA /* dep-lib-futures_util */ = {isa = PBXFileReference; lastKnownFileType = file; path = "dep-lib-futures_util"; sourceTree = "<group>"; };
+		3361174B2EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		3361174C2EC3C3950064B9FA /* lib-futures_util */ = {isa = PBXFileReference; lastKnownFileType = text; path = "lib-futures_util"; sourceTree = "<group>"; };
+		3361174D2EC3C3950064B9FA /* lib-futures_util.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "lib-futures_util.json"; sourceTree = "<group>"; };
+		3361174F2EC3C3950064B9FA /* dep-lib-getrandom */ = {isa = PBXFileReference; lastKnownFileType = file; path = "dep-lib-getrandom"; sourceTree = "<group>"; };
+		336117502EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		336117512EC3C3950064B9FA /* lib-getrandom */ = {isa = PBXFileReference; lastKnownFileType = text; path = "lib-getrandom"; sourceTree = "<group>"; };
+		336117522EC3C3950064B9FA /* lib-getrandom.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "lib-getrandom.json"; sourceTree = "<group>"; };
+		336117542EC3C3950064B9FA /* run-build-script-build-script-build */ = {isa = PBXFileReference; lastKnownFileType = text; path = "run-build-script-build-script-build"; sourceTree = "<group>"; };
+		336117552EC3C3950064B9FA /* run-build-script-build-script-build.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "run-build-script-build-script-build.json"; sourceTree = "<group>"; };
+		336117572EC3C3950064B9FA /* dep-lib-hashbrown */ = {isa = PBXFileReference; lastKnownFileType = file; path = "dep-lib-hashbrown"; sourceTree = "<group>"; };
+		336117582EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		336117592EC3C3950064B9FA /* lib-hashbrown */ = {isa = PBXFileReference; lastKnownFileType = text; path = "lib-hashbrown"; sourceTree = "<group>"; };
+		3361175A2EC3C3950064B9FA /* lib-hashbrown.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "lib-hashbrown.json"; sourceTree = "<group>"; };
+		3361175C2EC3C3950064B9FA /* dep-lib-hashlink */ = {isa = PBXFileReference; lastKnownFileType = file; path = "dep-lib-hashlink"; sourceTree = "<group>"; };
+		3361175D2EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		3361175E2EC3C3950064B9FA /* lib-hashlink */ = {isa = PBXFileReference; lastKnownFileType = text; path = "lib-hashlink"; sourceTree = "<group>"; };
+		3361175F2EC3C3950064B9FA /* lib-hashlink.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "lib-hashlink.json"; sourceTree = "<group>"; };
+		336117612EC3C3950064B9FA /* dep-lib-iana_time_zone */ = {isa = PBXFileReference; lastKnownFileType = file; path = "dep-lib-iana_time_zone"; sourceTree = "<group>"; };
+		336117622EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		336117632EC3C3950064B9FA /* lib-iana_time_zone */ = {isa = PBXFileReference; lastKnownFileType = text; path = "lib-iana_time_zone"; sourceTree = "<group>"; };
+		336117642EC3C3950064B9FA /* lib-iana_time_zone.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "lib-iana_time_zone.json"; sourceTree = "<group>"; };
+		336117662EC3C3950064B9FA /* dep-lib-itoa */ = {isa = PBXFileReference; lastKnownFileType = file; path = "dep-lib-itoa"; sourceTree = "<group>"; };
+		336117672EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		336117682EC3C3950064B9FA /* lib-itoa */ = {isa = PBXFileReference; lastKnownFileType = text; path = "lib-itoa"; sourceTree = "<group>"; };
+		336117692EC3C3950064B9FA /* lib-itoa.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "lib-itoa.json"; sourceTree = "<group>"; };
+		3361176B2EC3C3950064B9FA /* run-build-script-build-script-build */ = {isa = PBXFileReference; lastKnownFileType = text; path = "run-build-script-build-script-build"; sourceTree = "<group>"; };
+		3361176C2EC3C3950064B9FA /* run-build-script-build-script-build.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "run-build-script-build-script-build.json"; sourceTree = "<group>"; };
+		3361176E2EC3C3950064B9FA /* dep-lib-libc */ = {isa = PBXFileReference; lastKnownFileType = file; path = "dep-lib-libc"; sourceTree = "<group>"; };
+		3361176F2EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		336117702EC3C3950064B9FA /* lib-libc */ = {isa = PBXFileReference; lastKnownFileType = text; path = "lib-libc"; sourceTree = "<group>"; };
+		336117712EC3C3950064B9FA /* lib-libc.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "lib-libc.json"; sourceTree = "<group>"; };
+		336117732EC3C3950064B9FA /* run-build-script-build-script-build */ = {isa = PBXFileReference; lastKnownFileType = text; path = "run-build-script-build-script-build"; sourceTree = "<group>"; };
+		336117742EC3C3950064B9FA /* run-build-script-build-script-build.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "run-build-script-build-script-build.json"; sourceTree = "<group>"; };
+		336117762EC3C3950064B9FA /* dep-lib-libsqlite3_sys */ = {isa = PBXFileReference; lastKnownFileType = file; path = "dep-lib-libsqlite3_sys"; sourceTree = "<group>"; };
+		336117772EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		336117782EC3C3950064B9FA /* lib-libsqlite3_sys */ = {isa = PBXFileReference; lastKnownFileType = text; path = "lib-libsqlite3_sys"; sourceTree = "<group>"; };
+		336117792EC3C3950064B9FA /* lib-libsqlite3_sys.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "lib-libsqlite3_sys.json"; sourceTree = "<group>"; };
+		3361177B2EC3C3950064B9FA /* dep-lib-memchr */ = {isa = PBXFileReference; lastKnownFileType = file; path = "dep-lib-memchr"; sourceTree = "<group>"; };
+		3361177C2EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		3361177D2EC3C3950064B9FA /* lib-memchr */ = {isa = PBXFileReference; lastKnownFileType = text; path = "lib-memchr"; sourceTree = "<group>"; };
+		3361177E2EC3C3950064B9FA /* lib-memchr.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "lib-memchr.json"; sourceTree = "<group>"; };
+		336117802EC3C3950064B9FA /* dep-lib-num_traits */ = {isa = PBXFileReference; lastKnownFileType = file; path = "dep-lib-num_traits"; sourceTree = "<group>"; };
+		336117812EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		336117822EC3C3950064B9FA /* lib-num_traits */ = {isa = PBXFileReference; lastKnownFileType = text; path = "lib-num_traits"; sourceTree = "<group>"; };
+		336117832EC3C3950064B9FA /* lib-num_traits.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "lib-num_traits.json"; sourceTree = "<group>"; };
+		336117852EC3C3950064B9FA /* run-build-script-build-script-build */ = {isa = PBXFileReference; lastKnownFileType = text; path = "run-build-script-build-script-build"; sourceTree = "<group>"; };
+		336117862EC3C3950064B9FA /* run-build-script-build-script-build.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "run-build-script-build-script-build.json"; sourceTree = "<group>"; };
+		336117882EC3C3950064B9FA /* dep-lib-once_cell */ = {isa = PBXFileReference; lastKnownFileType = file; path = "dep-lib-once_cell"; sourceTree = "<group>"; };
+		336117892EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		3361178A2EC3C3950064B9FA /* lib-once_cell */ = {isa = PBXFileReference; lastKnownFileType = text; path = "lib-once_cell"; sourceTree = "<group>"; };
+		3361178B2EC3C3950064B9FA /* lib-once_cell.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "lib-once_cell.json"; sourceTree = "<group>"; };
+		3361178D2EC3C3950064B9FA /* dep-lib-pin_project_lite */ = {isa = PBXFileReference; lastKnownFileType = file; path = "dep-lib-pin_project_lite"; sourceTree = "<group>"; };
+		3361178E2EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		3361178F2EC3C3950064B9FA /* lib-pin_project_lite */ = {isa = PBXFileReference; lastKnownFileType = text; path = "lib-pin_project_lite"; sourceTree = "<group>"; };
+		336117902EC3C3950064B9FA /* lib-pin_project_lite.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "lib-pin_project_lite.json"; sourceTree = "<group>"; };
+		336117922EC3C3950064B9FA /* dep-lib-pin_utils */ = {isa = PBXFileReference; lastKnownFileType = file; path = "dep-lib-pin_utils"; sourceTree = "<group>"; };
+		336117932EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		336117942EC3C3950064B9FA /* lib-pin_utils */ = {isa = PBXFileReference; lastKnownFileType = text; path = "lib-pin_utils"; sourceTree = "<group>"; };
+		336117952EC3C3950064B9FA /* lib-pin_utils.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "lib-pin_utils.json"; sourceTree = "<group>"; };
+		336117972EC3C3950064B9FA /* dep-lib-rusqlite */ = {isa = PBXFileReference; lastKnownFileType = file; path = "dep-lib-rusqlite"; sourceTree = "<group>"; };
+		336117982EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		336117992EC3C3950064B9FA /* lib-rusqlite */ = {isa = PBXFileReference; lastKnownFileType = text; path = "lib-rusqlite"; sourceTree = "<group>"; };
+		3361179A2EC3C3950064B9FA /* lib-rusqlite.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "lib-rusqlite.json"; sourceTree = "<group>"; };
+		3361179C2EC3C3950064B9FA /* dep-lib-ryu */ = {isa = PBXFileReference; lastKnownFileType = file; path = "dep-lib-ryu"; sourceTree = "<group>"; };
+		3361179D2EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		3361179E2EC3C3950064B9FA /* lib-ryu */ = {isa = PBXFileReference; lastKnownFileType = text; path = "lib-ryu"; sourceTree = "<group>"; };
+		3361179F2EC3C3950064B9FA /* lib-ryu.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "lib-ryu.json"; sourceTree = "<group>"; };
+		336117A12EC3C3950064B9FA /* run-build-script-build-script-build */ = {isa = PBXFileReference; lastKnownFileType = text; path = "run-build-script-build-script-build"; sourceTree = "<group>"; };
+		336117A22EC3C3950064B9FA /* run-build-script-build-script-build.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "run-build-script-build-script-build.json"; sourceTree = "<group>"; };
+		336117A42EC3C3950064B9FA /* dep-lib-serde_core */ = {isa = PBXFileReference; lastKnownFileType = file; path = "dep-lib-serde_core"; sourceTree = "<group>"; };
+		336117A52EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		336117A62EC3C3950064B9FA /* lib-serde_core */ = {isa = PBXFileReference; lastKnownFileType = text; path = "lib-serde_core"; sourceTree = "<group>"; };
+		336117A72EC3C3950064B9FA /* lib-serde_core.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "lib-serde_core.json"; sourceTree = "<group>"; };
+		336117A92EC3C3950064B9FA /* dep-lib-serde_json */ = {isa = PBXFileReference; lastKnownFileType = file; path = "dep-lib-serde_json"; sourceTree = "<group>"; };
+		336117AA2EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		336117AB2EC3C3950064B9FA /* lib-serde_json */ = {isa = PBXFileReference; lastKnownFileType = text; path = "lib-serde_json"; sourceTree = "<group>"; };
+		336117AC2EC3C3950064B9FA /* lib-serde_json.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "lib-serde_json.json"; sourceTree = "<group>"; };
+		336117AE2EC3C3950064B9FA /* run-build-script-build-script-build */ = {isa = PBXFileReference; lastKnownFileType = text; path = "run-build-script-build-script-build"; sourceTree = "<group>"; };
+		336117AF2EC3C3950064B9FA /* run-build-script-build-script-build.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "run-build-script-build-script-build.json"; sourceTree = "<group>"; };
+		336117B12EC3C3950064B9FA /* run-build-script-build-script-build */ = {isa = PBXFileReference; lastKnownFileType = text; path = "run-build-script-build-script-build"; sourceTree = "<group>"; };
+		336117B22EC3C3950064B9FA /* run-build-script-build-script-build.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "run-build-script-build-script-build.json"; sourceTree = "<group>"; };
+		336117B42EC3C3950064B9FA /* dep-lib-serde */ = {isa = PBXFileReference; lastKnownFileType = file; path = "dep-lib-serde"; sourceTree = "<group>"; };
+		336117B52EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		336117B62EC3C3950064B9FA /* lib-serde */ = {isa = PBXFileReference; lastKnownFileType = text; path = "lib-serde"; sourceTree = "<group>"; };
+		336117B72EC3C3950064B9FA /* lib-serde.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "lib-serde.json"; sourceTree = "<group>"; };
+		336117B92EC3C3950064B9FA /* dep-lib-shared */ = {isa = PBXFileReference; lastKnownFileType = file; path = "dep-lib-shared"; sourceTree = "<group>"; };
+		336117BA2EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		336117BB2EC3C3950064B9FA /* lib-shared */ = {isa = PBXFileReference; lastKnownFileType = text; path = "lib-shared"; sourceTree = "<group>"; };
+		336117BC2EC3C3950064B9FA /* lib-shared.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "lib-shared.json"; sourceTree = "<group>"; };
+		336117BD2EC3C3950064B9FA /* output-lib-shared */ = {isa = PBXFileReference; lastKnownFileType = text; path = "output-lib-shared"; sourceTree = "<group>"; };
+		336117BF2EC3C3950064B9FA /* dep-lib-slab */ = {isa = PBXFileReference; lastKnownFileType = file; path = "dep-lib-slab"; sourceTree = "<group>"; };
+		336117C02EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		336117C12EC3C3950064B9FA /* lib-slab */ = {isa = PBXFileReference; lastKnownFileType = text; path = "lib-slab"; sourceTree = "<group>"; };
+		336117C22EC3C3950064B9FA /* lib-slab.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "lib-slab.json"; sourceTree = "<group>"; };
+		336117C42EC3C3950064B9FA /* dep-lib-smallvec */ = {isa = PBXFileReference; lastKnownFileType = file; path = "dep-lib-smallvec"; sourceTree = "<group>"; };
+		336117C52EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		336117C62EC3C3950064B9FA /* lib-smallvec */ = {isa = PBXFileReference; lastKnownFileType = text; path = "lib-smallvec"; sourceTree = "<group>"; };
+		336117C72EC3C3950064B9FA /* lib-smallvec.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "lib-smallvec.json"; sourceTree = "<group>"; };
+		336117C92EC3C3950064B9FA /* run-build-script-build-script-build */ = {isa = PBXFileReference; lastKnownFileType = text; path = "run-build-script-build-script-build"; sourceTree = "<group>"; };
+		336117CA2EC3C3950064B9FA /* run-build-script-build-script-build.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "run-build-script-build-script-build.json"; sourceTree = "<group>"; };
+		336117CC2EC3C3950064B9FA /* dep-lib-thiserror */ = {isa = PBXFileReference; lastKnownFileType = file; path = "dep-lib-thiserror"; sourceTree = "<group>"; };
+		336117CD2EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		336117CE2EC3C3950064B9FA /* lib-thiserror */ = {isa = PBXFileReference; lastKnownFileType = text; path = "lib-thiserror"; sourceTree = "<group>"; };
+		336117CF2EC3C3950064B9FA /* lib-thiserror.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "lib-thiserror.json"; sourceTree = "<group>"; };
+		336117D12EC3C3950064B9FA /* dep-lib-typeid */ = {isa = PBXFileReference; lastKnownFileType = file; path = "dep-lib-typeid"; sourceTree = "<group>"; };
+		336117D22EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		336117D32EC3C3950064B9FA /* lib-typeid */ = {isa = PBXFileReference; lastKnownFileType = text; path = "lib-typeid"; sourceTree = "<group>"; };
+		336117D42EC3C3950064B9FA /* lib-typeid.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "lib-typeid.json"; sourceTree = "<group>"; };
+		336117D62EC3C3950064B9FA /* run-build-script-build-script-build */ = {isa = PBXFileReference; lastKnownFileType = text; path = "run-build-script-build-script-build"; sourceTree = "<group>"; };
+		336117D72EC3C3950064B9FA /* run-build-script-build-script-build.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "run-build-script-build-script-build.json"; sourceTree = "<group>"; };
+		336117D92EC3C3950064B9FA /* dep-lib-uuid */ = {isa = PBXFileReference; lastKnownFileType = file; path = "dep-lib-uuid"; sourceTree = "<group>"; };
+		336117DA2EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		336117DB2EC3C3950064B9FA /* lib-uuid */ = {isa = PBXFileReference; lastKnownFileType = text; path = "lib-uuid"; sourceTree = "<group>"; };
+		336117DC2EC3C3950064B9FA /* lib-uuid.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "lib-uuid.json"; sourceTree = "<group>"; };
+		336117DE2EC3C3950064B9FA /* dep-lib-zerocopy */ = {isa = PBXFileReference; lastKnownFileType = file; path = "dep-lib-zerocopy"; sourceTree = "<group>"; };
+		336117DF2EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		336117E02EC3C3950064B9FA /* lib-zerocopy */ = {isa = PBXFileReference; lastKnownFileType = text; path = "lib-zerocopy"; sourceTree = "<group>"; };
+		336117E12EC3C3950064B9FA /* lib-zerocopy.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "lib-zerocopy.json"; sourceTree = "<group>"; };
+		336117E32EC3C3950064B9FA /* run-build-script-build-script-build */ = {isa = PBXFileReference; lastKnownFileType = text; path = "run-build-script-build-script-build"; sourceTree = "<group>"; };
+		336117E42EC3C3950064B9FA /* run-build-script-build-script-build.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "run-build-script-build-script-build.json"; sourceTree = "<group>"; };
+		336117E82EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		336117E92EC3C3950064B9FA /* output */ = {isa = PBXFileReference; lastKnownFileType = text; path = output; sourceTree = "<group>"; };
+		336117EA2EC3C3950064B9FA /* root-output */ = {isa = PBXFileReference; lastKnownFileType = text; path = "root-output"; sourceTree = "<group>"; };
+		336117EB2EC3C3950064B9FA /* stderr */ = {isa = PBXFileReference; lastKnownFileType = text; path = stderr; sourceTree = "<group>"; };
+		336117EE2EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		336117EF2EC3C3950064B9FA /* output */ = {isa = PBXFileReference; lastKnownFileType = text; path = output; sourceTree = "<group>"; };
+		336117F02EC3C3950064B9FA /* root-output */ = {isa = PBXFileReference; lastKnownFileType = text; path = "root-output"; sourceTree = "<group>"; };
+		336117F12EC3C3950064B9FA /* stderr */ = {isa = PBXFileReference; lastKnownFileType = text; path = stderr; sourceTree = "<group>"; };
+		336117F42EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		336117F52EC3C3950064B9FA /* output */ = {isa = PBXFileReference; lastKnownFileType = text; path = output; sourceTree = "<group>"; };
+		336117F62EC3C3950064B9FA /* root-output */ = {isa = PBXFileReference; lastKnownFileType = text; path = "root-output"; sourceTree = "<group>"; };
+		336117F72EC3C3950064B9FA /* stderr */ = {isa = PBXFileReference; lastKnownFileType = text; path = stderr; sourceTree = "<group>"; };
+		336117FA2EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		336117FB2EC3C3950064B9FA /* output */ = {isa = PBXFileReference; lastKnownFileType = text; path = output; sourceTree = "<group>"; };
+		336117FC2EC3C3950064B9FA /* root-output */ = {isa = PBXFileReference; lastKnownFileType = text; path = "root-output"; sourceTree = "<group>"; };
+		336117FD2EC3C3950064B9FA /* stderr */ = {isa = PBXFileReference; lastKnownFileType = text; path = stderr; sourceTree = "<group>"; };
+		336118002EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		336118012EC3C3950064B9FA /* output */ = {isa = PBXFileReference; lastKnownFileType = text; path = output; sourceTree = "<group>"; };
+		336118022EC3C3950064B9FA /* root-output */ = {isa = PBXFileReference; lastKnownFileType = text; path = "root-output"; sourceTree = "<group>"; };
+		336118032EC3C3950064B9FA /* stderr */ = {isa = PBXFileReference; lastKnownFileType = text; path = stderr; sourceTree = "<group>"; };
+		336118062EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		336118072EC3C3950064B9FA /* output */ = {isa = PBXFileReference; lastKnownFileType = text; path = output; sourceTree = "<group>"; };
+		336118082EC3C3950064B9FA /* root-output */ = {isa = PBXFileReference; lastKnownFileType = text; path = "root-output"; sourceTree = "<group>"; };
+		336118092EC3C3950064B9FA /* stderr */ = {isa = PBXFileReference; lastKnownFileType = text; path = stderr; sourceTree = "<group>"; };
+		3361180B2EC3C3950064B9FA /* bindgen.rs */ = {isa = PBXFileReference; lastKnownFileType = text; path = bindgen.rs; sourceTree = "<group>"; };
+		3361180C2EC3C3950064B9FA /* c877a2978823c39d-sqlite3.o */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.objfile"; path = "c877a2978823c39d-sqlite3.o"; sourceTree = "<group>"; };
+		3361180D2EC3C3950064B9FA /* libsqlite3.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libsqlite3.a; sourceTree = "<group>"; };
+		3361180F2EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		336118102EC3C3950064B9FA /* output */ = {isa = PBXFileReference; lastKnownFileType = text; path = output; sourceTree = "<group>"; };
+		336118112EC3C3950064B9FA /* root-output */ = {isa = PBXFileReference; lastKnownFileType = text; path = "root-output"; sourceTree = "<group>"; };
+		336118122EC3C3950064B9FA /* stderr */ = {isa = PBXFileReference; lastKnownFileType = text; path = stderr; sourceTree = "<group>"; };
+		336118152EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		336118162EC3C3950064B9FA /* output */ = {isa = PBXFileReference; lastKnownFileType = text; path = output; sourceTree = "<group>"; };
+		336118172EC3C3950064B9FA /* root-output */ = {isa = PBXFileReference; lastKnownFileType = text; path = "root-output"; sourceTree = "<group>"; };
+		336118182EC3C3950064B9FA /* stderr */ = {isa = PBXFileReference; lastKnownFileType = text; path = stderr; sourceTree = "<group>"; };
+		3361181A2EC3C3950064B9FA /* private.rs */ = {isa = PBXFileReference; lastKnownFileType = text; path = private.rs; sourceTree = "<group>"; };
+		3361181C2EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		3361181D2EC3C3950064B9FA /* output */ = {isa = PBXFileReference; lastKnownFileType = text; path = output; sourceTree = "<group>"; };
+		3361181E2EC3C3950064B9FA /* root-output */ = {isa = PBXFileReference; lastKnownFileType = text; path = "root-output"; sourceTree = "<group>"; };
+		3361181F2EC3C3950064B9FA /* stderr */ = {isa = PBXFileReference; lastKnownFileType = text; path = stderr; sourceTree = "<group>"; };
+		336118222EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		336118232EC3C3950064B9FA /* output */ = {isa = PBXFileReference; lastKnownFileType = text; path = output; sourceTree = "<group>"; };
+		336118242EC3C3950064B9FA /* root-output */ = {isa = PBXFileReference; lastKnownFileType = text; path = "root-output"; sourceTree = "<group>"; };
+		336118252EC3C3950064B9FA /* stderr */ = {isa = PBXFileReference; lastKnownFileType = text; path = stderr; sourceTree = "<group>"; };
+		336118272EC3C3950064B9FA /* private.rs */ = {isa = PBXFileReference; lastKnownFileType = text; path = private.rs; sourceTree = "<group>"; };
+		336118292EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		3361182A2EC3C3950064B9FA /* output */ = {isa = PBXFileReference; lastKnownFileType = text; path = output; sourceTree = "<group>"; };
+		3361182B2EC3C3950064B9FA /* root-output */ = {isa = PBXFileReference; lastKnownFileType = text; path = "root-output"; sourceTree = "<group>"; };
+		3361182C2EC3C3950064B9FA /* stderr */ = {isa = PBXFileReference; lastKnownFileType = text; path = stderr; sourceTree = "<group>"; };
+		3361182F2EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		336118302EC3C3950064B9FA /* output */ = {isa = PBXFileReference; lastKnownFileType = text; path = output; sourceTree = "<group>"; };
+		336118312EC3C3950064B9FA /* root-output */ = {isa = PBXFileReference; lastKnownFileType = text; path = "root-output"; sourceTree = "<group>"; };
+		336118322EC3C3950064B9FA /* stderr */ = {isa = PBXFileReference; lastKnownFileType = text; path = stderr; sourceTree = "<group>"; };
+		336118352EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		336118362EC3C3950064B9FA /* output */ = {isa = PBXFileReference; lastKnownFileType = text; path = output; sourceTree = "<group>"; };
+		336118372EC3C3950064B9FA /* root-output */ = {isa = PBXFileReference; lastKnownFileType = text; path = "root-output"; sourceTree = "<group>"; };
+		336118382EC3C3950064B9FA /* stderr */ = {isa = PBXFileReference; lastKnownFileType = text; path = stderr; sourceTree = "<group>"; };
+		3361183B2EC3C3950064B9FA /* invoked.timestamp */ = {isa = PBXFileReference; lastKnownFileType = text; path = invoked.timestamp; sourceTree = "<group>"; };
+		3361183C2EC3C3950064B9FA /* output */ = {isa = PBXFileReference; lastKnownFileType = text; path = output; sourceTree = "<group>"; };
+		3361183D2EC3C3950064B9FA /* root-output */ = {isa = PBXFileReference; lastKnownFileType = text; path = "root-output"; sourceTree = "<group>"; };
+		3361183E2EC3C3950064B9FA /* stderr */ = {isa = PBXFileReference; lastKnownFileType = text; path = stderr; sourceTree = "<group>"; };
+		336118412EC3C3950064B9FA /* ahash-6bc4ec167d994ac6.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = "ahash-6bc4ec167d994ac6.d"; sourceTree = "<group>"; };
+		336118422EC3C3950064B9FA /* anyhow-5e2dc711e2954336.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = "anyhow-5e2dc711e2954336.d"; sourceTree = "<group>"; };
+		336118432EC3C3950064B9FA /* bincode-9394566590185369.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = "bincode-9394566590185369.d"; sourceTree = "<group>"; };
+		336118442EC3C3950064B9FA /* bitflags-d136acaf03e572ec.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = "bitflags-d136acaf03e572ec.d"; sourceTree = "<group>"; };
+		336118452EC3C3950064B9FA /* cfg_if-2fb806f2d344dbf2.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = "cfg_if-2fb806f2d344dbf2.d"; sourceTree = "<group>"; };
+		336118462EC3C3950064B9FA /* chrono-703e85089f5f2088.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = "chrono-703e85089f5f2088.d"; sourceTree = "<group>"; };
+		336118472EC3C3950064B9FA /* core_foundation_sys-13154f8e27e09b87.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = "core_foundation_sys-13154f8e27e09b87.d"; sourceTree = "<group>"; };
+		336118482EC3C3950064B9FA /* crossbeam_channel-131751ea4fe9f0d8.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = "crossbeam_channel-131751ea4fe9f0d8.d"; sourceTree = "<group>"; };
+		336118492EC3C3950064B9FA /* crossbeam_utils-1a3323a04fa64acf.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = "crossbeam_utils-1a3323a04fa64acf.d"; sourceTree = "<group>"; };
+		3361184A2EC3C3950064B9FA /* crux_core-47d3031aefa5cec5.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = "crux_core-47d3031aefa5cec5.d"; sourceTree = "<group>"; };
+		3361184B2EC3C3950064B9FA /* erased_serde-dbafec08474258a4.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = "erased_serde-dbafec08474258a4.d"; sourceTree = "<group>"; };
+		3361184C2EC3C3950064B9FA /* fallible_iterator-8493b8fd10643092.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = "fallible_iterator-8493b8fd10643092.d"; sourceTree = "<group>"; };
+		3361184D2EC3C3950064B9FA /* fallible_streaming_iterator-1ffa832972c944b5.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = "fallible_streaming_iterator-1ffa832972c944b5.d"; sourceTree = "<group>"; };
+		3361184E2EC3C3950064B9FA /* futures_channel-26b99dd824c6e212.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = "futures_channel-26b99dd824c6e212.d"; sourceTree = "<group>"; };
+		3361184F2EC3C3950064B9FA /* futures_core-b651267e3d2f2652.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = "futures_core-b651267e3d2f2652.d"; sourceTree = "<group>"; };
+		336118502EC3C3950064B9FA /* futures_executor-c433ed6762d0d95f.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = "futures_executor-c433ed6762d0d95f.d"; sourceTree = "<group>"; };
+		336118512EC3C3950064B9FA /* futures_io-a60fbf65105bdd44.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = "futures_io-a60fbf65105bdd44.d"; sourceTree = "<group>"; };
+		336118522EC3C3950064B9FA /* futures_sink-0c227f901bcc006c.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = "futures_sink-0c227f901bcc006c.d"; sourceTree = "<group>"; };
+		336118532EC3C3950064B9FA /* futures_task-afa11825d13e5c7b.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = "futures_task-afa11825d13e5c7b.d"; sourceTree = "<group>"; };
+		336118542EC3C3950064B9FA /* futures_util-763f34528ef6a485.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = "futures_util-763f34528ef6a485.d"; sourceTree = "<group>"; };
+		336118552EC3C3950064B9FA /* futures-2ca909a80c582da4.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = "futures-2ca909a80c582da4.d"; sourceTree = "<group>"; };
+		336118562EC3C3950064B9FA /* getrandom-7b49b312674e3555.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = "getrandom-7b49b312674e3555.d"; sourceTree = "<group>"; };
+		336118572EC3C3950064B9FA /* hashbrown-5bf9dd9649f1fd21.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = "hashbrown-5bf9dd9649f1fd21.d"; sourceTree = "<group>"; };
+		336118582EC3C3950064B9FA /* hashlink-b35dd45b3dc86aa4.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = "hashlink-b35dd45b3dc86aa4.d"; sourceTree = "<group>"; };
+		336118592EC3C3950064B9FA /* iana_time_zone-7b30ddf40315a07e.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = "iana_time_zone-7b30ddf40315a07e.d"; sourceTree = "<group>"; };
+		3361185A2EC3C3950064B9FA /* itoa-42c1573f868c5062.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = "itoa-42c1573f868c5062.d"; sourceTree = "<group>"; };
+		3361185B2EC3C3950064B9FA /* libahash-6bc4ec167d994ac6.rlib */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libahash-6bc4ec167d994ac6.rlib"; sourceTree = "<group>"; };
+		3361185C2EC3C3950064B9FA /* libahash-6bc4ec167d994ac6.rmeta */ = {isa = PBXFileReference; lastKnownFileType = file; path = "libahash-6bc4ec167d994ac6.rmeta"; sourceTree = "<group>"; };
+		3361185D2EC3C3950064B9FA /* libanyhow-5e2dc711e2954336.rlib */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libanyhow-5e2dc711e2954336.rlib"; sourceTree = "<group>"; };
+		3361185E2EC3C3950064B9FA /* libanyhow-5e2dc711e2954336.rmeta */ = {isa = PBXFileReference; lastKnownFileType = file; path = "libanyhow-5e2dc711e2954336.rmeta"; sourceTree = "<group>"; };
+		3361185F2EC3C3950064B9FA /* libbincode-9394566590185369.rlib */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libbincode-9394566590185369.rlib"; sourceTree = "<group>"; };
+		336118602EC3C3950064B9FA /* libbincode-9394566590185369.rmeta */ = {isa = PBXFileReference; lastKnownFileType = file; path = "libbincode-9394566590185369.rmeta"; sourceTree = "<group>"; };
+		336118612EC3C3950064B9FA /* libbitflags-d136acaf03e572ec.rlib */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libbitflags-d136acaf03e572ec.rlib"; sourceTree = "<group>"; };
+		336118622EC3C3950064B9FA /* libbitflags-d136acaf03e572ec.rmeta */ = {isa = PBXFileReference; lastKnownFileType = file; path = "libbitflags-d136acaf03e572ec.rmeta"; sourceTree = "<group>"; };
+		336118632EC3C3950064B9FA /* libc-cf75d9adfc301c6b.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = "libc-cf75d9adfc301c6b.d"; sourceTree = "<group>"; };
+		336118642EC3C3950064B9FA /* libcfg_if-2fb806f2d344dbf2.rlib */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libcfg_if-2fb806f2d344dbf2.rlib"; sourceTree = "<group>"; };
+		336118652EC3C3950064B9FA /* libcfg_if-2fb806f2d344dbf2.rmeta */ = {isa = PBXFileReference; lastKnownFileType = file; path = "libcfg_if-2fb806f2d344dbf2.rmeta"; sourceTree = "<group>"; };
+		336118662EC3C3950064B9FA /* libchrono-703e85089f5f2088.rlib */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libchrono-703e85089f5f2088.rlib"; sourceTree = "<group>"; };
+		336118672EC3C3950064B9FA /* libchrono-703e85089f5f2088.rmeta */ = {isa = PBXFileReference; lastKnownFileType = file; path = "libchrono-703e85089f5f2088.rmeta"; sourceTree = "<group>"; };
+		336118682EC3C3950064B9FA /* libcore_foundation_sys-13154f8e27e09b87.rlib */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libcore_foundation_sys-13154f8e27e09b87.rlib"; sourceTree = "<group>"; };
+		336118692EC3C3950064B9FA /* libcore_foundation_sys-13154f8e27e09b87.rmeta */ = {isa = PBXFileReference; lastKnownFileType = file; path = "libcore_foundation_sys-13154f8e27e09b87.rmeta"; sourceTree = "<group>"; };
+		3361186A2EC3C3950064B9FA /* libcrossbeam_channel-131751ea4fe9f0d8.rlib */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libcrossbeam_channel-131751ea4fe9f0d8.rlib"; sourceTree = "<group>"; };
+		3361186B2EC3C3950064B9FA /* libcrossbeam_channel-131751ea4fe9f0d8.rmeta */ = {isa = PBXFileReference; lastKnownFileType = file; path = "libcrossbeam_channel-131751ea4fe9f0d8.rmeta"; sourceTree = "<group>"; };
+		3361186C2EC3C3950064B9FA /* libcrossbeam_utils-1a3323a04fa64acf.rlib */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libcrossbeam_utils-1a3323a04fa64acf.rlib"; sourceTree = "<group>"; };
+		3361186D2EC3C3950064B9FA /* libcrossbeam_utils-1a3323a04fa64acf.rmeta */ = {isa = PBXFileReference; lastKnownFileType = file; path = "libcrossbeam_utils-1a3323a04fa64acf.rmeta"; sourceTree = "<group>"; };
+		3361186E2EC3C3950064B9FA /* libcrux_core-47d3031aefa5cec5.rlib */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libcrux_core-47d3031aefa5cec5.rlib"; sourceTree = "<group>"; };
+		3361186F2EC3C3950064B9FA /* libcrux_core-47d3031aefa5cec5.rmeta */ = {isa = PBXFileReference; lastKnownFileType = file; path = "libcrux_core-47d3031aefa5cec5.rmeta"; sourceTree = "<group>"; };
+		336118702EC3C3950064B9FA /* liberased_serde-dbafec08474258a4.rlib */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "liberased_serde-dbafec08474258a4.rlib"; sourceTree = "<group>"; };
+		336118712EC3C3950064B9FA /* liberased_serde-dbafec08474258a4.rmeta */ = {isa = PBXFileReference; lastKnownFileType = file; path = "liberased_serde-dbafec08474258a4.rmeta"; sourceTree = "<group>"; };
+		336118722EC3C3950064B9FA /* libfallible_iterator-8493b8fd10643092.rlib */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libfallible_iterator-8493b8fd10643092.rlib"; sourceTree = "<group>"; };
+		336118732EC3C3950064B9FA /* libfallible_iterator-8493b8fd10643092.rmeta */ = {isa = PBXFileReference; lastKnownFileType = file; path = "libfallible_iterator-8493b8fd10643092.rmeta"; sourceTree = "<group>"; };
+		336118742EC3C3950064B9FA /* libfallible_streaming_iterator-1ffa832972c944b5.rlib */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libfallible_streaming_iterator-1ffa832972c944b5.rlib"; sourceTree = "<group>"; };
+		336118752EC3C3950064B9FA /* libfallible_streaming_iterator-1ffa832972c944b5.rmeta */ = {isa = PBXFileReference; lastKnownFileType = file; path = "libfallible_streaming_iterator-1ffa832972c944b5.rmeta"; sourceTree = "<group>"; };
+		336118762EC3C3950064B9FA /* libfutures_channel-26b99dd824c6e212.rlib */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libfutures_channel-26b99dd824c6e212.rlib"; sourceTree = "<group>"; };
+		336118772EC3C3950064B9FA /* libfutures_channel-26b99dd824c6e212.rmeta */ = {isa = PBXFileReference; lastKnownFileType = file; path = "libfutures_channel-26b99dd824c6e212.rmeta"; sourceTree = "<group>"; };
+		336118782EC3C3950064B9FA /* libfutures_core-b651267e3d2f2652.rlib */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libfutures_core-b651267e3d2f2652.rlib"; sourceTree = "<group>"; };
+		336118792EC3C3950064B9FA /* libfutures_core-b651267e3d2f2652.rmeta */ = {isa = PBXFileReference; lastKnownFileType = file; path = "libfutures_core-b651267e3d2f2652.rmeta"; sourceTree = "<group>"; };
+		3361187A2EC3C3950064B9FA /* libfutures_executor-c433ed6762d0d95f.rlib */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libfutures_executor-c433ed6762d0d95f.rlib"; sourceTree = "<group>"; };
+		3361187B2EC3C3950064B9FA /* libfutures_executor-c433ed6762d0d95f.rmeta */ = {isa = PBXFileReference; lastKnownFileType = file; path = "libfutures_executor-c433ed6762d0d95f.rmeta"; sourceTree = "<group>"; };
+		3361187C2EC3C3950064B9FA /* libfutures_io-a60fbf65105bdd44.rlib */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libfutures_io-a60fbf65105bdd44.rlib"; sourceTree = "<group>"; };
+		3361187D2EC3C3950064B9FA /* libfutures_io-a60fbf65105bdd44.rmeta */ = {isa = PBXFileReference; lastKnownFileType = file; path = "libfutures_io-a60fbf65105bdd44.rmeta"; sourceTree = "<group>"; };
+		3361187E2EC3C3950064B9FA /* libfutures_sink-0c227f901bcc006c.rlib */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libfutures_sink-0c227f901bcc006c.rlib"; sourceTree = "<group>"; };
+		3361187F2EC3C3950064B9FA /* libfutures_sink-0c227f901bcc006c.rmeta */ = {isa = PBXFileReference; lastKnownFileType = file; path = "libfutures_sink-0c227f901bcc006c.rmeta"; sourceTree = "<group>"; };
+		336118802EC3C3950064B9FA /* libfutures_task-afa11825d13e5c7b.rlib */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libfutures_task-afa11825d13e5c7b.rlib"; sourceTree = "<group>"; };
+		336118812EC3C3950064B9FA /* libfutures_task-afa11825d13e5c7b.rmeta */ = {isa = PBXFileReference; lastKnownFileType = file; path = "libfutures_task-afa11825d13e5c7b.rmeta"; sourceTree = "<group>"; };
+		336118822EC3C3950064B9FA /* libfutures_util-763f34528ef6a485.rlib */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libfutures_util-763f34528ef6a485.rlib"; sourceTree = "<group>"; };
+		336118832EC3C3950064B9FA /* libfutures_util-763f34528ef6a485.rmeta */ = {isa = PBXFileReference; lastKnownFileType = file; path = "libfutures_util-763f34528ef6a485.rmeta"; sourceTree = "<group>"; };
+		336118842EC3C3950064B9FA /* libfutures-2ca909a80c582da4.rlib */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libfutures-2ca909a80c582da4.rlib"; sourceTree = "<group>"; };
+		336118852EC3C3950064B9FA /* libfutures-2ca909a80c582da4.rmeta */ = {isa = PBXFileReference; lastKnownFileType = file; path = "libfutures-2ca909a80c582da4.rmeta"; sourceTree = "<group>"; };
+		336118862EC3C3950064B9FA /* libgetrandom-7b49b312674e3555.rlib */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libgetrandom-7b49b312674e3555.rlib"; sourceTree = "<group>"; };
+		336118872EC3C3950064B9FA /* libgetrandom-7b49b312674e3555.rmeta */ = {isa = PBXFileReference; lastKnownFileType = file; path = "libgetrandom-7b49b312674e3555.rmeta"; sourceTree = "<group>"; };
+		336118882EC3C3950064B9FA /* libhashbrown-5bf9dd9649f1fd21.rlib */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libhashbrown-5bf9dd9649f1fd21.rlib"; sourceTree = "<group>"; };
+		336118892EC3C3950064B9FA /* libhashbrown-5bf9dd9649f1fd21.rmeta */ = {isa = PBXFileReference; lastKnownFileType = file; path = "libhashbrown-5bf9dd9649f1fd21.rmeta"; sourceTree = "<group>"; };
+		3361188A2EC3C3950064B9FA /* libhashlink-b35dd45b3dc86aa4.rlib */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libhashlink-b35dd45b3dc86aa4.rlib"; sourceTree = "<group>"; };
+		3361188B2EC3C3950064B9FA /* libhashlink-b35dd45b3dc86aa4.rmeta */ = {isa = PBXFileReference; lastKnownFileType = file; path = "libhashlink-b35dd45b3dc86aa4.rmeta"; sourceTree = "<group>"; };
+		3361188C2EC3C3950064B9FA /* libiana_time_zone-7b30ddf40315a07e.rlib */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libiana_time_zone-7b30ddf40315a07e.rlib"; sourceTree = "<group>"; };
+		3361188D2EC3C3950064B9FA /* libiana_time_zone-7b30ddf40315a07e.rmeta */ = {isa = PBXFileReference; lastKnownFileType = file; path = "libiana_time_zone-7b30ddf40315a07e.rmeta"; sourceTree = "<group>"; };
+		3361188E2EC3C3950064B9FA /* libitoa-42c1573f868c5062.rlib */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libitoa-42c1573f868c5062.rlib"; sourceTree = "<group>"; };
+		3361188F2EC3C3950064B9FA /* libitoa-42c1573f868c5062.rmeta */ = {isa = PBXFileReference; lastKnownFileType = file; path = "libitoa-42c1573f868c5062.rmeta"; sourceTree = "<group>"; };
+		336118902EC3C3950064B9FA /* liblibc-cf75d9adfc301c6b.rlib */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "liblibc-cf75d9adfc301c6b.rlib"; sourceTree = "<group>"; };
+		336118912EC3C3950064B9FA /* liblibc-cf75d9adfc301c6b.rmeta */ = {isa = PBXFileReference; lastKnownFileType = file; path = "liblibc-cf75d9adfc301c6b.rmeta"; sourceTree = "<group>"; };
+		336118922EC3C3950064B9FA /* liblibsqlite3_sys-d30b1288ff712d2b.rlib */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "liblibsqlite3_sys-d30b1288ff712d2b.rlib"; sourceTree = "<group>"; };
+		336118932EC3C3950064B9FA /* liblibsqlite3_sys-d30b1288ff712d2b.rmeta */ = {isa = PBXFileReference; lastKnownFileType = file; path = "liblibsqlite3_sys-d30b1288ff712d2b.rmeta"; sourceTree = "<group>"; };
+		336118942EC3C3950064B9FA /* libmemchr-66b10684c52b81b3.rlib */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libmemchr-66b10684c52b81b3.rlib"; sourceTree = "<group>"; };
+		336118952EC3C3950064B9FA /* libmemchr-66b10684c52b81b3.rmeta */ = {isa = PBXFileReference; lastKnownFileType = file; path = "libmemchr-66b10684c52b81b3.rmeta"; sourceTree = "<group>"; };
+		336118962EC3C3950064B9FA /* libnum_traits-2fe8aeff767fcf14.rlib */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libnum_traits-2fe8aeff767fcf14.rlib"; sourceTree = "<group>"; };
+		336118972EC3C3950064B9FA /* libnum_traits-2fe8aeff767fcf14.rmeta */ = {isa = PBXFileReference; lastKnownFileType = file; path = "libnum_traits-2fe8aeff767fcf14.rmeta"; sourceTree = "<group>"; };
+		336118982EC3C3950064B9FA /* libonce_cell-57123ab505a7fc37.rlib */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libonce_cell-57123ab505a7fc37.rlib"; sourceTree = "<group>"; };
+		336118992EC3C3950064B9FA /* libonce_cell-57123ab505a7fc37.rmeta */ = {isa = PBXFileReference; lastKnownFileType = file; path = "libonce_cell-57123ab505a7fc37.rmeta"; sourceTree = "<group>"; };
+		3361189A2EC3C3950064B9FA /* libpin_project_lite-13f01817f76a5952.rlib */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libpin_project_lite-13f01817f76a5952.rlib"; sourceTree = "<group>"; };
+		3361189B2EC3C3950064B9FA /* libpin_project_lite-13f01817f76a5952.rmeta */ = {isa = PBXFileReference; lastKnownFileType = file; path = "libpin_project_lite-13f01817f76a5952.rmeta"; sourceTree = "<group>"; };
+		3361189C2EC3C3950064B9FA /* libpin_utils-ee0cdb35ef4565b8.rlib */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libpin_utils-ee0cdb35ef4565b8.rlib"; sourceTree = "<group>"; };
+		3361189D2EC3C3950064B9FA /* libpin_utils-ee0cdb35ef4565b8.rmeta */ = {isa = PBXFileReference; lastKnownFileType = file; path = "libpin_utils-ee0cdb35ef4565b8.rmeta"; sourceTree = "<group>"; };
+		3361189E2EC3C3950064B9FA /* librusqlite-fa162f009feb2913.rlib */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "librusqlite-fa162f009feb2913.rlib"; sourceTree = "<group>"; };
+		3361189F2EC3C3950064B9FA /* librusqlite-fa162f009feb2913.rmeta */ = {isa = PBXFileReference; lastKnownFileType = file; path = "librusqlite-fa162f009feb2913.rmeta"; sourceTree = "<group>"; };
+		336118A02EC3C3950064B9FA /* libryu-4c32a35f5af2941e.rlib */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libryu-4c32a35f5af2941e.rlib"; sourceTree = "<group>"; };
+		336118A12EC3C3950064B9FA /* libryu-4c32a35f5af2941e.rmeta */ = {isa = PBXFileReference; lastKnownFileType = file; path = "libryu-4c32a35f5af2941e.rmeta"; sourceTree = "<group>"; };
+		336118A22EC3C3950064B9FA /* libserde_core-17163cfc29eaa8b7.rlib */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libserde_core-17163cfc29eaa8b7.rlib"; sourceTree = "<group>"; };
+		336118A32EC3C3950064B9FA /* libserde_core-17163cfc29eaa8b7.rmeta */ = {isa = PBXFileReference; lastKnownFileType = file; path = "libserde_core-17163cfc29eaa8b7.rmeta"; sourceTree = "<group>"; };
+		336118A42EC3C3950064B9FA /* libserde_json-cc6f926238c9d2ff.rlib */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libserde_json-cc6f926238c9d2ff.rlib"; sourceTree = "<group>"; };
+		336118A52EC3C3950064B9FA /* libserde_json-cc6f926238c9d2ff.rmeta */ = {isa = PBXFileReference; lastKnownFileType = file; path = "libserde_json-cc6f926238c9d2ff.rmeta"; sourceTree = "<group>"; };
+		336118A62EC3C3950064B9FA /* libserde-aeb85b0d8c37fa05.rlib */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libserde-aeb85b0d8c37fa05.rlib"; sourceTree = "<group>"; };
+		336118A72EC3C3950064B9FA /* libserde-aeb85b0d8c37fa05.rmeta */ = {isa = PBXFileReference; lastKnownFileType = file; path = "libserde-aeb85b0d8c37fa05.rmeta"; sourceTree = "<group>"; };
+		336118A82EC3C3950064B9FA /* libshared.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libshared.a; sourceTree = "<group>"; };
+		336118A92EC3C3950064B9FA /* libshared.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libshared.dylib; sourceTree = "<group>"; };
+		336118AA2EC3C3950064B9FA /* libshared.rlib */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libshared.rlib; sourceTree = "<group>"; };
+		336118AB2EC3C3950064B9FA /* libslab-a5cb04692ff20867.rlib */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libslab-a5cb04692ff20867.rlib"; sourceTree = "<group>"; };
+		336118AC2EC3C3950064B9FA /* libslab-a5cb04692ff20867.rmeta */ = {isa = PBXFileReference; lastKnownFileType = file; path = "libslab-a5cb04692ff20867.rmeta"; sourceTree = "<group>"; };
+		336118AD2EC3C3950064B9FA /* libsmallvec-75844e597ae44980.rlib */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libsmallvec-75844e597ae44980.rlib"; sourceTree = "<group>"; };
+		336118AE2EC3C3950064B9FA /* libsmallvec-75844e597ae44980.rmeta */ = {isa = PBXFileReference; lastKnownFileType = file; path = "libsmallvec-75844e597ae44980.rmeta"; sourceTree = "<group>"; };
+		336118AF2EC3C3950064B9FA /* libsqlite3_sys-d30b1288ff712d2b.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = "libsqlite3_sys-d30b1288ff712d2b.d"; sourceTree = "<group>"; };
+		336118B02EC3C3950064B9FA /* libthiserror-76a1313566c75f42.rlib */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libthiserror-76a1313566c75f42.rlib"; sourceTree = "<group>"; };
+		336118B12EC3C3950064B9FA /* libthiserror-76a1313566c75f42.rmeta */ = {isa = PBXFileReference; lastKnownFileType = file; path = "libthiserror-76a1313566c75f42.rmeta"; sourceTree = "<group>"; };
+		336118B22EC3C3950064B9FA /* libtypeid-9e01b04c669d957a.rlib */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libtypeid-9e01b04c669d957a.rlib"; sourceTree = "<group>"; };
+		336118B32EC3C3950064B9FA /* libtypeid-9e01b04c669d957a.rmeta */ = {isa = PBXFileReference; lastKnownFileType = file; path = "libtypeid-9e01b04c669d957a.rmeta"; sourceTree = "<group>"; };
+		336118B42EC3C3950064B9FA /* libuuid-294345b46801fa57.rlib */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libuuid-294345b46801fa57.rlib"; sourceTree = "<group>"; };
+		336118B52EC3C3950064B9FA /* libuuid-294345b46801fa57.rmeta */ = {isa = PBXFileReference; lastKnownFileType = file; path = "libuuid-294345b46801fa57.rmeta"; sourceTree = "<group>"; };
+		336118B62EC3C3950064B9FA /* libzerocopy-6b7fae9fab01897a.rlib */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libzerocopy-6b7fae9fab01897a.rlib"; sourceTree = "<group>"; };
+		336118B72EC3C3950064B9FA /* libzerocopy-6b7fae9fab01897a.rmeta */ = {isa = PBXFileReference; lastKnownFileType = file; path = "libzerocopy-6b7fae9fab01897a.rmeta"; sourceTree = "<group>"; };
+		336118B82EC3C3950064B9FA /* memchr-66b10684c52b81b3.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = "memchr-66b10684c52b81b3.d"; sourceTree = "<group>"; };
+		336118B92EC3C3950064B9FA /* num_traits-2fe8aeff767fcf14.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = "num_traits-2fe8aeff767fcf14.d"; sourceTree = "<group>"; };
+		336118BA2EC3C3950064B9FA /* once_cell-57123ab505a7fc37.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = "once_cell-57123ab505a7fc37.d"; sourceTree = "<group>"; };
+		336118BB2EC3C3950064B9FA /* pin_project_lite-13f01817f76a5952.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = "pin_project_lite-13f01817f76a5952.d"; sourceTree = "<group>"; };
+		336118BC2EC3C3950064B9FA /* pin_utils-ee0cdb35ef4565b8.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = "pin_utils-ee0cdb35ef4565b8.d"; sourceTree = "<group>"; };
+		336118BD2EC3C3950064B9FA /* rusqlite-fa162f009feb2913.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = "rusqlite-fa162f009feb2913.d"; sourceTree = "<group>"; };
+		336118BE2EC3C3950064B9FA /* ryu-4c32a35f5af2941e.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = "ryu-4c32a35f5af2941e.d"; sourceTree = "<group>"; };
+		336118BF2EC3C3950064B9FA /* serde_core-17163cfc29eaa8b7.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = "serde_core-17163cfc29eaa8b7.d"; sourceTree = "<group>"; };
+		336118C02EC3C3950064B9FA /* serde_json-cc6f926238c9d2ff.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = "serde_json-cc6f926238c9d2ff.d"; sourceTree = "<group>"; };
+		336118C12EC3C3950064B9FA /* serde-aeb85b0d8c37fa05.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = "serde-aeb85b0d8c37fa05.d"; sourceTree = "<group>"; };
+		336118C22EC3C3950064B9FA /* shared.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = shared.d; sourceTree = "<group>"; };
+		336118C32EC3C3950064B9FA /* slab-a5cb04692ff20867.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = "slab-a5cb04692ff20867.d"; sourceTree = "<group>"; };
+		336118C42EC3C3950064B9FA /* smallvec-75844e597ae44980.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = "smallvec-75844e597ae44980.d"; sourceTree = "<group>"; };
+		336118C52EC3C3950064B9FA /* thiserror-76a1313566c75f42.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = "thiserror-76a1313566c75f42.d"; sourceTree = "<group>"; };
+		336118C62EC3C3950064B9FA /* typeid-9e01b04c669d957a.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = "typeid-9e01b04c669d957a.d"; sourceTree = "<group>"; };
+		336118C72EC3C3950064B9FA /* uuid-294345b46801fa57.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = "uuid-294345b46801fa57.d"; sourceTree = "<group>"; };
+		336118C82EC3C3950064B9FA /* zerocopy-6b7fae9fab01897a.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = "zerocopy-6b7fae9fab01897a.d"; sourceTree = "<group>"; };
+		336118CC2EC3C3950064B9FA /* .cargo-lock */ = {isa = PBXFileReference; lastKnownFileType = text; path = ".cargo-lock"; sourceTree = "<group>"; };
+		336118CD2EC3C3950064B9FA /* libshared.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libshared.a; sourceTree = "<group>"; };
+		336118CE2EC3C3950064B9FA /* libshared.d */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.dtrace; path = libshared.d; sourceTree = "<group>"; };
+		336118CF2EC3C3950064B9FA /* libshared.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libshared.dylib; sourceTree = "<group>"; };
+		336118D02EC3C3950064B9FA /* libshared.rlib */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libshared.rlib; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -78,6 +490,7 @@
 				335573E72EB2CB5B00E26543 /* Thiccc */,
 				335573F92EB2CB5C00E26543 /* ThicccTests */,
 				335574032EB2CB5C00E26543 /* ThicccUITests */,
+				336116D82EC3C3720064B9FA /* Frameworks */,
 				335573E62EB2CB5B00E26543 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -90,6 +503,1170 @@
 				335574002EB2CB5C00E26543 /* ThicccUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		336116D82EC3C3720064B9FA /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				336118D12EC3C3950064B9FA /* release */,
+				336116D92EC3C3720064B9FA /* libshared.a */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		336116DE2EC3C3950064B9FA /* ahash-6bc4ec167d994ac6 */ = {
+			isa = PBXGroup;
+			children = (
+				336116DA2EC3C3950064B9FA /* dep-lib-ahash */,
+				336116DB2EC3C3950064B9FA /* invoked.timestamp */,
+				336116DC2EC3C3950064B9FA /* lib-ahash */,
+				336116DD2EC3C3950064B9FA /* lib-ahash.json */,
+			);
+			path = "ahash-6bc4ec167d994ac6";
+			sourceTree = "<group>";
+		};
+		336116E12EC3C3950064B9FA /* ahash-7d123fad6f815943 */ = {
+			isa = PBXGroup;
+			children = (
+				336116DF2EC3C3950064B9FA /* run-build-script-build-script-build */,
+				336116E02EC3C3950064B9FA /* run-build-script-build-script-build.json */,
+			);
+			path = "ahash-7d123fad6f815943";
+			sourceTree = "<group>";
+		};
+		336116E62EC3C3950064B9FA /* anyhow-5e2dc711e2954336 */ = {
+			isa = PBXGroup;
+			children = (
+				336116E22EC3C3950064B9FA /* dep-lib-anyhow */,
+				336116E32EC3C3950064B9FA /* invoked.timestamp */,
+				336116E42EC3C3950064B9FA /* lib-anyhow */,
+				336116E52EC3C3950064B9FA /* lib-anyhow.json */,
+			);
+			path = "anyhow-5e2dc711e2954336";
+			sourceTree = "<group>";
+		};
+		336116E92EC3C3950064B9FA /* anyhow-ab84c8656414746b */ = {
+			isa = PBXGroup;
+			children = (
+				336116E72EC3C3950064B9FA /* run-build-script-build-script-build */,
+				336116E82EC3C3950064B9FA /* run-build-script-build-script-build.json */,
+			);
+			path = "anyhow-ab84c8656414746b";
+			sourceTree = "<group>";
+		};
+		336116EE2EC3C3950064B9FA /* bincode-9394566590185369 */ = {
+			isa = PBXGroup;
+			children = (
+				336116EA2EC3C3950064B9FA /* dep-lib-bincode */,
+				336116EB2EC3C3950064B9FA /* invoked.timestamp */,
+				336116EC2EC3C3950064B9FA /* lib-bincode */,
+				336116ED2EC3C3950064B9FA /* lib-bincode.json */,
+			);
+			path = "bincode-9394566590185369";
+			sourceTree = "<group>";
+		};
+		336116F32EC3C3950064B9FA /* bitflags-d136acaf03e572ec */ = {
+			isa = PBXGroup;
+			children = (
+				336116EF2EC3C3950064B9FA /* dep-lib-bitflags */,
+				336116F02EC3C3950064B9FA /* invoked.timestamp */,
+				336116F12EC3C3950064B9FA /* lib-bitflags */,
+				336116F22EC3C3950064B9FA /* lib-bitflags.json */,
+			);
+			path = "bitflags-d136acaf03e572ec";
+			sourceTree = "<group>";
+		};
+		336116F82EC3C3950064B9FA /* cfg-if-2fb806f2d344dbf2 */ = {
+			isa = PBXGroup;
+			children = (
+				336116F42EC3C3950064B9FA /* dep-lib-cfg_if */,
+				336116F52EC3C3950064B9FA /* invoked.timestamp */,
+				336116F62EC3C3950064B9FA /* lib-cfg_if */,
+				336116F72EC3C3950064B9FA /* lib-cfg_if.json */,
+			);
+			path = "cfg-if-2fb806f2d344dbf2";
+			sourceTree = "<group>";
+		};
+		336116FD2EC3C3950064B9FA /* chrono-703e85089f5f2088 */ = {
+			isa = PBXGroup;
+			children = (
+				336116F92EC3C3950064B9FA /* dep-lib-chrono */,
+				336116FA2EC3C3950064B9FA /* invoked.timestamp */,
+				336116FB2EC3C3950064B9FA /* lib-chrono */,
+				336116FC2EC3C3950064B9FA /* lib-chrono.json */,
+			);
+			path = "chrono-703e85089f5f2088";
+			sourceTree = "<group>";
+		};
+		336117022EC3C3950064B9FA /* core-foundation-sys-13154f8e27e09b87 */ = {
+			isa = PBXGroup;
+			children = (
+				336116FE2EC3C3950064B9FA /* dep-lib-core_foundation_sys */,
+				336116FF2EC3C3950064B9FA /* invoked.timestamp */,
+				336117002EC3C3950064B9FA /* lib-core_foundation_sys */,
+				336117012EC3C3950064B9FA /* lib-core_foundation_sys.json */,
+			);
+			path = "core-foundation-sys-13154f8e27e09b87";
+			sourceTree = "<group>";
+		};
+		336117072EC3C3950064B9FA /* crossbeam-channel-131751ea4fe9f0d8 */ = {
+			isa = PBXGroup;
+			children = (
+				336117032EC3C3950064B9FA /* dep-lib-crossbeam_channel */,
+				336117042EC3C3950064B9FA /* invoked.timestamp */,
+				336117052EC3C3950064B9FA /* lib-crossbeam_channel */,
+				336117062EC3C3950064B9FA /* lib-crossbeam_channel.json */,
+			);
+			path = "crossbeam-channel-131751ea4fe9f0d8";
+			sourceTree = "<group>";
+		};
+		3361170C2EC3C3950064B9FA /* crossbeam-utils-1a3323a04fa64acf */ = {
+			isa = PBXGroup;
+			children = (
+				336117082EC3C3950064B9FA /* dep-lib-crossbeam_utils */,
+				336117092EC3C3950064B9FA /* invoked.timestamp */,
+				3361170A2EC3C3950064B9FA /* lib-crossbeam_utils */,
+				3361170B2EC3C3950064B9FA /* lib-crossbeam_utils.json */,
+			);
+			path = "crossbeam-utils-1a3323a04fa64acf";
+			sourceTree = "<group>";
+		};
+		3361170F2EC3C3950064B9FA /* crossbeam-utils-c3fd10b1b086a645 */ = {
+			isa = PBXGroup;
+			children = (
+				3361170D2EC3C3950064B9FA /* run-build-script-build-script-build */,
+				3361170E2EC3C3950064B9FA /* run-build-script-build-script-build.json */,
+			);
+			path = "crossbeam-utils-c3fd10b1b086a645";
+			sourceTree = "<group>";
+		};
+		336117142EC3C3950064B9FA /* crux_core-47d3031aefa5cec5 */ = {
+			isa = PBXGroup;
+			children = (
+				336117102EC3C3950064B9FA /* dep-lib-crux_core */,
+				336117112EC3C3950064B9FA /* invoked.timestamp */,
+				336117122EC3C3950064B9FA /* lib-crux_core */,
+				336117132EC3C3950064B9FA /* lib-crux_core.json */,
+			);
+			path = "crux_core-47d3031aefa5cec5";
+			sourceTree = "<group>";
+		};
+		336117172EC3C3950064B9FA /* erased-serde-bbd5eb83dab4551e */ = {
+			isa = PBXGroup;
+			children = (
+				336117152EC3C3950064B9FA /* run-build-script-build-script-build */,
+				336117162EC3C3950064B9FA /* run-build-script-build-script-build.json */,
+			);
+			path = "erased-serde-bbd5eb83dab4551e";
+			sourceTree = "<group>";
+		};
+		3361171C2EC3C3950064B9FA /* erased-serde-dbafec08474258a4 */ = {
+			isa = PBXGroup;
+			children = (
+				336117182EC3C3950064B9FA /* dep-lib-erased_serde */,
+				336117192EC3C3950064B9FA /* invoked.timestamp */,
+				3361171A2EC3C3950064B9FA /* lib-erased_serde */,
+				3361171B2EC3C3950064B9FA /* lib-erased_serde.json */,
+			);
+			path = "erased-serde-dbafec08474258a4";
+			sourceTree = "<group>";
+		};
+		336117212EC3C3950064B9FA /* fallible-iterator-8493b8fd10643092 */ = {
+			isa = PBXGroup;
+			children = (
+				3361171D2EC3C3950064B9FA /* dep-lib-fallible_iterator */,
+				3361171E2EC3C3950064B9FA /* invoked.timestamp */,
+				3361171F2EC3C3950064B9FA /* lib-fallible_iterator */,
+				336117202EC3C3950064B9FA /* lib-fallible_iterator.json */,
+			);
+			path = "fallible-iterator-8493b8fd10643092";
+			sourceTree = "<group>";
+		};
+		336117262EC3C3950064B9FA /* fallible-streaming-iterator-1ffa832972c944b5 */ = {
+			isa = PBXGroup;
+			children = (
+				336117222EC3C3950064B9FA /* dep-lib-fallible_streaming_iterator */,
+				336117232EC3C3950064B9FA /* invoked.timestamp */,
+				336117242EC3C3950064B9FA /* lib-fallible_streaming_iterator */,
+				336117252EC3C3950064B9FA /* lib-fallible_streaming_iterator.json */,
+			);
+			path = "fallible-streaming-iterator-1ffa832972c944b5";
+			sourceTree = "<group>";
+		};
+		3361172B2EC3C3950064B9FA /* futures-2ca909a80c582da4 */ = {
+			isa = PBXGroup;
+			children = (
+				336117272EC3C3950064B9FA /* dep-lib-futures */,
+				336117282EC3C3950064B9FA /* invoked.timestamp */,
+				336117292EC3C3950064B9FA /* lib-futures */,
+				3361172A2EC3C3950064B9FA /* lib-futures.json */,
+			);
+			path = "futures-2ca909a80c582da4";
+			sourceTree = "<group>";
+		};
+		336117302EC3C3950064B9FA /* futures-channel-26b99dd824c6e212 */ = {
+			isa = PBXGroup;
+			children = (
+				3361172C2EC3C3950064B9FA /* dep-lib-futures_channel */,
+				3361172D2EC3C3950064B9FA /* invoked.timestamp */,
+				3361172E2EC3C3950064B9FA /* lib-futures_channel */,
+				3361172F2EC3C3950064B9FA /* lib-futures_channel.json */,
+			);
+			path = "futures-channel-26b99dd824c6e212";
+			sourceTree = "<group>";
+		};
+		336117352EC3C3950064B9FA /* futures-core-b651267e3d2f2652 */ = {
+			isa = PBXGroup;
+			children = (
+				336117312EC3C3950064B9FA /* dep-lib-futures_core */,
+				336117322EC3C3950064B9FA /* invoked.timestamp */,
+				336117332EC3C3950064B9FA /* lib-futures_core */,
+				336117342EC3C3950064B9FA /* lib-futures_core.json */,
+			);
+			path = "futures-core-b651267e3d2f2652";
+			sourceTree = "<group>";
+		};
+		3361173A2EC3C3950064B9FA /* futures-executor-c433ed6762d0d95f */ = {
+			isa = PBXGroup;
+			children = (
+				336117362EC3C3950064B9FA /* dep-lib-futures_executor */,
+				336117372EC3C3950064B9FA /* invoked.timestamp */,
+				336117382EC3C3950064B9FA /* lib-futures_executor */,
+				336117392EC3C3950064B9FA /* lib-futures_executor.json */,
+			);
+			path = "futures-executor-c433ed6762d0d95f";
+			sourceTree = "<group>";
+		};
+		3361173F2EC3C3950064B9FA /* futures-io-a60fbf65105bdd44 */ = {
+			isa = PBXGroup;
+			children = (
+				3361173B2EC3C3950064B9FA /* dep-lib-futures_io */,
+				3361173C2EC3C3950064B9FA /* invoked.timestamp */,
+				3361173D2EC3C3950064B9FA /* lib-futures_io */,
+				3361173E2EC3C3950064B9FA /* lib-futures_io.json */,
+			);
+			path = "futures-io-a60fbf65105bdd44";
+			sourceTree = "<group>";
+		};
+		336117442EC3C3950064B9FA /* futures-sink-0c227f901bcc006c */ = {
+			isa = PBXGroup;
+			children = (
+				336117402EC3C3950064B9FA /* dep-lib-futures_sink */,
+				336117412EC3C3950064B9FA /* invoked.timestamp */,
+				336117422EC3C3950064B9FA /* lib-futures_sink */,
+				336117432EC3C3950064B9FA /* lib-futures_sink.json */,
+			);
+			path = "futures-sink-0c227f901bcc006c";
+			sourceTree = "<group>";
+		};
+		336117492EC3C3950064B9FA /* futures-task-afa11825d13e5c7b */ = {
+			isa = PBXGroup;
+			children = (
+				336117452EC3C3950064B9FA /* dep-lib-futures_task */,
+				336117462EC3C3950064B9FA /* invoked.timestamp */,
+				336117472EC3C3950064B9FA /* lib-futures_task */,
+				336117482EC3C3950064B9FA /* lib-futures_task.json */,
+			);
+			path = "futures-task-afa11825d13e5c7b";
+			sourceTree = "<group>";
+		};
+		3361174E2EC3C3950064B9FA /* futures-util-763f34528ef6a485 */ = {
+			isa = PBXGroup;
+			children = (
+				3361174A2EC3C3950064B9FA /* dep-lib-futures_util */,
+				3361174B2EC3C3950064B9FA /* invoked.timestamp */,
+				3361174C2EC3C3950064B9FA /* lib-futures_util */,
+				3361174D2EC3C3950064B9FA /* lib-futures_util.json */,
+			);
+			path = "futures-util-763f34528ef6a485";
+			sourceTree = "<group>";
+		};
+		336117532EC3C3950064B9FA /* getrandom-7b49b312674e3555 */ = {
+			isa = PBXGroup;
+			children = (
+				3361174F2EC3C3950064B9FA /* dep-lib-getrandom */,
+				336117502EC3C3950064B9FA /* invoked.timestamp */,
+				336117512EC3C3950064B9FA /* lib-getrandom */,
+				336117522EC3C3950064B9FA /* lib-getrandom.json */,
+			);
+			path = "getrandom-7b49b312674e3555";
+			sourceTree = "<group>";
+		};
+		336117562EC3C3950064B9FA /* getrandom-e9a374725bf928af */ = {
+			isa = PBXGroup;
+			children = (
+				336117542EC3C3950064B9FA /* run-build-script-build-script-build */,
+				336117552EC3C3950064B9FA /* run-build-script-build-script-build.json */,
+			);
+			path = "getrandom-e9a374725bf928af";
+			sourceTree = "<group>";
+		};
+		3361175B2EC3C3950064B9FA /* hashbrown-5bf9dd9649f1fd21 */ = {
+			isa = PBXGroup;
+			children = (
+				336117572EC3C3950064B9FA /* dep-lib-hashbrown */,
+				336117582EC3C3950064B9FA /* invoked.timestamp */,
+				336117592EC3C3950064B9FA /* lib-hashbrown */,
+				3361175A2EC3C3950064B9FA /* lib-hashbrown.json */,
+			);
+			path = "hashbrown-5bf9dd9649f1fd21";
+			sourceTree = "<group>";
+		};
+		336117602EC3C3950064B9FA /* hashlink-b35dd45b3dc86aa4 */ = {
+			isa = PBXGroup;
+			children = (
+				3361175C2EC3C3950064B9FA /* dep-lib-hashlink */,
+				3361175D2EC3C3950064B9FA /* invoked.timestamp */,
+				3361175E2EC3C3950064B9FA /* lib-hashlink */,
+				3361175F2EC3C3950064B9FA /* lib-hashlink.json */,
+			);
+			path = "hashlink-b35dd45b3dc86aa4";
+			sourceTree = "<group>";
+		};
+		336117652EC3C3950064B9FA /* iana-time-zone-7b30ddf40315a07e */ = {
+			isa = PBXGroup;
+			children = (
+				336117612EC3C3950064B9FA /* dep-lib-iana_time_zone */,
+				336117622EC3C3950064B9FA /* invoked.timestamp */,
+				336117632EC3C3950064B9FA /* lib-iana_time_zone */,
+				336117642EC3C3950064B9FA /* lib-iana_time_zone.json */,
+			);
+			path = "iana-time-zone-7b30ddf40315a07e";
+			sourceTree = "<group>";
+		};
+		3361176A2EC3C3950064B9FA /* itoa-42c1573f868c5062 */ = {
+			isa = PBXGroup;
+			children = (
+				336117662EC3C3950064B9FA /* dep-lib-itoa */,
+				336117672EC3C3950064B9FA /* invoked.timestamp */,
+				336117682EC3C3950064B9FA /* lib-itoa */,
+				336117692EC3C3950064B9FA /* lib-itoa.json */,
+			);
+			path = "itoa-42c1573f868c5062";
+			sourceTree = "<group>";
+		};
+		3361176D2EC3C3950064B9FA /* libc-0388295c4a8ffe36 */ = {
+			isa = PBXGroup;
+			children = (
+				3361176B2EC3C3950064B9FA /* run-build-script-build-script-build */,
+				3361176C2EC3C3950064B9FA /* run-build-script-build-script-build.json */,
+			);
+			path = "libc-0388295c4a8ffe36";
+			sourceTree = "<group>";
+		};
+		336117722EC3C3950064B9FA /* libc-cf75d9adfc301c6b */ = {
+			isa = PBXGroup;
+			children = (
+				3361176E2EC3C3950064B9FA /* dep-lib-libc */,
+				3361176F2EC3C3950064B9FA /* invoked.timestamp */,
+				336117702EC3C3950064B9FA /* lib-libc */,
+				336117712EC3C3950064B9FA /* lib-libc.json */,
+			);
+			path = "libc-cf75d9adfc301c6b";
+			sourceTree = "<group>";
+		};
+		336117752EC3C3950064B9FA /* libsqlite3-sys-090b7d2a2680769b */ = {
+			isa = PBXGroup;
+			children = (
+				336117732EC3C3950064B9FA /* run-build-script-build-script-build */,
+				336117742EC3C3950064B9FA /* run-build-script-build-script-build.json */,
+			);
+			path = "libsqlite3-sys-090b7d2a2680769b";
+			sourceTree = "<group>";
+		};
+		3361177A2EC3C3950064B9FA /* libsqlite3-sys-d30b1288ff712d2b */ = {
+			isa = PBXGroup;
+			children = (
+				336117762EC3C3950064B9FA /* dep-lib-libsqlite3_sys */,
+				336117772EC3C3950064B9FA /* invoked.timestamp */,
+				336117782EC3C3950064B9FA /* lib-libsqlite3_sys */,
+				336117792EC3C3950064B9FA /* lib-libsqlite3_sys.json */,
+			);
+			path = "libsqlite3-sys-d30b1288ff712d2b";
+			sourceTree = "<group>";
+		};
+		3361177F2EC3C3950064B9FA /* memchr-66b10684c52b81b3 */ = {
+			isa = PBXGroup;
+			children = (
+				3361177B2EC3C3950064B9FA /* dep-lib-memchr */,
+				3361177C2EC3C3950064B9FA /* invoked.timestamp */,
+				3361177D2EC3C3950064B9FA /* lib-memchr */,
+				3361177E2EC3C3950064B9FA /* lib-memchr.json */,
+			);
+			path = "memchr-66b10684c52b81b3";
+			sourceTree = "<group>";
+		};
+		336117842EC3C3950064B9FA /* num-traits-2fe8aeff767fcf14 */ = {
+			isa = PBXGroup;
+			children = (
+				336117802EC3C3950064B9FA /* dep-lib-num_traits */,
+				336117812EC3C3950064B9FA /* invoked.timestamp */,
+				336117822EC3C3950064B9FA /* lib-num_traits */,
+				336117832EC3C3950064B9FA /* lib-num_traits.json */,
+			);
+			path = "num-traits-2fe8aeff767fcf14";
+			sourceTree = "<group>";
+		};
+		336117872EC3C3950064B9FA /* num-traits-7876111c659c4274 */ = {
+			isa = PBXGroup;
+			children = (
+				336117852EC3C3950064B9FA /* run-build-script-build-script-build */,
+				336117862EC3C3950064B9FA /* run-build-script-build-script-build.json */,
+			);
+			path = "num-traits-7876111c659c4274";
+			sourceTree = "<group>";
+		};
+		3361178C2EC3C3950064B9FA /* once_cell-57123ab505a7fc37 */ = {
+			isa = PBXGroup;
+			children = (
+				336117882EC3C3950064B9FA /* dep-lib-once_cell */,
+				336117892EC3C3950064B9FA /* invoked.timestamp */,
+				3361178A2EC3C3950064B9FA /* lib-once_cell */,
+				3361178B2EC3C3950064B9FA /* lib-once_cell.json */,
+			);
+			path = "once_cell-57123ab505a7fc37";
+			sourceTree = "<group>";
+		};
+		336117912EC3C3950064B9FA /* pin-project-lite-13f01817f76a5952 */ = {
+			isa = PBXGroup;
+			children = (
+				3361178D2EC3C3950064B9FA /* dep-lib-pin_project_lite */,
+				3361178E2EC3C3950064B9FA /* invoked.timestamp */,
+				3361178F2EC3C3950064B9FA /* lib-pin_project_lite */,
+				336117902EC3C3950064B9FA /* lib-pin_project_lite.json */,
+			);
+			path = "pin-project-lite-13f01817f76a5952";
+			sourceTree = "<group>";
+		};
+		336117962EC3C3950064B9FA /* pin-utils-ee0cdb35ef4565b8 */ = {
+			isa = PBXGroup;
+			children = (
+				336117922EC3C3950064B9FA /* dep-lib-pin_utils */,
+				336117932EC3C3950064B9FA /* invoked.timestamp */,
+				336117942EC3C3950064B9FA /* lib-pin_utils */,
+				336117952EC3C3950064B9FA /* lib-pin_utils.json */,
+			);
+			path = "pin-utils-ee0cdb35ef4565b8";
+			sourceTree = "<group>";
+		};
+		3361179B2EC3C3950064B9FA /* rusqlite-fa162f009feb2913 */ = {
+			isa = PBXGroup;
+			children = (
+				336117972EC3C3950064B9FA /* dep-lib-rusqlite */,
+				336117982EC3C3950064B9FA /* invoked.timestamp */,
+				336117992EC3C3950064B9FA /* lib-rusqlite */,
+				3361179A2EC3C3950064B9FA /* lib-rusqlite.json */,
+			);
+			path = "rusqlite-fa162f009feb2913";
+			sourceTree = "<group>";
+		};
+		336117A02EC3C3950064B9FA /* ryu-4c32a35f5af2941e */ = {
+			isa = PBXGroup;
+			children = (
+				3361179C2EC3C3950064B9FA /* dep-lib-ryu */,
+				3361179D2EC3C3950064B9FA /* invoked.timestamp */,
+				3361179E2EC3C3950064B9FA /* lib-ryu */,
+				3361179F2EC3C3950064B9FA /* lib-ryu.json */,
+			);
+			path = "ryu-4c32a35f5af2941e";
+			sourceTree = "<group>";
+		};
+		336117A32EC3C3950064B9FA /* serde_core-892fd6674f6d0a45 */ = {
+			isa = PBXGroup;
+			children = (
+				336117A12EC3C3950064B9FA /* run-build-script-build-script-build */,
+				336117A22EC3C3950064B9FA /* run-build-script-build-script-build.json */,
+			);
+			path = "serde_core-892fd6674f6d0a45";
+			sourceTree = "<group>";
+		};
+		336117A82EC3C3950064B9FA /* serde_core-17163cfc29eaa8b7 */ = {
+			isa = PBXGroup;
+			children = (
+				336117A42EC3C3950064B9FA /* dep-lib-serde_core */,
+				336117A52EC3C3950064B9FA /* invoked.timestamp */,
+				336117A62EC3C3950064B9FA /* lib-serde_core */,
+				336117A72EC3C3950064B9FA /* lib-serde_core.json */,
+			);
+			path = "serde_core-17163cfc29eaa8b7";
+			sourceTree = "<group>";
+		};
+		336117AD2EC3C3950064B9FA /* serde_json-cc6f926238c9d2ff */ = {
+			isa = PBXGroup;
+			children = (
+				336117A92EC3C3950064B9FA /* dep-lib-serde_json */,
+				336117AA2EC3C3950064B9FA /* invoked.timestamp */,
+				336117AB2EC3C3950064B9FA /* lib-serde_json */,
+				336117AC2EC3C3950064B9FA /* lib-serde_json.json */,
+			);
+			path = "serde_json-cc6f926238c9d2ff";
+			sourceTree = "<group>";
+		};
+		336117B02EC3C3950064B9FA /* serde_json-d31d922ee82df5d4 */ = {
+			isa = PBXGroup;
+			children = (
+				336117AE2EC3C3950064B9FA /* run-build-script-build-script-build */,
+				336117AF2EC3C3950064B9FA /* run-build-script-build-script-build.json */,
+			);
+			path = "serde_json-d31d922ee82df5d4";
+			sourceTree = "<group>";
+		};
+		336117B32EC3C3950064B9FA /* serde-8909ec9d72000dfd */ = {
+			isa = PBXGroup;
+			children = (
+				336117B12EC3C3950064B9FA /* run-build-script-build-script-build */,
+				336117B22EC3C3950064B9FA /* run-build-script-build-script-build.json */,
+			);
+			path = "serde-8909ec9d72000dfd";
+			sourceTree = "<group>";
+		};
+		336117B82EC3C3950064B9FA /* serde-aeb85b0d8c37fa05 */ = {
+			isa = PBXGroup;
+			children = (
+				336117B42EC3C3950064B9FA /* dep-lib-serde */,
+				336117B52EC3C3950064B9FA /* invoked.timestamp */,
+				336117B62EC3C3950064B9FA /* lib-serde */,
+				336117B72EC3C3950064B9FA /* lib-serde.json */,
+			);
+			path = "serde-aeb85b0d8c37fa05";
+			sourceTree = "<group>";
+		};
+		336117BE2EC3C3950064B9FA /* shared-848d767e1456813e */ = {
+			isa = PBXGroup;
+			children = (
+				336117B92EC3C3950064B9FA /* dep-lib-shared */,
+				336117BA2EC3C3950064B9FA /* invoked.timestamp */,
+				336117BB2EC3C3950064B9FA /* lib-shared */,
+				336117BC2EC3C3950064B9FA /* lib-shared.json */,
+				336117BD2EC3C3950064B9FA /* output-lib-shared */,
+			);
+			path = "shared-848d767e1456813e";
+			sourceTree = "<group>";
+		};
+		336117C32EC3C3950064B9FA /* slab-a5cb04692ff20867 */ = {
+			isa = PBXGroup;
+			children = (
+				336117BF2EC3C3950064B9FA /* dep-lib-slab */,
+				336117C02EC3C3950064B9FA /* invoked.timestamp */,
+				336117C12EC3C3950064B9FA /* lib-slab */,
+				336117C22EC3C3950064B9FA /* lib-slab.json */,
+			);
+			path = "slab-a5cb04692ff20867";
+			sourceTree = "<group>";
+		};
+		336117C82EC3C3950064B9FA /* smallvec-75844e597ae44980 */ = {
+			isa = PBXGroup;
+			children = (
+				336117C42EC3C3950064B9FA /* dep-lib-smallvec */,
+				336117C52EC3C3950064B9FA /* invoked.timestamp */,
+				336117C62EC3C3950064B9FA /* lib-smallvec */,
+				336117C72EC3C3950064B9FA /* lib-smallvec.json */,
+			);
+			path = "smallvec-75844e597ae44980";
+			sourceTree = "<group>";
+		};
+		336117CB2EC3C3950064B9FA /* thiserror-6abf5a42a30ed29a */ = {
+			isa = PBXGroup;
+			children = (
+				336117C92EC3C3950064B9FA /* run-build-script-build-script-build */,
+				336117CA2EC3C3950064B9FA /* run-build-script-build-script-build.json */,
+			);
+			path = "thiserror-6abf5a42a30ed29a";
+			sourceTree = "<group>";
+		};
+		336117D02EC3C3950064B9FA /* thiserror-76a1313566c75f42 */ = {
+			isa = PBXGroup;
+			children = (
+				336117CC2EC3C3950064B9FA /* dep-lib-thiserror */,
+				336117CD2EC3C3950064B9FA /* invoked.timestamp */,
+				336117CE2EC3C3950064B9FA /* lib-thiserror */,
+				336117CF2EC3C3950064B9FA /* lib-thiserror.json */,
+			);
+			path = "thiserror-76a1313566c75f42";
+			sourceTree = "<group>";
+		};
+		336117D52EC3C3950064B9FA /* typeid-9e01b04c669d957a */ = {
+			isa = PBXGroup;
+			children = (
+				336117D12EC3C3950064B9FA /* dep-lib-typeid */,
+				336117D22EC3C3950064B9FA /* invoked.timestamp */,
+				336117D32EC3C3950064B9FA /* lib-typeid */,
+				336117D42EC3C3950064B9FA /* lib-typeid.json */,
+			);
+			path = "typeid-9e01b04c669d957a";
+			sourceTree = "<group>";
+		};
+		336117D82EC3C3950064B9FA /* typeid-300a18a12bade944 */ = {
+			isa = PBXGroup;
+			children = (
+				336117D62EC3C3950064B9FA /* run-build-script-build-script-build */,
+				336117D72EC3C3950064B9FA /* run-build-script-build-script-build.json */,
+			);
+			path = "typeid-300a18a12bade944";
+			sourceTree = "<group>";
+		};
+		336117DD2EC3C3950064B9FA /* uuid-294345b46801fa57 */ = {
+			isa = PBXGroup;
+			children = (
+				336117D92EC3C3950064B9FA /* dep-lib-uuid */,
+				336117DA2EC3C3950064B9FA /* invoked.timestamp */,
+				336117DB2EC3C3950064B9FA /* lib-uuid */,
+				336117DC2EC3C3950064B9FA /* lib-uuid.json */,
+			);
+			path = "uuid-294345b46801fa57";
+			sourceTree = "<group>";
+		};
+		336117E22EC3C3950064B9FA /* zerocopy-6b7fae9fab01897a */ = {
+			isa = PBXGroup;
+			children = (
+				336117DE2EC3C3950064B9FA /* dep-lib-zerocopy */,
+				336117DF2EC3C3950064B9FA /* invoked.timestamp */,
+				336117E02EC3C3950064B9FA /* lib-zerocopy */,
+				336117E12EC3C3950064B9FA /* lib-zerocopy.json */,
+			);
+			path = "zerocopy-6b7fae9fab01897a";
+			sourceTree = "<group>";
+		};
+		336117E52EC3C3950064B9FA /* zerocopy-a45fd57f6124306d */ = {
+			isa = PBXGroup;
+			children = (
+				336117E32EC3C3950064B9FA /* run-build-script-build-script-build */,
+				336117E42EC3C3950064B9FA /* run-build-script-build-script-build.json */,
+			);
+			path = "zerocopy-a45fd57f6124306d";
+			sourceTree = "<group>";
+		};
+		336117E62EC3C3950064B9FA /* .fingerprint */ = {
+			isa = PBXGroup;
+			children = (
+				336116DE2EC3C3950064B9FA /* ahash-6bc4ec167d994ac6 */,
+				336116E12EC3C3950064B9FA /* ahash-7d123fad6f815943 */,
+				336116E62EC3C3950064B9FA /* anyhow-5e2dc711e2954336 */,
+				336116E92EC3C3950064B9FA /* anyhow-ab84c8656414746b */,
+				336116EE2EC3C3950064B9FA /* bincode-9394566590185369 */,
+				336116F32EC3C3950064B9FA /* bitflags-d136acaf03e572ec */,
+				336116F82EC3C3950064B9FA /* cfg-if-2fb806f2d344dbf2 */,
+				336116FD2EC3C3950064B9FA /* chrono-703e85089f5f2088 */,
+				336117022EC3C3950064B9FA /* core-foundation-sys-13154f8e27e09b87 */,
+				336117072EC3C3950064B9FA /* crossbeam-channel-131751ea4fe9f0d8 */,
+				3361170C2EC3C3950064B9FA /* crossbeam-utils-1a3323a04fa64acf */,
+				3361170F2EC3C3950064B9FA /* crossbeam-utils-c3fd10b1b086a645 */,
+				336117142EC3C3950064B9FA /* crux_core-47d3031aefa5cec5 */,
+				336117172EC3C3950064B9FA /* erased-serde-bbd5eb83dab4551e */,
+				3361171C2EC3C3950064B9FA /* erased-serde-dbafec08474258a4 */,
+				336117212EC3C3950064B9FA /* fallible-iterator-8493b8fd10643092 */,
+				336117262EC3C3950064B9FA /* fallible-streaming-iterator-1ffa832972c944b5 */,
+				3361172B2EC3C3950064B9FA /* futures-2ca909a80c582da4 */,
+				336117302EC3C3950064B9FA /* futures-channel-26b99dd824c6e212 */,
+				336117352EC3C3950064B9FA /* futures-core-b651267e3d2f2652 */,
+				3361173A2EC3C3950064B9FA /* futures-executor-c433ed6762d0d95f */,
+				3361173F2EC3C3950064B9FA /* futures-io-a60fbf65105bdd44 */,
+				336117442EC3C3950064B9FA /* futures-sink-0c227f901bcc006c */,
+				336117492EC3C3950064B9FA /* futures-task-afa11825d13e5c7b */,
+				3361174E2EC3C3950064B9FA /* futures-util-763f34528ef6a485 */,
+				336117532EC3C3950064B9FA /* getrandom-7b49b312674e3555 */,
+				336117562EC3C3950064B9FA /* getrandom-e9a374725bf928af */,
+				3361175B2EC3C3950064B9FA /* hashbrown-5bf9dd9649f1fd21 */,
+				336117602EC3C3950064B9FA /* hashlink-b35dd45b3dc86aa4 */,
+				336117652EC3C3950064B9FA /* iana-time-zone-7b30ddf40315a07e */,
+				3361176A2EC3C3950064B9FA /* itoa-42c1573f868c5062 */,
+				3361176D2EC3C3950064B9FA /* libc-0388295c4a8ffe36 */,
+				336117722EC3C3950064B9FA /* libc-cf75d9adfc301c6b */,
+				336117752EC3C3950064B9FA /* libsqlite3-sys-090b7d2a2680769b */,
+				3361177A2EC3C3950064B9FA /* libsqlite3-sys-d30b1288ff712d2b */,
+				3361177F2EC3C3950064B9FA /* memchr-66b10684c52b81b3 */,
+				336117842EC3C3950064B9FA /* num-traits-2fe8aeff767fcf14 */,
+				336117872EC3C3950064B9FA /* num-traits-7876111c659c4274 */,
+				3361178C2EC3C3950064B9FA /* once_cell-57123ab505a7fc37 */,
+				336117912EC3C3950064B9FA /* pin-project-lite-13f01817f76a5952 */,
+				336117962EC3C3950064B9FA /* pin-utils-ee0cdb35ef4565b8 */,
+				3361179B2EC3C3950064B9FA /* rusqlite-fa162f009feb2913 */,
+				336117A02EC3C3950064B9FA /* ryu-4c32a35f5af2941e */,
+				336117A32EC3C3950064B9FA /* serde_core-892fd6674f6d0a45 */,
+				336117A82EC3C3950064B9FA /* serde_core-17163cfc29eaa8b7 */,
+				336117AD2EC3C3950064B9FA /* serde_json-cc6f926238c9d2ff */,
+				336117B02EC3C3950064B9FA /* serde_json-d31d922ee82df5d4 */,
+				336117B32EC3C3950064B9FA /* serde-8909ec9d72000dfd */,
+				336117B82EC3C3950064B9FA /* serde-aeb85b0d8c37fa05 */,
+				336117BE2EC3C3950064B9FA /* shared-848d767e1456813e */,
+				336117C32EC3C3950064B9FA /* slab-a5cb04692ff20867 */,
+				336117C82EC3C3950064B9FA /* smallvec-75844e597ae44980 */,
+				336117CB2EC3C3950064B9FA /* thiserror-6abf5a42a30ed29a */,
+				336117D02EC3C3950064B9FA /* thiserror-76a1313566c75f42 */,
+				336117D52EC3C3950064B9FA /* typeid-9e01b04c669d957a */,
+				336117D82EC3C3950064B9FA /* typeid-300a18a12bade944 */,
+				336117DD2EC3C3950064B9FA /* uuid-294345b46801fa57 */,
+				336117E22EC3C3950064B9FA /* zerocopy-6b7fae9fab01897a */,
+				336117E52EC3C3950064B9FA /* zerocopy-a45fd57f6124306d */,
+			);
+			path = .fingerprint;
+			sourceTree = "<group>";
+		};
+		336117E72EC3C3950064B9FA /* out */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = out;
+			sourceTree = "<group>";
+		};
+		336117EC2EC3C3950064B9FA /* ahash-7d123fad6f815943 */ = {
+			isa = PBXGroup;
+			children = (
+				336117E72EC3C3950064B9FA /* out */,
+				336117E82EC3C3950064B9FA /* invoked.timestamp */,
+				336117E92EC3C3950064B9FA /* output */,
+				336117EA2EC3C3950064B9FA /* root-output */,
+				336117EB2EC3C3950064B9FA /* stderr */,
+			);
+			path = "ahash-7d123fad6f815943";
+			sourceTree = "<group>";
+		};
+		336117ED2EC3C3950064B9FA /* out */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = out;
+			sourceTree = "<group>";
+		};
+		336117F22EC3C3950064B9FA /* anyhow-ab84c8656414746b */ = {
+			isa = PBXGroup;
+			children = (
+				336117ED2EC3C3950064B9FA /* out */,
+				336117EE2EC3C3950064B9FA /* invoked.timestamp */,
+				336117EF2EC3C3950064B9FA /* output */,
+				336117F02EC3C3950064B9FA /* root-output */,
+				336117F12EC3C3950064B9FA /* stderr */,
+			);
+			path = "anyhow-ab84c8656414746b";
+			sourceTree = "<group>";
+		};
+		336117F32EC3C3950064B9FA /* out */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = out;
+			sourceTree = "<group>";
+		};
+		336117F82EC3C3950064B9FA /* crossbeam-utils-c3fd10b1b086a645 */ = {
+			isa = PBXGroup;
+			children = (
+				336117F32EC3C3950064B9FA /* out */,
+				336117F42EC3C3950064B9FA /* invoked.timestamp */,
+				336117F52EC3C3950064B9FA /* output */,
+				336117F62EC3C3950064B9FA /* root-output */,
+				336117F72EC3C3950064B9FA /* stderr */,
+			);
+			path = "crossbeam-utils-c3fd10b1b086a645";
+			sourceTree = "<group>";
+		};
+		336117F92EC3C3950064B9FA /* out */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = out;
+			sourceTree = "<group>";
+		};
+		336117FE2EC3C3950064B9FA /* erased-serde-bbd5eb83dab4551e */ = {
+			isa = PBXGroup;
+			children = (
+				336117F92EC3C3950064B9FA /* out */,
+				336117FA2EC3C3950064B9FA /* invoked.timestamp */,
+				336117FB2EC3C3950064B9FA /* output */,
+				336117FC2EC3C3950064B9FA /* root-output */,
+				336117FD2EC3C3950064B9FA /* stderr */,
+			);
+			path = "erased-serde-bbd5eb83dab4551e";
+			sourceTree = "<group>";
+		};
+		336117FF2EC3C3950064B9FA /* out */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = out;
+			sourceTree = "<group>";
+		};
+		336118042EC3C3950064B9FA /* getrandom-e9a374725bf928af */ = {
+			isa = PBXGroup;
+			children = (
+				336117FF2EC3C3950064B9FA /* out */,
+				336118002EC3C3950064B9FA /* invoked.timestamp */,
+				336118012EC3C3950064B9FA /* output */,
+				336118022EC3C3950064B9FA /* root-output */,
+				336118032EC3C3950064B9FA /* stderr */,
+			);
+			path = "getrandom-e9a374725bf928af";
+			sourceTree = "<group>";
+		};
+		336118052EC3C3950064B9FA /* out */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = out;
+			sourceTree = "<group>";
+		};
+		3361180A2EC3C3950064B9FA /* libc-0388295c4a8ffe36 */ = {
+			isa = PBXGroup;
+			children = (
+				336118052EC3C3950064B9FA /* out */,
+				336118062EC3C3950064B9FA /* invoked.timestamp */,
+				336118072EC3C3950064B9FA /* output */,
+				336118082EC3C3950064B9FA /* root-output */,
+				336118092EC3C3950064B9FA /* stderr */,
+			);
+			path = "libc-0388295c4a8ffe36";
+			sourceTree = "<group>";
+		};
+		3361180E2EC3C3950064B9FA /* out */ = {
+			isa = PBXGroup;
+			children = (
+				3361180B2EC3C3950064B9FA /* bindgen.rs */,
+				3361180C2EC3C3950064B9FA /* c877a2978823c39d-sqlite3.o */,
+				3361180D2EC3C3950064B9FA /* libsqlite3.a */,
+			);
+			path = out;
+			sourceTree = "<group>";
+		};
+		336118132EC3C3950064B9FA /* libsqlite3-sys-090b7d2a2680769b */ = {
+			isa = PBXGroup;
+			children = (
+				3361180E2EC3C3950064B9FA /* out */,
+				3361180F2EC3C3950064B9FA /* invoked.timestamp */,
+				336118102EC3C3950064B9FA /* output */,
+				336118112EC3C3950064B9FA /* root-output */,
+				336118122EC3C3950064B9FA /* stderr */,
+			);
+			path = "libsqlite3-sys-090b7d2a2680769b";
+			sourceTree = "<group>";
+		};
+		336118142EC3C3950064B9FA /* out */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = out;
+			sourceTree = "<group>";
+		};
+		336118192EC3C3950064B9FA /* num-traits-7876111c659c4274 */ = {
+			isa = PBXGroup;
+			children = (
+				336118142EC3C3950064B9FA /* out */,
+				336118152EC3C3950064B9FA /* invoked.timestamp */,
+				336118162EC3C3950064B9FA /* output */,
+				336118172EC3C3950064B9FA /* root-output */,
+				336118182EC3C3950064B9FA /* stderr */,
+			);
+			path = "num-traits-7876111c659c4274";
+			sourceTree = "<group>";
+		};
+		3361181B2EC3C3950064B9FA /* out */ = {
+			isa = PBXGroup;
+			children = (
+				3361181A2EC3C3950064B9FA /* private.rs */,
+			);
+			path = out;
+			sourceTree = "<group>";
+		};
+		336118202EC3C3950064B9FA /* serde_core-892fd6674f6d0a45 */ = {
+			isa = PBXGroup;
+			children = (
+				3361181B2EC3C3950064B9FA /* out */,
+				3361181C2EC3C3950064B9FA /* invoked.timestamp */,
+				3361181D2EC3C3950064B9FA /* output */,
+				3361181E2EC3C3950064B9FA /* root-output */,
+				3361181F2EC3C3950064B9FA /* stderr */,
+			);
+			path = "serde_core-892fd6674f6d0a45";
+			sourceTree = "<group>";
+		};
+		336118212EC3C3950064B9FA /* out */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = out;
+			sourceTree = "<group>";
+		};
+		336118262EC3C3950064B9FA /* serde_json-d31d922ee82df5d4 */ = {
+			isa = PBXGroup;
+			children = (
+				336118212EC3C3950064B9FA /* out */,
+				336118222EC3C3950064B9FA /* invoked.timestamp */,
+				336118232EC3C3950064B9FA /* output */,
+				336118242EC3C3950064B9FA /* root-output */,
+				336118252EC3C3950064B9FA /* stderr */,
+			);
+			path = "serde_json-d31d922ee82df5d4";
+			sourceTree = "<group>";
+		};
+		336118282EC3C3950064B9FA /* out */ = {
+			isa = PBXGroup;
+			children = (
+				336118272EC3C3950064B9FA /* private.rs */,
+			);
+			path = out;
+			sourceTree = "<group>";
+		};
+		3361182D2EC3C3950064B9FA /* serde-8909ec9d72000dfd */ = {
+			isa = PBXGroup;
+			children = (
+				336118282EC3C3950064B9FA /* out */,
+				336118292EC3C3950064B9FA /* invoked.timestamp */,
+				3361182A2EC3C3950064B9FA /* output */,
+				3361182B2EC3C3950064B9FA /* root-output */,
+				3361182C2EC3C3950064B9FA /* stderr */,
+			);
+			path = "serde-8909ec9d72000dfd";
+			sourceTree = "<group>";
+		};
+		3361182E2EC3C3950064B9FA /* out */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = out;
+			sourceTree = "<group>";
+		};
+		336118332EC3C3950064B9FA /* thiserror-6abf5a42a30ed29a */ = {
+			isa = PBXGroup;
+			children = (
+				3361182E2EC3C3950064B9FA /* out */,
+				3361182F2EC3C3950064B9FA /* invoked.timestamp */,
+				336118302EC3C3950064B9FA /* output */,
+				336118312EC3C3950064B9FA /* root-output */,
+				336118322EC3C3950064B9FA /* stderr */,
+			);
+			path = "thiserror-6abf5a42a30ed29a";
+			sourceTree = "<group>";
+		};
+		336118342EC3C3950064B9FA /* out */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = out;
+			sourceTree = "<group>";
+		};
+		336118392EC3C3950064B9FA /* typeid-300a18a12bade944 */ = {
+			isa = PBXGroup;
+			children = (
+				336118342EC3C3950064B9FA /* out */,
+				336118352EC3C3950064B9FA /* invoked.timestamp */,
+				336118362EC3C3950064B9FA /* output */,
+				336118372EC3C3950064B9FA /* root-output */,
+				336118382EC3C3950064B9FA /* stderr */,
+			);
+			path = "typeid-300a18a12bade944";
+			sourceTree = "<group>";
+		};
+		3361183A2EC3C3950064B9FA /* out */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = out;
+			sourceTree = "<group>";
+		};
+		3361183F2EC3C3950064B9FA /* zerocopy-a45fd57f6124306d */ = {
+			isa = PBXGroup;
+			children = (
+				3361183A2EC3C3950064B9FA /* out */,
+				3361183B2EC3C3950064B9FA /* invoked.timestamp */,
+				3361183C2EC3C3950064B9FA /* output */,
+				3361183D2EC3C3950064B9FA /* root-output */,
+				3361183E2EC3C3950064B9FA /* stderr */,
+			);
+			path = "zerocopy-a45fd57f6124306d";
+			sourceTree = "<group>";
+		};
+		336118402EC3C3950064B9FA /* build */ = {
+			isa = PBXGroup;
+			children = (
+				336117EC2EC3C3950064B9FA /* ahash-7d123fad6f815943 */,
+				336117F22EC3C3950064B9FA /* anyhow-ab84c8656414746b */,
+				336117F82EC3C3950064B9FA /* crossbeam-utils-c3fd10b1b086a645 */,
+				336117FE2EC3C3950064B9FA /* erased-serde-bbd5eb83dab4551e */,
+				336118042EC3C3950064B9FA /* getrandom-e9a374725bf928af */,
+				3361180A2EC3C3950064B9FA /* libc-0388295c4a8ffe36 */,
+				336118132EC3C3950064B9FA /* libsqlite3-sys-090b7d2a2680769b */,
+				336118192EC3C3950064B9FA /* num-traits-7876111c659c4274 */,
+				336118202EC3C3950064B9FA /* serde_core-892fd6674f6d0a45 */,
+				336118262EC3C3950064B9FA /* serde_json-d31d922ee82df5d4 */,
+				3361182D2EC3C3950064B9FA /* serde-8909ec9d72000dfd */,
+				336118332EC3C3950064B9FA /* thiserror-6abf5a42a30ed29a */,
+				336118392EC3C3950064B9FA /* typeid-300a18a12bade944 */,
+				3361183F2EC3C3950064B9FA /* zerocopy-a45fd57f6124306d */,
+			);
+			path = build;
+			sourceTree = "<group>";
+		};
+		336118C92EC3C3950064B9FA /* deps */ = {
+			isa = PBXGroup;
+			children = (
+				336118412EC3C3950064B9FA /* ahash-6bc4ec167d994ac6.d */,
+				336118422EC3C3950064B9FA /* anyhow-5e2dc711e2954336.d */,
+				336118432EC3C3950064B9FA /* bincode-9394566590185369.d */,
+				336118442EC3C3950064B9FA /* bitflags-d136acaf03e572ec.d */,
+				336118452EC3C3950064B9FA /* cfg_if-2fb806f2d344dbf2.d */,
+				336118462EC3C3950064B9FA /* chrono-703e85089f5f2088.d */,
+				336118472EC3C3950064B9FA /* core_foundation_sys-13154f8e27e09b87.d */,
+				336118482EC3C3950064B9FA /* crossbeam_channel-131751ea4fe9f0d8.d */,
+				336118492EC3C3950064B9FA /* crossbeam_utils-1a3323a04fa64acf.d */,
+				3361184A2EC3C3950064B9FA /* crux_core-47d3031aefa5cec5.d */,
+				3361184B2EC3C3950064B9FA /* erased_serde-dbafec08474258a4.d */,
+				3361184C2EC3C3950064B9FA /* fallible_iterator-8493b8fd10643092.d */,
+				3361184D2EC3C3950064B9FA /* fallible_streaming_iterator-1ffa832972c944b5.d */,
+				3361184E2EC3C3950064B9FA /* futures_channel-26b99dd824c6e212.d */,
+				3361184F2EC3C3950064B9FA /* futures_core-b651267e3d2f2652.d */,
+				336118502EC3C3950064B9FA /* futures_executor-c433ed6762d0d95f.d */,
+				336118512EC3C3950064B9FA /* futures_io-a60fbf65105bdd44.d */,
+				336118522EC3C3950064B9FA /* futures_sink-0c227f901bcc006c.d */,
+				336118532EC3C3950064B9FA /* futures_task-afa11825d13e5c7b.d */,
+				336118542EC3C3950064B9FA /* futures_util-763f34528ef6a485.d */,
+				336118552EC3C3950064B9FA /* futures-2ca909a80c582da4.d */,
+				336118562EC3C3950064B9FA /* getrandom-7b49b312674e3555.d */,
+				336118572EC3C3950064B9FA /* hashbrown-5bf9dd9649f1fd21.d */,
+				336118582EC3C3950064B9FA /* hashlink-b35dd45b3dc86aa4.d */,
+				336118592EC3C3950064B9FA /* iana_time_zone-7b30ddf40315a07e.d */,
+				3361185A2EC3C3950064B9FA /* itoa-42c1573f868c5062.d */,
+				3361185B2EC3C3950064B9FA /* libahash-6bc4ec167d994ac6.rlib */,
+				3361185C2EC3C3950064B9FA /* libahash-6bc4ec167d994ac6.rmeta */,
+				3361185D2EC3C3950064B9FA /* libanyhow-5e2dc711e2954336.rlib */,
+				3361185E2EC3C3950064B9FA /* libanyhow-5e2dc711e2954336.rmeta */,
+				3361185F2EC3C3950064B9FA /* libbincode-9394566590185369.rlib */,
+				336118602EC3C3950064B9FA /* libbincode-9394566590185369.rmeta */,
+				336118612EC3C3950064B9FA /* libbitflags-d136acaf03e572ec.rlib */,
+				336118622EC3C3950064B9FA /* libbitflags-d136acaf03e572ec.rmeta */,
+				336118632EC3C3950064B9FA /* libc-cf75d9adfc301c6b.d */,
+				336118642EC3C3950064B9FA /* libcfg_if-2fb806f2d344dbf2.rlib */,
+				336118652EC3C3950064B9FA /* libcfg_if-2fb806f2d344dbf2.rmeta */,
+				336118662EC3C3950064B9FA /* libchrono-703e85089f5f2088.rlib */,
+				336118672EC3C3950064B9FA /* libchrono-703e85089f5f2088.rmeta */,
+				336118682EC3C3950064B9FA /* libcore_foundation_sys-13154f8e27e09b87.rlib */,
+				336118692EC3C3950064B9FA /* libcore_foundation_sys-13154f8e27e09b87.rmeta */,
+				3361186A2EC3C3950064B9FA /* libcrossbeam_channel-131751ea4fe9f0d8.rlib */,
+				3361186B2EC3C3950064B9FA /* libcrossbeam_channel-131751ea4fe9f0d8.rmeta */,
+				3361186C2EC3C3950064B9FA /* libcrossbeam_utils-1a3323a04fa64acf.rlib */,
+				3361186D2EC3C3950064B9FA /* libcrossbeam_utils-1a3323a04fa64acf.rmeta */,
+				3361186E2EC3C3950064B9FA /* libcrux_core-47d3031aefa5cec5.rlib */,
+				3361186F2EC3C3950064B9FA /* libcrux_core-47d3031aefa5cec5.rmeta */,
+				336118702EC3C3950064B9FA /* liberased_serde-dbafec08474258a4.rlib */,
+				336118712EC3C3950064B9FA /* liberased_serde-dbafec08474258a4.rmeta */,
+				336118722EC3C3950064B9FA /* libfallible_iterator-8493b8fd10643092.rlib */,
+				336118732EC3C3950064B9FA /* libfallible_iterator-8493b8fd10643092.rmeta */,
+				336118742EC3C3950064B9FA /* libfallible_streaming_iterator-1ffa832972c944b5.rlib */,
+				336118752EC3C3950064B9FA /* libfallible_streaming_iterator-1ffa832972c944b5.rmeta */,
+				336118762EC3C3950064B9FA /* libfutures_channel-26b99dd824c6e212.rlib */,
+				336118772EC3C3950064B9FA /* libfutures_channel-26b99dd824c6e212.rmeta */,
+				336118782EC3C3950064B9FA /* libfutures_core-b651267e3d2f2652.rlib */,
+				336118792EC3C3950064B9FA /* libfutures_core-b651267e3d2f2652.rmeta */,
+				3361187A2EC3C3950064B9FA /* libfutures_executor-c433ed6762d0d95f.rlib */,
+				3361187B2EC3C3950064B9FA /* libfutures_executor-c433ed6762d0d95f.rmeta */,
+				3361187C2EC3C3950064B9FA /* libfutures_io-a60fbf65105bdd44.rlib */,
+				3361187D2EC3C3950064B9FA /* libfutures_io-a60fbf65105bdd44.rmeta */,
+				3361187E2EC3C3950064B9FA /* libfutures_sink-0c227f901bcc006c.rlib */,
+				3361187F2EC3C3950064B9FA /* libfutures_sink-0c227f901bcc006c.rmeta */,
+				336118802EC3C3950064B9FA /* libfutures_task-afa11825d13e5c7b.rlib */,
+				336118812EC3C3950064B9FA /* libfutures_task-afa11825d13e5c7b.rmeta */,
+				336118822EC3C3950064B9FA /* libfutures_util-763f34528ef6a485.rlib */,
+				336118832EC3C3950064B9FA /* libfutures_util-763f34528ef6a485.rmeta */,
+				336118842EC3C3950064B9FA /* libfutures-2ca909a80c582da4.rlib */,
+				336118852EC3C3950064B9FA /* libfutures-2ca909a80c582da4.rmeta */,
+				336118862EC3C3950064B9FA /* libgetrandom-7b49b312674e3555.rlib */,
+				336118872EC3C3950064B9FA /* libgetrandom-7b49b312674e3555.rmeta */,
+				336118882EC3C3950064B9FA /* libhashbrown-5bf9dd9649f1fd21.rlib */,
+				336118892EC3C3950064B9FA /* libhashbrown-5bf9dd9649f1fd21.rmeta */,
+				3361188A2EC3C3950064B9FA /* libhashlink-b35dd45b3dc86aa4.rlib */,
+				3361188B2EC3C3950064B9FA /* libhashlink-b35dd45b3dc86aa4.rmeta */,
+				3361188C2EC3C3950064B9FA /* libiana_time_zone-7b30ddf40315a07e.rlib */,
+				3361188D2EC3C3950064B9FA /* libiana_time_zone-7b30ddf40315a07e.rmeta */,
+				3361188E2EC3C3950064B9FA /* libitoa-42c1573f868c5062.rlib */,
+				3361188F2EC3C3950064B9FA /* libitoa-42c1573f868c5062.rmeta */,
+				336118902EC3C3950064B9FA /* liblibc-cf75d9adfc301c6b.rlib */,
+				336118912EC3C3950064B9FA /* liblibc-cf75d9adfc301c6b.rmeta */,
+				336118922EC3C3950064B9FA /* liblibsqlite3_sys-d30b1288ff712d2b.rlib */,
+				336118932EC3C3950064B9FA /* liblibsqlite3_sys-d30b1288ff712d2b.rmeta */,
+				336118942EC3C3950064B9FA /* libmemchr-66b10684c52b81b3.rlib */,
+				336118952EC3C3950064B9FA /* libmemchr-66b10684c52b81b3.rmeta */,
+				336118962EC3C3950064B9FA /* libnum_traits-2fe8aeff767fcf14.rlib */,
+				336118972EC3C3950064B9FA /* libnum_traits-2fe8aeff767fcf14.rmeta */,
+				336118982EC3C3950064B9FA /* libonce_cell-57123ab505a7fc37.rlib */,
+				336118992EC3C3950064B9FA /* libonce_cell-57123ab505a7fc37.rmeta */,
+				3361189A2EC3C3950064B9FA /* libpin_project_lite-13f01817f76a5952.rlib */,
+				3361189B2EC3C3950064B9FA /* libpin_project_lite-13f01817f76a5952.rmeta */,
+				3361189C2EC3C3950064B9FA /* libpin_utils-ee0cdb35ef4565b8.rlib */,
+				3361189D2EC3C3950064B9FA /* libpin_utils-ee0cdb35ef4565b8.rmeta */,
+				3361189E2EC3C3950064B9FA /* librusqlite-fa162f009feb2913.rlib */,
+				3361189F2EC3C3950064B9FA /* librusqlite-fa162f009feb2913.rmeta */,
+				336118A02EC3C3950064B9FA /* libryu-4c32a35f5af2941e.rlib */,
+				336118A12EC3C3950064B9FA /* libryu-4c32a35f5af2941e.rmeta */,
+				336118A22EC3C3950064B9FA /* libserde_core-17163cfc29eaa8b7.rlib */,
+				336118A32EC3C3950064B9FA /* libserde_core-17163cfc29eaa8b7.rmeta */,
+				336118A42EC3C3950064B9FA /* libserde_json-cc6f926238c9d2ff.rlib */,
+				336118A52EC3C3950064B9FA /* libserde_json-cc6f926238c9d2ff.rmeta */,
+				336118A62EC3C3950064B9FA /* libserde-aeb85b0d8c37fa05.rlib */,
+				336118A72EC3C3950064B9FA /* libserde-aeb85b0d8c37fa05.rmeta */,
+				336118A82EC3C3950064B9FA /* libshared.a */,
+				336118A92EC3C3950064B9FA /* libshared.dylib */,
+				336118AA2EC3C3950064B9FA /* libshared.rlib */,
+				336118AB2EC3C3950064B9FA /* libslab-a5cb04692ff20867.rlib */,
+				336118AC2EC3C3950064B9FA /* libslab-a5cb04692ff20867.rmeta */,
+				336118AD2EC3C3950064B9FA /* libsmallvec-75844e597ae44980.rlib */,
+				336118AE2EC3C3950064B9FA /* libsmallvec-75844e597ae44980.rmeta */,
+				336118AF2EC3C3950064B9FA /* libsqlite3_sys-d30b1288ff712d2b.d */,
+				336118B02EC3C3950064B9FA /* libthiserror-76a1313566c75f42.rlib */,
+				336118B12EC3C3950064B9FA /* libthiserror-76a1313566c75f42.rmeta */,
+				336118B22EC3C3950064B9FA /* libtypeid-9e01b04c669d957a.rlib */,
+				336118B32EC3C3950064B9FA /* libtypeid-9e01b04c669d957a.rmeta */,
+				336118B42EC3C3950064B9FA /* libuuid-294345b46801fa57.rlib */,
+				336118B52EC3C3950064B9FA /* libuuid-294345b46801fa57.rmeta */,
+				336118B62EC3C3950064B9FA /* libzerocopy-6b7fae9fab01897a.rlib */,
+				336118B72EC3C3950064B9FA /* libzerocopy-6b7fae9fab01897a.rmeta */,
+				336118B82EC3C3950064B9FA /* memchr-66b10684c52b81b3.d */,
+				336118B92EC3C3950064B9FA /* num_traits-2fe8aeff767fcf14.d */,
+				336118BA2EC3C3950064B9FA /* once_cell-57123ab505a7fc37.d */,
+				336118BB2EC3C3950064B9FA /* pin_project_lite-13f01817f76a5952.d */,
+				336118BC2EC3C3950064B9FA /* pin_utils-ee0cdb35ef4565b8.d */,
+				336118BD2EC3C3950064B9FA /* rusqlite-fa162f009feb2913.d */,
+				336118BE2EC3C3950064B9FA /* ryu-4c32a35f5af2941e.d */,
+				336118BF2EC3C3950064B9FA /* serde_core-17163cfc29eaa8b7.d */,
+				336118C02EC3C3950064B9FA /* serde_json-cc6f926238c9d2ff.d */,
+				336118C12EC3C3950064B9FA /* serde-aeb85b0d8c37fa05.d */,
+				336118C22EC3C3950064B9FA /* shared.d */,
+				336118C32EC3C3950064B9FA /* slab-a5cb04692ff20867.d */,
+				336118C42EC3C3950064B9FA /* smallvec-75844e597ae44980.d */,
+				336118C52EC3C3950064B9FA /* thiserror-76a1313566c75f42.d */,
+				336118C62EC3C3950064B9FA /* typeid-9e01b04c669d957a.d */,
+				336118C72EC3C3950064B9FA /* uuid-294345b46801fa57.d */,
+				336118C82EC3C3950064B9FA /* zerocopy-6b7fae9fab01897a.d */,
+			);
+			path = deps;
+			sourceTree = "<group>";
+		};
+		336118CA2EC3C3950064B9FA /* examples */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = examples;
+			sourceTree = "<group>";
+		};
+		336118CB2EC3C3950064B9FA /* incremental */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = incremental;
+			sourceTree = "<group>";
+		};
+		336118D12EC3C3950064B9FA /* release */ = {
+			isa = PBXGroup;
+			children = (
+				336117E62EC3C3950064B9FA /* .fingerprint */,
+				336118402EC3C3950064B9FA /* build */,
+				336118C92EC3C3950064B9FA /* deps */,
+				336118CA2EC3C3950064B9FA /* examples */,
+				336118CB2EC3C3950064B9FA /* incremental */,
+				336118CC2EC3C3950064B9FA /* .cargo-lock */,
+				336118CD2EC3C3950064B9FA /* libshared.a */,
+				336118CE2EC3C3950064B9FA /* libshared.d */,
+				336118CF2EC3C3950064B9FA /* libshared.dylib */,
+				336118D02EC3C3950064B9FA /* libshared.rlib */,
+			);
+			name = release;
+			path = "../../shared/target/aarch64-apple-ios-sim/release";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -396,6 +1973,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/../../shared";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -409,8 +1987,14 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
+				LIBRARY_SEARCH_PATHS = "";
 				MACOSX_DEPLOYMENT_TARGET = 15.2;
 				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-L$(PROJECT_DIR)/../../shared/target/aarch64-apple-ios/release",
+					"-L$(PROJECT_DIR)/../../shared/target/aarch64-apple-ios-sim/release",
+					"$(PROJECT_DIR)/../../shared/target/aarch64-apple-ios-sim/release/libshared.a",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.cuzzos.Thiccc;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -435,6 +2019,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/../../shared";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -448,8 +2033,14 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
+				LIBRARY_SEARCH_PATHS = "";
 				MACOSX_DEPLOYMENT_TARGET = 15.2;
 				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-L$(PROJECT_DIR)/../../shared/target/aarch64-apple-ios/release",
+					"-L$(PROJECT_DIR)/../../shared/target/aarch64-apple-ios-sim/release",
+					"$(PROJECT_DIR)/../../shared/target/aarch64-apple-ios-sim/release/libshared.a",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.cuzzos.Thiccc;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;

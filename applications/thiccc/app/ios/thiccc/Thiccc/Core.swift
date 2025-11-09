@@ -8,6 +8,24 @@
 import Foundation
 import Combine
 
+// MARK: - FFI Function Declarations
+// These are declared in shared.h and imported via the bridging header
+// Using @_silgen_name to match C function names exactly
+@_silgen_name("rust_core_new")
+func rust_core_new() -> OpaquePointer?
+
+@_silgen_name("rust_core_free")
+func rust_core_free(_ core: OpaquePointer?)
+
+@_silgen_name("rust_core_dispatch")
+func rust_core_dispatch(_ core: OpaquePointer?, _ eventJson: UnsafePointer<CChar>?) -> UnsafeMutablePointer<CChar>?
+
+@_silgen_name("rust_core_view")
+func rust_core_view(_ core: OpaquePointer?) -> UnsafeMutablePointer<CChar>?
+
+@_silgen_name("rust_string_free")
+func rust_string_free(_ s: UnsafeMutablePointer<CChar>?)
+
 // MARK: - Event Types (matching Rust Event enum)
 enum Event: Codable {
     // Timer events
@@ -113,17 +131,65 @@ enum NavigationDestination: Codable, Equatable {
 
 // MARK: - Rust Core Bridge
 /// Bridge to Rust/Crux core
-/// For now, this is a mock implementation. In production, this would call into the actual Rust FFI.
+/// Uses FFI to call into the actual Rust core when available, falls back to mock implementation
 class RustCore: ObservableObject {
     @Published var viewModel: ViewModel
     
-    // Internal model state (managed by Swift side for now)
+    // Rust FFI core pointer (nil if using mock)
+    private var rustCorePtr: OpaquePointer?
+    
+    // Internal model state (managed by Swift side for mock mode)
     private var model: Model
     
+    // Database manager for persistence
+    private let databaseManager = DatabaseManager()
+    
+    // Flag to enable/disable FFI
+    // Set to true to use Rust core via FFI, false to use Swift mock implementation
+    // When Rust library is linked, FFI will work. If not linked, app will crash on init.
+    // To use mock mode, set this to false until Rust libraries are built and linked.
+    private let useFFI: Bool = true
+    
     init() {
+        // Initialize model first (required for all code paths)
         self.model = Model()
-        // Initialize with default ViewModel, will be updated on first event
-        self.viewModel = ViewModel(
+        
+        if useFFI {
+            // Try to initialize Rust core via FFI
+            // If library isn't linked, this will fail at link time, not runtime
+            rustCorePtr = rust_core_new()
+            
+            // Get initial view model
+            if let ptr = rustCorePtr {
+                if let viewModelJson = rust_core_view(ptr) {
+                    defer { rust_string_free(viewModelJson) }
+                    if let jsonString = String(cString: viewModelJson, encoding: .utf8),
+                       let data = jsonString.data(using: .utf8),
+                       let vm = try? JSONDecoder().decode(ViewModel.self, from: data) {
+                        self.viewModel = vm
+                        return
+                    }
+                }
+            }
+            
+            // If FFI failed, fall back to mock
+            print("Warning: FFI initialization failed, falling back to mock implementation")
+            self.viewModel = Self.defaultViewModel()
+            self.rustCorePtr = nil
+        } else {
+            // Mock mode
+            self.viewModel = Self.defaultViewModel()
+        }
+    }
+    
+    deinit {
+        if let ptr = rustCorePtr {
+            rust_core_free(ptr)
+        }
+    }
+    
+    private static func defaultViewModel() -> ViewModel {
+        ViewModel(
             workout: nil,
             isTimerRunning: false,
             formattedTime: "0:00",
@@ -138,10 +204,28 @@ class RustCore: ObservableObject {
     
     /// Dispatch an event to the core
     func dispatch(_ event: Event) {
-        // For now, process events in Swift
-        // In production, this would serialize to JSON and call Rust FFI
-        processEvent(event)
-        viewModel = getViewModel()
+        if useFFI, let ptr = rustCorePtr {
+            // Use Rust FFI
+            do {
+                let eventJson = try JSONEncoder().encode(event)
+                let eventString = String(data: eventJson, encoding: .utf8) ?? "{}"
+                
+                if let viewModelJson = rust_core_dispatch(ptr, eventString) {
+                    defer { rust_string_free(viewModelJson) }
+                    if let jsonString = String(cString: viewModelJson, encoding: .utf8),
+                       let data = jsonString.data(using: .utf8),
+                       let vm = try? JSONDecoder().decode(ViewModel.self, from: data) {
+                        self.viewModel = vm
+                    }
+                }
+            } catch {
+                print("Error encoding event: \(error)")
+            }
+        } else {
+            // Mock implementation
+            processEvent(event)
+            viewModel = getViewModel()
+        }
     }
     
     private func processEvent(_ event: Event) {
@@ -178,6 +262,8 @@ class RustCore: ObservableObject {
             if var workout = model.currentWorkout {
                 workout.endTimestamp = Date()
                 workout.duration = model.secondsElapsed
+                // Save to database
+                databaseManager.saveWorkout(workout)
                 model.workouts.insert(workout, at: 0)
                 model.currentWorkout = nil
                 model.isTimerRunning = false
@@ -305,10 +391,14 @@ class RustCore: ObservableObject {
                 model.currentWorkout = workout
             }
         case .loadHistory:
-            // History loading will be handled by database layer
-            break
+            // Load workouts from database
+            let workouts = databaseManager.loadWorkouts()
+            model.workouts = workouts
         case .loadWorkoutDetail(let workoutId):
-            if let workout = model.workouts.first(where: { $0.id == workoutId }) {
+            // Try to load from database first, then fall back to in-memory
+            if let workout = databaseManager.loadWorkout(workoutId: workoutId) {
+                model.selectedWorkout = workout
+            } else if let workout = model.workouts.first(where: { $0.id == workoutId }) {
                 model.selectedWorkout = workout
             }
         case .importWorkout(let jsonData):
