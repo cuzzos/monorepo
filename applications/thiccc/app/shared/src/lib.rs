@@ -561,8 +561,78 @@ impl crux_core::App for App {
     }
 }
 
-// Note: FFI bridge will be implemented in the Swift shell
-// For now, the core logic is complete and ready for integration
+// MARK: - UniFFI Integration
+
+use std::sync::Mutex;
+
+/// Error type for UniFFI FFI operations
+#[derive(Debug, thiserror::Error)]
+pub enum CoreError {
+    #[error("Serialization error: {0}")]
+    SerializationError(String),
+    #[error("Deserialization error: {0}")]
+    DeserializationError(String),
+    #[error("Event processing error: {0}")]
+    EventProcessingError(String),
+}
+
+/// Global core state (thread-safe)
+static CORE_STATE: Mutex<Option<CoreState>> = Mutex::new(None);
+
+struct CoreState {
+    model: Model,
+}
+
+/// Process an event and return the updated view model
+pub fn process_event(msg: &[u8]) -> Result<Vec<u8>, CoreError> {
+    let event: Event = serde_json::from_slice(msg)
+        .map_err(|e| CoreError::DeserializationError(e.to_string()))?;
+
+    let mut state = CORE_STATE.lock().unwrap();
+    if state.is_none() {
+        *state = Some(CoreState {
+            model: Model::default(),
+        });
+    }
+
+    let core_state = state.as_mut().unwrap();
+    let app = App::default();
+
+    // Update the model with the event
+    let caps = Capabilities::default();
+    let _command = crux_core::App::update(&app, event, &mut core_state.model, &caps);
+
+    // Generate and serialize the view model
+    let view_model = crux_core::App::view(&app, &core_state.model);
+    serde_json::to_vec(&view_model)
+        .map_err(|e| CoreError::SerializationError(e.to_string()))
+}
+
+/// Get the current view model without processing an event
+pub fn view() -> Result<Vec<u8>, CoreError> {
+    let state = CORE_STATE.lock().unwrap();
+
+    let app = App::default();
+    let view_model = if let Some(core_state) = state.as_ref() {
+        crux_core::App::view(&app, &core_state.model)
+    } else {
+        let default_model = Model::default();
+        crux_core::App::view(&app, &default_model)
+    };
+
+    serde_json::to_vec(&view_model)
+        .map_err(|e| CoreError::SerializationError(e.to_string()))
+}
+
+/// Handle a capability response (for future use with full Crux capabilities)
+pub fn handle_response(_id: u32, _res: &[u8]) -> Result<Vec<u8>, CoreError> {
+    // For now, just return the current view
+    // In the future, this would process capability responses
+    view()
+}
+
+// Include UniFFI scaffolding
+uniffi::include_scaffolding!("shared");
 
 #[cfg(test)]
 mod tests {
@@ -631,334 +701,5 @@ mod tests {
         
         assert_eq!(calculation.total_weight, 225.0);
         assert_eq!(calculation.plates.len(), 2);
-    }
-}
-
-// MARK: - FFI Functions for Swift Integration
-
-use std::ffi::{CStr, CString};
-use std::os::raw::c_char;
-use std::ptr;
-
-/// Core instance that holds the app state
-/// For FFI, we bypass the full Crux capability system and use a simplified update
-pub struct RustCore {
-    model: Model,
-}
-
-impl RustCore {
-    fn new() -> Self {
-        let model = Model::default();
-        Self {
-            model,
-        }
-    }
-
-    fn dispatch(&mut self, event_json: &str) -> Result<(), String> {
-        let event: Event = serde_json::from_str(event_json)
-            .map_err(|e| format!("Failed to parse event: {}", e))?;
-        
-        // Simplified update without capabilities - we'll handle the logic directly
-        // This is a simplified version that doesn't use the full Crux capability system
-        self.update_direct(event);
-        Ok(())
-    }
-    
-    // Simplified update function that doesn't require capabilities
-    fn update_direct(&mut self, event: Event) {
-        match event {
-            Event::StartTimer => {
-                self.model.is_timer_running = true;
-            }
-            Event::StopTimer => {
-                self.model.is_timer_running = false;
-            }
-            Event::ToggleTimer => {
-                self.model.is_timer_running = !self.model.is_timer_running;
-            }
-            Event::TimerTick => {
-                if self.model.is_timer_running {
-                    self.model.seconds_elapsed += 1;
-                    if let Some(ref mut workout) = self.model.current_workout {
-                        workout.duration = Some(self.model.seconds_elapsed);
-                    }
-                }
-            }
-            Event::CreateWorkout { name } => {
-                let workout = Workout {
-                    id: uuid::Uuid::new_v4(),
-                    name,
-                    note: None,
-                    duration: Some(0),
-                    start_timestamp: chrono::Utc::now(),
-                    end_timestamp: None,
-                    exercises: Vec::new(),
-                };
-                self.model.current_workout = Some(workout);
-                self.model.seconds_elapsed = 0;
-                self.model.is_timer_running = true;
-            }
-            Event::FinishWorkout => {
-                if let Some(mut workout) = self.model.current_workout.take() {
-                    workout.end_timestamp = Some(chrono::Utc::now());
-                    workout.duration = Some(self.model.seconds_elapsed);
-                    self.model.workouts.insert(0, workout);
-                    self.model.is_timer_running = false;
-                    self.model.seconds_elapsed = 0;
-                }
-            }
-            Event::DiscardWorkout => {
-                self.model.current_workout = None;
-                self.model.is_timer_running = false;
-                self.model.seconds_elapsed = 0;
-            }
-            Event::UpdateWorkoutName { name } => {
-                if let Some(ref mut workout) = self.model.current_workout {
-                    workout.name = name;
-                }
-            }
-            Event::UpdateWorkoutNote { note } => {
-                if let Some(ref mut workout) = self.model.current_workout {
-                    workout.note = note;
-                }
-            }
-            Event::AddExercise { global_exercise } => {
-                if let Some(ref mut workout) = self.model.current_workout {
-                    let exercise = Exercise {
-                        id: uuid::Uuid::new_v4(),
-                        superset_id: None,
-                        workout_id: workout.id,
-                        name: global_exercise.name,
-                        pinned_notes: Vec::new(),
-                        notes: Vec::new(),
-                        duration: None,
-                        exercise_type: ExerciseType::Unknown, // Will be set from global_exercise if needed
-                        weight_unit: None,
-                        default_warm_up_time: None,
-                        default_rest_time: None,
-                        sets: Vec::new(),
-                        body_part: None,
-                    };
-                    workout.exercises.push(exercise);
-                }
-            }
-            Event::DeleteExercise { exercise_id } => {
-                if let Some(ref mut workout) = self.model.current_workout {
-                    workout.exercises.retain(|e| e.id != exercise_id);
-                }
-            }
-            Event::UpdateExerciseName { exercise_id, name } => {
-                if let Some(ref mut workout) = self.model.current_workout {
-                    if let Some(exercise) = workout.exercises.iter_mut().find(|e| e.id == exercise_id) {
-                        exercise.name = name;
-                    }
-                }
-            }
-            Event::AddSet { exercise_id } => {
-                if let Some(ref mut workout) = self.model.current_workout {
-                    if let Some(exercise) = workout.exercises.iter_mut().find(|e| e.id == exercise_id) {
-                        let set = ExerciseSet {
-                            id: uuid::Uuid::new_v4(),
-                            set_type: SetType::Working,
-                            weight_unit: exercise.weight_unit.clone(),
-                            suggest: SetSuggest::default(),
-                            actual: SetActual::default(),
-                            is_completed: false,
-                            exercise_id,
-                            workout_id: workout.id,
-                            set_index: exercise.sets.len() as i32,
-                        };
-                        exercise.sets.push(set);
-                    }
-                }
-            }
-            Event::DeleteSet { exercise_id, set_index } => {
-                if let Some(ref mut workout) = self.model.current_workout {
-                    if let Some(exercise) = workout.exercises.iter_mut().find(|e| e.id == exercise_id) {
-                        if set_index < exercise.sets.len() {
-                            exercise.sets.remove(set_index);
-                            // Reindex remaining sets
-                            for (idx, set) in exercise.sets.iter_mut().enumerate() {
-                                set.set_index = idx as i32;
-                            }
-                        }
-                    }
-                }
-            }
-            Event::UpdateSetActual { exercise_id, set_index, actual } => {
-                if let Some(ref mut workout) = self.model.current_workout {
-                    if let Some(exercise) = workout.exercises.iter_mut().find(|e| e.id == exercise_id) {
-                        if set_index < exercise.sets.len() {
-                            exercise.sets[set_index].actual = actual;
-                        }
-                    }
-                }
-            }
-            Event::UpdateSetSuggest { exercise_id, set_index, suggest } => {
-                if let Some(ref mut workout) = self.model.current_workout {
-                    if let Some(exercise) = workout.exercises.iter_mut().find(|e| e.id == exercise_id) {
-                        if set_index < exercise.sets.len() {
-                            exercise.sets[set_index].suggest = suggest;
-                        }
-                    }
-                }
-            }
-            Event::ToggleSetCompleted { exercise_id, set_index } => {
-                if let Some(ref mut workout) = self.model.current_workout {
-                    if let Some(exercise) = workout.exercises.iter_mut().find(|e| e.id == exercise_id) {
-                        if set_index < exercise.sets.len() {
-                            exercise.sets[set_index].is_completed = !exercise.sets[set_index].is_completed;
-                        }
-                    }
-                }
-            }
-            Event::LoadHistory => {
-                // History loading handled by database layer on Swift side
-            }
-            Event::LoadWorkoutDetail { workout_id } => {
-                if let Some(workout) = self.model.workouts.iter().find(|w| w.id == workout_id) {
-                    self.model.selected_workout = Some(workout.clone());
-                }
-            }
-            Event::ImportWorkout { json_data } => {
-                if let Ok(workout) = serde_json::from_str::<Workout>(&json_data) {
-                    self.model.current_workout = Some(workout);
-                }
-            }
-            Event::NavigateToWorkout => {
-                self.model.selected_tab = Tab::Workout;
-            }
-            Event::NavigateToHistory => {
-                self.model.selected_tab = Tab::History;
-            }
-            Event::NavigateToWorkoutDetail { workout_id } => {
-                self.model.navigation_path.push(NavigationDestination::WorkoutDetail { workout_id });
-            }
-            Event::NavigateToHistoryDetail { workout_id } => {
-                self.model.navigation_path.push(NavigationDestination::HistoryDetail { workout_id });
-            }
-            Event::CalculatePlates { target_weight, bar_type } => {
-                // Simplified plate calculation
-                let plates = calculate_plates_simple(target_weight, &bar_type);
-                self.model.plate_calculation = Some(PlateCalculation {
-                    total_weight: target_weight,
-                    bar_type: bar_type.clone(),
-                    plates,
-                });
-            }
-            Event::WorkoutSaved | Event::WorkoutLoaded { .. } | Event::HistoryLoaded { .. } => {
-                // Internal events - handled by database layer
-            }
-        }
-    }
-    
-    fn view(&self) -> Result<String, String> {
-        // Use the App's view function to generate view model
-        let app = App::default();
-        let view_model = crux_core::App::view(&app, &self.model);
-        serde_json::to_string(&view_model)
-            .map_err(|e| format!("Failed to serialize view model: {}", e))
-    }
-}
-
-// Simplified plate calculation
-fn calculate_plates_simple(target_weight: f64, bar_type: &BarType) -> Vec<Plate> {
-    let bar_weight = bar_type.weight;
-    let plate_weight = target_weight - bar_weight;
-    let mut plates = Vec::new();
-    
-    // Simple algorithm: use 45lb plates
-    let plate_size = 45.0;
-    let num_plates = (plate_weight / (plate_size * 2.0)).floor() as usize;
-    
-    for _ in 0..num_plates {
-        plates.push(Plate {
-            id: uuid::Uuid::new_v4(),
-            weight: plate_size,
-        });
-    }
-    
-    plates
-}
-
-/// Create a new Rust core instance
-/// Returns a pointer to the core instance
-#[unsafe(no_mangle)]
-pub extern "C" fn rust_core_new() -> *mut RustCore {
-    Box::into_raw(Box::new(RustCore::new()))
-}
-
-/// Free a Rust core instance
-#[unsafe(no_mangle)]
-pub extern "C" fn rust_core_free(core: *mut RustCore) {
-    if !core.is_null() {
-        unsafe {
-            let _ = Box::from_raw(core);
-        }
-    }
-}
-
-/// Dispatch an event to the core
-/// event_json: JSON string of the event
-/// Returns: JSON string of the view model, or null on error
-#[unsafe(no_mangle)]
-pub extern "C" fn rust_core_dispatch(core: *mut RustCore, event_json: *const c_char) -> *mut c_char {
-    if core.is_null() || event_json.is_null() {
-        return ptr::null_mut();
-    }
-
-    let event_str = unsafe {
-        match CStr::from_ptr(event_json).to_str() {
-            Ok(s) => s,
-            Err(_) => return ptr::null_mut(),
-        }
-    };
-
-    let core = unsafe { &mut *core };
-    
-    match core.dispatch(event_str) {
-        Ok(_) => {
-            match core.view() {
-                Ok(view_json) => {
-                    match CString::new(view_json) {
-                        Ok(c_string) => c_string.into_raw(),
-                        Err(_) => ptr::null_mut(),
-                    }
-                }
-                Err(_) => ptr::null_mut(),
-            }
-        }
-        Err(_) => ptr::null_mut(),
-    }
-}
-
-/// Get the current view model
-/// Returns: JSON string of the view model, or null on error
-#[unsafe(no_mangle)]
-pub extern "C" fn rust_core_view(core: *const RustCore) -> *mut c_char {
-    if core.is_null() {
-        return ptr::null_mut();
-    }
-
-    let core = unsafe { &*core };
-    
-    match core.view() {
-        Ok(view_json) => {
-            match CString::new(view_json) {
-                Ok(c_string) => c_string.into_raw(),
-                Err(_) => ptr::null_mut(),
-            }
-        }
-        Err(_) => ptr::null_mut(),
-    }
-}
-
-/// Free a string returned from Rust
-#[unsafe(no_mangle)]
-pub extern "C" fn rust_string_free(s: *mut c_char) {
-    if !s.is_null() {
-        unsafe {
-            let _ = CString::from_raw(s);
-        }
     }
 }

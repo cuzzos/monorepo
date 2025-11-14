@@ -1,10 +1,10 @@
 #!/bin/bash
-# Build script for Rust iOS libraries
+# Build script for Rust iOS libraries with UniFFI
 # Run this on your local machine with network access
 
 set -e
 
-echo "Building Rust library for iOS..."
+echo "Building Rust library for iOS with UniFFI..."
 
 # Check if we're in the right directory
 if [ ! -f "Cargo.toml" ]; then
@@ -19,7 +19,7 @@ rustup target add aarch64-apple-ios-sim || true
 # Also add x86_64 for Intel Macs (optional)
 rustup target add x86_64-apple-ios-sim || true
 
-# Clean old builds to remove .dylib files
+# Clean old builds
 echo "Cleaning old builds..."
 cargo clean --target aarch64-apple-ios
 cargo clean --target aarch64-apple-ios-sim
@@ -32,28 +32,32 @@ cargo build --release --target aarch64-apple-ios
 echo "Building for iOS simulator (aarch64-apple-ios-sim)..."
 cargo build --release --target aarch64-apple-ios-sim
 
-# Remove any .dylib files that might have been created (shouldn't exist with staticlib, but clean up anyway)
-echo "Removing any .dylib files..."
-find target/aarch64-apple-ios/release -name "libshared.dylib" -delete 2>/dev/null || true
-find target/aarch64-apple-ios-sim/release -name "libshared.dylib" -delete 2>/dev/null || true
-find target/aarch64-apple-ios/release/deps -name "libshared.dylib" -delete 2>/dev/null || true
-find target/aarch64-apple-ios-sim/release/deps -name "libshared.dylib" -delete 2>/dev/null || true
-
 # Build for iOS simulator (x86_64 - Intel Macs, optional)
 echo "Building for iOS simulator (x86_64-apple-ios-sim)..."
 cargo build --release --target x86_64-apple-ios-sim || echo "Note: x86_64 build skipped (not needed on Apple Silicon)"
 
-# Verify builds
+# Generate Swift bindings using uniffi-bindgen
 echo ""
-echo "Build complete! Libraries are at:"
-ls -lh target/*/release/libshared.a 2>/dev/null || echo "No libraries found"
+echo "Generating Swift bindings with UniFFI..."
+cargo run --bin uniffi-bindgen generate \
+    --library target/aarch64-apple-ios-sim/release/libshared.a \
+    --language swift \
+    --out-dir ../ios/thiccc/Thiccc/Generated
 
 echo ""
+echo "Build complete!"
+echo ""
+echo "Generated files:"
+echo "  - Swift bindings: ../ios/thiccc/Thiccc/Generated/shared.swift"
+echo "  - C header: ../ios/thiccc/Thiccc/Generated/sharedFFI.h"
+echo "  - Module map: ../ios/thiccc/Thiccc/Generated/sharedFFI.modulemap"
+echo ""
+echo "Libraries:"
+ls -lh target/*/release/libshared.a 2>/dev/null || echo "No static libraries found"
+ls -lh target/*/release/libshared.dylib 2>/dev/null || echo "No dynamic libraries found"
+echo ""
 echo "Next steps:"
-echo "1. Open Thiccc.xcodeproj in Xcode"
-echo "2. Add libshared.a to 'Link Binary With Libraries'"
-echo "3. Add library search paths in Build Settings:"
-echo "   - \$(PROJECT_DIR)/../shared/target/aarch64-apple-ios/release"
-echo "   - \$(PROJECT_DIR)/../shared/target/aarch64-apple-ios-sim/release"
-echo "4. Set 'Objective-C Bridging Header' to: Thiccc/shared-Bridging-Header.h"
+echo "1. Add the Generated folder to your Xcode project"
+echo "2. Import SharedCore in your Swift files"
+echo "3. Use processEvent() and view() functions from the generated bindings"
 
