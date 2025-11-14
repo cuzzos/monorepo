@@ -103,9 +103,9 @@
 
 ## 🔄 Next Steps (Ready for Testing)
 
-1. **Generate Swift Bindings**: Run `./build-ios.sh` to generate UniFFI bindings
-2. **Add Generated Files to Xcode**: Follow steps in `UNIFFI-SUMMARY.md`
-3. **Test UniFFI Integration**: Verify event dispatch and view updates work
+1. **Initial Setup**: Run `./build-ios.sh` once (builds Rust libraries)
+2. **Generate Xcode Project**: Run `xcodegen generate` in `app/ios`
+3. **Open & Build**: Open Xcode, hit ⌘R - automatic from here!
 4. **Database Integration**: Connect Swift shell to Rust database
 5. **Timer Integration**: Connect Swift timer to send TimerTick events
 6. **Full Testing**: Comprehensive test coverage
@@ -115,13 +115,16 @@
 
 ## ✨ Summary
 
-The migration is **complete with UniFFI integration**. All business logic is in Rust, the database layer is implemented, and the Swift-Rust FFI bridge is now **fully automated with UniFFI**. The codebase is significantly cleaner:
+The migration is **complete with automatic XcodeGen workflow**. All business logic is in Rust, the database layer is implemented, and the Swift-Rust FFI bridge is now **fully automated with UniFFI + XcodeGen**. The codebase is significantly cleaner:
 
 - **80% reduction** in FFI code
 - **Automatic memory management** (no manual pointer handling)
 - **Type-safe FFI boundary** with compiler verification
 - **Single source of truth** for FFI interface (shared.udl)
+- **Automatic build process** - Xcode rebuilds Rust + regenerates bindings
 - **Cross-platform ready** (same .udl generates Android/Kotlin bindings)
 
-Ready for final testing and deployment. See `UNIFFI-SUMMARY.md` for next steps.
+**Workflow**: Make Rust changes → Hit ⌘R in Xcode → Done!
+
+Ready for final testing and deployment. See `UNIFFI-SUMMARY.md` for setup steps.
 

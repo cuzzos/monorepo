@@ -93,44 +93,47 @@ thiccc/
   ```bash
   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
   rustup update
-  ```
-
-- **Xcode 15+**: With iOS 18 SDK
-- **iOS Targets**:
-  ```bash
   rustup target add aarch64-apple-ios aarch64-apple-ios-sim
   ```
 
-### 2. Build Rust Core & Generate Swift Bindings
+- **Xcode 15+**: With iOS 18 SDK
+- **XcodeGen**: For project generation
+  ```bash
+  brew install xcodegen
+  ```
+
+### 2. Initial Setup (One-Time)
+
+Build Rust libraries for the first time:
 
 ```bash
 cd /workspaces/Goonlytics/applications/thiccc/app/shared
 ./build-ios.sh
 ```
 
-This will:
-- ✅ Build Rust libraries for iOS device and simulator
-- ✅ Generate Swift bindings automatically with UniFFI
-- ✅ Output to `../ios/thiccc/Thiccc/Generated/`
-
-### 3. Open in Xcode
+### 3. Generate Xcode Project
 
 ```bash
-cd ../ios/thiccc
-open Thiccc.xcodeproj
+cd ../ios
+xcodegen generate
 ```
 
-### 4. Add Generated Files to Xcode
+This creates `Thiccc.xcodeproj` with automatic UniFFI integration configured.
 
-1. In Xcode, right-click **Thiccc** folder
-2. Select **"Add Files to Thiccc"**
-3. Navigate to `Thiccc/Generated`
-4. ✅ Check **"Create folder references"**
-5. Click **Add**
+### 4. Open & Build
 
-### 5. Update Swift Code
+```bash
+open thiccc/Thiccc.xcodeproj
+```
 
-In `CoreUniffi.swift`:
+**That's it!** Hit ⌘R in Xcode and it will:
+- ✅ Automatically rebuild Rust if code changed
+- ✅ Automatically regenerate Swift bindings
+- ✅ Build and run the app
+
+### 5. Update Swift Code (One-Time)
+
+In `CoreUniffi.swift`, make these changes once:
 
 **Uncomment:**
 ```swift
@@ -147,14 +150,24 @@ let viewBytes = try self.processEventFallback(eventBytes)
 let viewBytes = try processEvent(msg: eventBytes)
 ```
 
-### 6. Build & Run
-
-1. Select **iPhone 15 Pro** simulator
-2. ⌘R to build and run
+Then select **iPhone 15 Pro** simulator and ⌘R to build!
 
 ## Development
 
-### Rust Development
+### Daily Workflow
+
+**Rust changes:**
+```bash
+cd app/shared
+vim src/lib.rs  # Make changes
+```
+
+**Then in Xcode:**
+- Just hit ⌘R
+- Xcode automatically rebuilds Rust and regenerates bindings
+- No manual steps needed!
+
+### Rust Development Commands
 
 ```bash
 cd app/shared
@@ -165,21 +178,14 @@ cargo check
 # Run tests
 cargo test
 
-# Build for specific target
+# Manual build (optional - Xcode does this automatically)
 cargo build --release --target aarch64-apple-ios-sim
-
-# Generate Swift bindings only
-cargo run --bin uniffi-bindgen generate \
-    --library target/aarch64-apple-ios-sim/release/libshared.dylib \
-    --language swift \
-    --out-dir ../ios/thiccc/Thiccc/Generated
 ```
 
 ### Modifying the FFI Interface
 
 1. Edit `app/shared/src/shared.udl` (the interface definition)
-2. Rebuild: `./build-ios.sh`
-3. UniFFI auto-generates new Swift bindings
+2. Hit ⌘R in Xcode - bindings regenerate automatically!
 
 **Example**: Adding a new function:
 
@@ -202,7 +208,7 @@ pub fn get_workout_stats(workout_id: &str) -> Result<Vec<u8>, CoreError> {
 }
 ```
 
-That's it! UniFFI generates all the Swift/C bridge code automatically.
+Hit ⌘R in Xcode - done! UniFFI generates all Swift/C bridge code automatically.
 
 ### iOS Development
 
@@ -217,6 +223,16 @@ core.dispatch(.addExercise(globalExercise: exercise))
 
 // Observe view model updates
 Text(core.viewModel.formattedTime)
+```
+
+### Regenerating Xcode Project
+
+If you modify `project.yml`:
+
+```bash
+cd app/ios
+xcodegen generate
+# Xcode will prompt to reload - click "Reload"
 ```
 
 ## Key Concepts

@@ -50,31 +50,28 @@ cargo check
 
 ## Next Steps for User
 
-### 1. Generate Swift Bindings
+### 1. Initial Setup (One-Time)
+
+Build Rust libraries:
 
 ```bash
 cd /workspaces/Goonlytics/applications/thiccc/app/shared
 ./build-ios.sh
 ```
 
-This will:
-- Build Rust libraries for iOS device and simulator
-- Generate Swift bindings in `../ios/thiccc/Thiccc/Generated/`
-- Create:
-  - `shared.swift` - Swift API
-  - `sharedFFI.h` - C header
-  - `sharedFFI.modulemap` - Module map
+### 2. Generate Xcode Project
 
-### 2. Add Generated Files to Xcode
+```bash
+cd ../ios
+xcodegen generate
+```
 
-1. Open `Thiccc.xcodeproj`
-2. Right-click **Thiccc** folder
-3. **Add Files to Thiccc**
-4. Select `app/ios/thiccc/Thiccc/Generated` folder
-5. ✅ Check **"Create folder references"**
-6. Click **Add**
+This creates `Thiccc.xcodeproj` with:
+- ✅ Automatic UniFFI binding generation
+- ✅ Rust library linking configured
+- ✅ Pre-build scripts set up
 
-### 3. Update Swift Code
+### 3. Update Swift Code (One-Time)
 
 In `CoreUniffi.swift`:
 
@@ -92,7 +89,7 @@ let viewBytes = try self.processEventFallback(eventBytes)
 let viewBytes = try processEvent(msg: eventBytes)
 ```
 
-### 4. Update App
+### 4. Update App (One-Time)
 
 In your main app file:
 
@@ -105,18 +102,24 @@ In your main app file:
 @StateObject private var core = RustCoreUniffi()
 ```
 
-### 5. Clean Up Xcode Settings
+### 5. Build & Run
 
-Remove old FFI configuration:
-1. **Other Linker Flags**: Remove explicit `.a` library paths
-2. **Library Search Paths**: Clear old paths
-3. **Objective-C Bridging Header**: Clear value (no longer needed)
+```bash
+open thiccc/Thiccc.xcodeproj
+```
 
-### 6. Test
+Hit ⌘R in Xcode - that's it! Xcode will:
+- ✅ Check if Rust code changed
+- ✅ Rebuild Rust libraries if needed
+- ✅ Regenerate Swift bindings automatically
+- ✅ Build and run the app
 
-1. Build and run on iOS Simulator
-2. Test core functionality: create workout, add exercises, etc.
-3. Verify view model updates correctly
+### 6. Daily Workflow
+
+From now on:
+1. Make Rust changes
+2. Hit ⌘R in Xcode
+3. Done! Everything rebuilds automatically.
 
 ### 7. Remove Old Files (Optional)
 

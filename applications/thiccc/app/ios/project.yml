@@ -1,9 +1,9 @@
-# XcodeGen Project Specification for thiccc
-# This file can generate a proper Xcode project
+# XcodeGen Project Specification for Thiccc
+# Following Crux + UniFFI best practices
 # Install XcodeGen: brew install xcodegen
 # Generate project: xcodegen generate
 
-name: thiccc
+name: Thiccc
 options:
   bundleIdPrefix: com.thiccc
   deploymentTarget:
@@ -12,7 +12,7 @@ options:
 
 settings:
   base:
-    PRODUCT_NAME: thiccc
+    PRODUCT_NAME: Thiccc
     SWIFT_VERSION: "6.0"
     IPHONEOS_DEPLOYMENT_TARGET: "18.0"
     TARGETED_DEVICE_FAMILY: "1,2"
@@ -21,16 +21,71 @@ settings:
     CURRENT_PROJECT_VERSION: "1"
 
 targets:
-  thiccc:
+  Thiccc:
     type: application
     platform: iOS
     deploymentTarget: "18.0"
-    
+
     sources:
-      - path: thiccc
+      - path: thiccc/Thiccc
         excludes:
           - "*.md"
-    
+        includes:
+          - "**/*.swift"
+          - "Assets.xcassets"
+          - "Preview Content"
+      # Include UniFFI-generated Swift bindings
+      - path: thiccc/Thiccc/Generated
+        type: folder
+        optional: true
+        buildPhase: sources
+
+    # Crux + UniFFI: Build scripts
+    preBuildScripts:
+      - name: "Generate UniFFI Bindings"
+        shell: /bin/sh
+        script: |
+          set -e
+
+          # Only generate if shared core was modified
+          SHARED_DIR="$PROJECT_DIR/../../shared"
+          GENERATED_DIR="$PROJECT_DIR/Thiccc/Generated"
+
+          echo "📦 Checking if UniFFI bindings need regeneration..."
+
+          # Create Generated directory if it doesn't exist
+          mkdir -p "$GENERATED_DIR"
+
+          # Check if we need to regenerate (if Rust files are newer than Swift bindings)
+          if [ "$CONFIGURATION" == "Debug" ]; then
+            if [ ! -f "$GENERATED_DIR/shared.swift" ] || \
+               [ "$SHARED_DIR/src/lib.rs" -nt "$GENERATED_DIR/shared.swift" ] || \
+               [ "$SHARED_DIR/src/shared.udl" -nt "$GENERATED_DIR/shared.swift" ]; then
+
+              echo "🔨 Building Rust shared core..."
+              cd "$SHARED_DIR"
+
+              # Build for simulator (Debug builds typically target simulator)
+              cargo build --release --target aarch64-apple-ios-sim
+
+              echo "🎨 Generating Swift bindings..."
+              cargo run --bin uniffi-bindgen generate \
+                --library target/aarch64-apple-ios-sim/release/libshared.dylib \
+                --language swift \
+                --out-dir "$GENERATED_DIR"
+
+              echo "✅ UniFFI bindings generated"
+            else
+              echo "✅ UniFFI bindings are up to date"
+            fi
+          fi
+        inputFiles:
+          - $(PROJECT_DIR)/../../shared/src/lib.rs
+          - $(PROJECT_DIR)/../../shared/src/shared.udl
+        outputFiles:
+          - $(PROJECT_DIR)/Thiccc/Generated/shared.swift
+          - $(PROJECT_DIR)/Thiccc/Generated/sharedFFI.h
+
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.thiccc.app
@@ -44,4 +99,24 @@ targets:
         INFOPLIST_KEY_UISupportedInterfaceOrientations: "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
         SWIFT_EMIT_LOC_STRINGS: YES
+        # UniFFI: Import generated module
+        SWIFT_INCLUDE_PATHS: $(PROJECT_DIR)/Thiccc/Generated
+        # Link Rust library
+        OTHER_LDFLAGS: >-
+          -lshared
+          -L$(PROJECT_DIR)/../../shared/target/aarch64-apple-ios-sim/release
+          -L$(PROJECT_DIR)/../../shared/target/aarch64-apple-ios/release
+
+      configs:
+        Debug:
+          # Simulator build
+          OTHER_LDFLAGS: >-
+            -lshared
+            -L$(PROJECT_DIR)/../../shared/target/aarch64-apple-ios-sim/release
+
+        Release:
+          # Device build
+          OTHER_LDFLAGS: >-
+            -lshared
+            -L$(PROJECT_DIR)/../../shared/target/aarch64-apple-ios/release
 
