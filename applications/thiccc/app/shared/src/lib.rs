@@ -1,9 +1,16 @@
-use crux_core::render::Render;
+use crux_core::render::{render, RenderOperation};
+use crux_core::Command;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 mod models;
 mod database;
+
+/// Effect enum for the app
+#[crux_core::macros::effect]
+pub enum Effect {
+    Render(RenderOperation),
+}
 
 pub use models::*;
 
@@ -173,31 +180,33 @@ pub struct WorkoutListItem {
     pub start_timestamp: i64, // Unix timestamp
 }
 
-/// Capabilities used by the app
-pub type Capabilities = Render<Event>;
+/// Capabilities used by the app (deprecated, will be removed in future versions)
+#[derive(Default)]
+pub struct Capabilities;
 
 impl crux_core::App for App {
     type Event = Event;
     type Model = Model;
     type ViewModel = ViewModel;
     type Capabilities = Capabilities;
+    type Effect = Effect;
 
-    fn update(&self, event: Self::Event, model: &mut Self::Model, caps: &Self::Capabilities) {
+    fn update(&self, event: Self::Event, model: &mut Self::Model, _caps: &Self::Capabilities) -> Command<Self::Effect, Self::Event> {
         match event {
             Event::StartTimer => {
                 model.is_timer_running = true;
                 // Timer will be handled by Swift side, sending TimerTick events
-                caps.render();
+                return render();
             }
             
             Event::StopTimer => {
                 model.is_timer_running = false;
-                caps.render();
+                return render();
             }
             
             Event::ToggleTimer => {
                 model.is_timer_running = !model.is_timer_running;
-                caps.render();
+                return render();
             }
             
             Event::TimerTick => {
@@ -206,7 +215,7 @@ impl crux_core::App for App {
                     if let Some(ref mut workout) = model.current_workout {
                         workout.duration = Some(model.seconds_elapsed);
                     }
-                    caps.render();
+                    return render();
                 }
             }
             
@@ -222,8 +231,8 @@ impl crux_core::App for App {
                 };
                 model.current_workout = Some(workout);
                 model.seconds_elapsed = 0;
-                self.update(Event::StartTimer, model, caps);
-                caps.render();
+                // Call StartTimer which will also render
+                return self.update(Event::StartTimer, model, _caps);
             }
             
             Event::FinishWorkout => {
@@ -237,43 +246,43 @@ impl crux_core::App for App {
                     
                     model.is_timer_running = false;
                     model.seconds_elapsed = 0;
-                    caps.render();
+                    return render();
                 }
             }
             
             Event::WorkoutSaved => {
                 // Database save completed, no action needed
-                caps.render();
+                return render();
             }
             
             Event::WorkoutLoaded { workout } => {
                 model.selected_workout = Some(workout);
-                caps.render();
+                return render();
             }
             
             Event::HistoryLoaded { workouts } => {
                 model.workouts = workouts;
-                caps.render();
+                return render();
             }
-            
+
             Event::DiscardWorkout => {
                 model.current_workout = None;
                 model.is_timer_running = false;
                 model.seconds_elapsed = 0;
-                caps.render();
+                return render();
             }
             
             Event::UpdateWorkoutName { name } => {
                 if let Some(ref mut workout) = model.current_workout {
                     workout.name = name;
-                    caps.render();
+                    return render();
                 }
             }
             
             Event::UpdateWorkoutNote { note } => {
                 if let Some(ref mut workout) = model.current_workout {
                     workout.note = note;
-                    caps.render();
+                    return render();
                 }
             }
             
@@ -302,14 +311,14 @@ impl crux_core::App for App {
                         body_part: None,
                     };
                     workout.exercises.push(exercise);
-                    caps.render();
+                    return render();
                 }
             }
             
             Event::DeleteExercise { exercise_id } => {
                 if let Some(ref mut workout) = model.current_workout {
                     workout.exercises.retain(|e| e.id != exercise_id);
-                    caps.render();
+                    return render();
                 }
             }
             
@@ -317,7 +326,7 @@ impl crux_core::App for App {
                 if let Some(ref mut workout) = model.current_workout {
                     if let Some(exercise) = workout.exercises.iter_mut().find(|e| e.id == exercise_id) {
                         exercise.name = name;
-                        caps.render();
+                        return render();
                     }
                 }
             }
@@ -337,7 +346,7 @@ impl crux_core::App for App {
                             set_index: exercise.sets.len() as i32,
                         };
                         exercise.sets.push(set);
-                        caps.render();
+                        return render();
                     }
                 }
             }
@@ -351,7 +360,7 @@ impl crux_core::App for App {
                             for (idx, set) in exercise.sets.iter_mut().enumerate() {
                                 set.set_index = idx as i32;
                             }
-                            caps.render();
+                            return render();
                         }
                     }
                 }
@@ -362,7 +371,7 @@ impl crux_core::App for App {
                     if let Some(exercise) = workout.exercises.iter_mut().find(|e| e.id == exercise_id) {
                         if let Some(set) = exercise.sets.get_mut(set_index) {
                             set.actual = actual;
-                            caps.render();
+                            return render();
                         }
                     }
                 }
@@ -373,7 +382,7 @@ impl crux_core::App for App {
                     if let Some(exercise) = workout.exercises.iter_mut().find(|e| e.id == exercise_id) {
                         if let Some(set) = exercise.sets.get_mut(set_index) {
                             set.suggest = suggest;
-                            caps.render();
+                            return render();
                         }
                     }
                 }
@@ -384,7 +393,7 @@ impl crux_core::App for App {
                     if let Some(exercise) = workout.exercises.iter_mut().find(|e| e.id == exercise_id) {
                         if let Some(set) = exercise.sets.get_mut(set_index) {
                             set.is_completed = !set.is_completed;
-                            caps.render();
+                            return render();
                         }
                     }
                 }
@@ -393,7 +402,7 @@ impl crux_core::App for App {
             Event::LoadHistory => {
                 // Request to load history - shell will handle database query
                 // and send HistoryLoaded event back
-                caps.render();
+                return render();
             }
             
             Event::LoadWorkoutDetail { workout_id } => {
@@ -402,35 +411,35 @@ impl crux_core::App for App {
                 // For now, try to find in existing workouts
                 if let Some(workout) = model.workouts.iter().find(|w| w.id == workout_id) {
                     model.selected_workout = Some(workout.clone());
-                    caps.render();
+                    return render();
                 }
             }
             
             Event::ImportWorkout { json_data } => {
                 if let Ok(workout) = serde_json::from_str::<Workout>(&json_data) {
                     model.current_workout = Some(workout);
-                    caps.render();
+                    return render();
                 }
             }
             
             Event::NavigateToWorkout => {
                 model.selected_tab = Tab::Workout;
-                caps.render();
+                return render();
             }
             
             Event::NavigateToHistory => {
                 model.selected_tab = Tab::History;
-                caps.render();
+                return render();
             }
             
             Event::NavigateToWorkoutDetail { workout_id } => {
                 model.navigation_path.push(NavigationDestination::WorkoutDetail { workout_id });
-                caps.render();
+                return render();
             }
             
             Event::NavigateToHistoryDetail { workout_id } => {
                 model.navigation_path.push(NavigationDestination::HistoryDetail { workout_id });
-                self.update(Event::LoadWorkoutDetail { workout_id }, model, caps);
+                return self.update(Event::LoadWorkoutDetail { workout_id }, model, _caps);
             }
             
             Event::CalculatePlates { target_weight, bar_type } => {
@@ -453,10 +462,12 @@ impl crux_core::App for App {
                     bar_type,
                     plates,
                 });
-                caps.render();
+                return render();
             }
             
         }
+        
+        Command::done()
     }
 
     fn view(&self, model: &Self::Model) -> Self::ViewModel {

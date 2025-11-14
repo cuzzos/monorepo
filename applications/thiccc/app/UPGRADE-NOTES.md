@@ -1,26 +1,26 @@
-# Upgrade to Rust Edition 2024
+# Upgrade to Rust Edition 2024 & Crux 0.16.1
 
 ## What Changed
 
-Your iOS application has been updated to use **Rust Edition 2024**, the latest stable edition released in February 2025 with Rust 1.85.0.
+Your iOS application has been updated to use **Rust Edition 2024** and **Crux Core 0.16.1**, the absolute latest version with the modern Command-based architecture.
 
 ### Package Versions
 
 - **Rust Edition**: Upgraded from 2021 → **2024**
 - **Rust Compiler**: 1.90.0 (supports edition 2024)
-- **crux_core**: Kept at v0.7.6 (stable API)
+- **crux_core**: Upgraded from v0.7 → **v0.16.1** (latest version with Command API)
+- **rusqlite**: Upgraded from v0.31 → **v0.37.0** (latest stable release)
 - **serde**: Updated to latest 1.0.228
 - **All transitive dependencies**: Updated to latest compatible versions
 
-### Why Crux 0.7 Instead of 0.16?
+### Crux 0.16.1 - Modern Command-Based Architecture
 
-Crux 0.16 introduced significant breaking API changes that move to a Command-based architecture. For this proof of concept, we're using the stable 0.7 API which:
-- Has well-documented patterns
-- Provides all features needed for basic apps
-- Works seamlessly with Rust 2024 edition
-- Is easier to understand and extend
-
-When you're ready to scale, you can migrate to 0.16+ for the new Command API.
+The upgrade to Crux 0.16.1 includes the fully modern Command-based architecture:
+- **Effect Type**: Defined custom `Effect` enum using `#[crux_core::macros::effect]`
+- **Command Return**: `App::update` now returns `Command<Effect, Event>`
+- **New render() API**: Migrated from deprecated `Render` capability to `render()` function
+- **Cleaner Code**: All render operations now use the Command API exclusively
+- **No Deprecation Warnings**: Fully migrated to the latest APIs
 
 ## What You Get with Rust 2024 Edition
 
@@ -39,18 +39,67 @@ cd shared && cargo test
 
 Results:
 ```
-test tests::test_increment ... ok
+test tests::test_exercise_creation ... ok
 test tests::test_model_default ... ok
-test tests::test_view ... ok
+test tests::test_plate_calculation ... ok
+test tests::test_workout_creation ... ok
 ```
+
+All 4 tests pass successfully!
+
+## Migration Details
+
+### Effect Definition
+The app now defines a custom Effect enum that encapsulates all possible side effects:
+
+```rust
+#[crux_core::macros::effect]
+pub enum Effect {
+    Render(RenderOperation),
+}
+```
+
+This can be extended in the future to include other capabilities like HTTP, Time, etc.
+
+### Update Method Changes
+The `App::update` method signature changed from:
+```rust
+fn update(&self, event: Event, model: &mut Model, caps: &Capabilities)
+```
+
+to:
+```rust
+fn update(&self, event: Event, model: &mut Model, _caps: &Capabilities) -> Command<Effect, Event>
+```
+
+### Render API Migration (0.15 → 0.16.1)
+The most significant change in 0.16.1 is the deprecation of the `Render` capability in favor of the `render()` function:
+
+**Old API (deprecated in 0.16.1):**
+```rust
+caps.render();  // Spawns async task internally, no return value
+```
+
+**New API (0.16.1+):**
+```rust
+return render();  // Returns Command<Effect, Event>
+```
+
+Benefits of the new API:
+- Explicit command composition
+- Better testability
+- Clearer data flow
+- No deprecation warnings
+- Ready for future capability additions
 
 ## Next Steps
 
-1. Continue developing features with the stable API
-2. When ready for production, consider migrating to crux_core 0.16+ for:
-   - New Command-based architecture
+1. Continue developing features with the Command-based API
+2. Consider migrating capability calls to use Command builders for:
    - Better composability
-   - More modern patterns
+   - Explicit effect composition
+   - Improved testability
+3. Ready to add more capabilities (HTTP, Time, etc.) using the same pattern
 
 ## Documentation
 
