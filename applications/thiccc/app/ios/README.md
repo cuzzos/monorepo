@@ -7,8 +7,12 @@ This iOS app uses **XcodeGen + UniFFI** for automatic Rust-Swift integration.
 ### 1. Prerequisites
 
 ```bash
-# Install XcodeGen (one-time)
-brew install xcodegen
+# Install Mint (Swift tool manager)
+brew install mint
+
+# Install XcodeGen from Mintfile (version-pinned)
+cd ../../
+mint bootstrap
 ```
 
 ### 2. Initial Build
@@ -24,7 +28,7 @@ cd ../shared
 
 ```bash
 cd ../ios
-xcodegen generate
+mint run xcodegen xcodegen generate
 ```
 
 This creates `Thiccc.xcodeproj` with:
@@ -108,9 +112,20 @@ First time setup:
 Edit `project.yml`, then:
 
 ```bash
-xcodegen generate
+mint run xcodegen xcodegen generate
 # Xcode will prompt to reload - click "Reload"
 ```
+
+### Tool Versions
+
+**Why Mint?**
+- ✅ Version pinning via `Mintfile`
+- ✅ Reproducible builds across team
+- ✅ Standard for Swift tools
+- ✅ Isolated tool installations
+
+Current tools in `Mintfile`:
+- XcodeGen 2.42.0
 
 ---
 
@@ -139,7 +154,13 @@ rustup target add aarch64-apple-ios-sim
 ### Files appear red in Xcode
 Regenerate the project:
 ```bash
-xcodegen generate
+mint run xcodegen xcodegen generate
+```
+
+### Wrong XcodeGen version
+Use the version specified in Mintfile:
+```bash
+mint bootstrap  # Reinstalls from Mintfile
 ```
 
 ---

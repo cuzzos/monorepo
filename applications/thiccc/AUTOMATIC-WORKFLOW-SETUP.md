@@ -118,6 +118,19 @@ When you hit ⌘R in Xcode:
 
 ## Next Steps for You
 
+### Option 1: Automated (Recommended)
+
+Run the setup script on your Mac:
+
+```bash
+cd /path/to/thiccc
+./setup-mac.sh
+```
+
+This handles everything: installing tools, building Rust, generating Xcode project.
+
+### Option 2: Manual
+
 Run these commands on your Mac:
 
 ```bash
@@ -131,7 +144,13 @@ open thiccc/Thiccc.xcodeproj  # Opens in Xcode
 # Hit ⌘R - automatic from here!
 ```
 
-That's it! From now on, just hit ⌘R in Xcode whenever you make changes.
+### Important: macOS Required
+
+**Note:** XcodeGen requires macOS (it uses Xcode frameworks). While you can develop Rust code in the Linux devcontainer, iOS project generation and builds must run on a Mac.
+
+**Workflow:**
+- ✅ **Rust development**: Devcontainer (Linux) or Mac
+- ✅ **iOS builds**: Mac only (XcodeGen + Xcode)
 
 ---
 

@@ -63,8 +63,10 @@ cd /workspaces/Goonlytics/applications/thiccc/app/shared
 
 ```bash
 cd ../ios
-xcodegen generate
+mint run xcodegen xcodegen generate
 ```
+
+**Note:** XcodeGen version is pinned in `Mintfile` for reproducible builds.
 
 This creates `Thiccc.xcodeproj` with:
 - ✅ Automatic UniFFI binding generation

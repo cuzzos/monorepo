@@ -1,0 +1,4 @@
+# Mint-managed tool binaries
+# These are installed via `mint bootstrap` from Mintfile
+.build/
+
