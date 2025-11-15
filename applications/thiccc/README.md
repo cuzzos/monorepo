@@ -9,7 +9,7 @@ iOS workout tracker with **Rust business logic** + **SwiftUI UI**.
 open app/ios/thiccc/Thiccc.xcodeproj && # ⌘R to run
 ```
 
-**First time?** → [QUICKSTART.md](./QUICKSTART.md) has details
+**First time?** → [docs/QUICKSTART.md](./docs/QUICKSTART.md) has details
 
 ## What Is This?
 
@@ -28,10 +28,10 @@ open app/ios/thiccc/Thiccc.xcodeproj && # ⌘R to run
 ```
 thiccc/
 ├── setup-mac.sh              # Run this first!
+├── docs/                     # All documentation here
 ├── app/
 │   ├── shared/               # Rust (business logic)
 │   └── ios/                  # Swift (UI)
-└── docs → QUICKSTART.md, ARCHITECTURE.md, etc.
 ```
 
 ## Daily Development
@@ -51,14 +51,14 @@ cargo check         # Check compilation
 |-------|----------|
 | "No such module 'SharedCore'" | Hit ⌘B in Xcode (first build) |
 | Build errors | Run `./setup-mac.sh` again |
-| How does it work? | See [ARCHITECTURE.md](./app/ios/ARCHITECTURE.md) |
-| Deploy to TestFlight | See [DEPLOYMENT-INDEX.md](./app/DEPLOYMENT-INDEX.md) |
+| How does it work? | See [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) |
+| Deploy to TestFlight | See [docs/DEPLOYMENT-INDEX.md](./docs/DEPLOYMENT-INDEX.md) |
 
 ## Learn More
 
-- **[QUICKSTART.md](./QUICKSTART.md)** - Setup instructions
-- **[app/ios/ARCHITECTURE.md](./app/ios/ARCHITECTURE.md)** - How it works (architecture, testing, etc.)
-- **[app/DEPLOYMENT-INDEX.md](./app/DEPLOYMENT-INDEX.md)** - Deploy to TestFlight
+- **[docs/QUICKSTART.md](./docs/QUICKSTART.md)** - Setup instructions
+- **[docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)** - How it works (architecture, testing, etc.)
+- **[docs/DEPLOYMENT-INDEX.md](./docs/DEPLOYMENT-INDEX.md)** - Deploy to TestFlight
 
 ## Stack
 

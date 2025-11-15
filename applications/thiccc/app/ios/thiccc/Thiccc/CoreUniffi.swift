@@ -5,7 +5,7 @@
 //  Swift bridge to Rust/Crux core using UniFFI.
 //  This file bridges Swift UI to Rust business logic using UniFFI-generated bindings.
 //
-//  For detailed architecture documentation, see: ../ARCHITECTURE.md
+//  For detailed architecture documentation, see: ../../../../docs/ARCHITECTURE.md
 //
 //  Quick summary:
 //    • All business logic is in Rust (app/shared/src/lib.rs)

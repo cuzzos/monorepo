@@ -84,6 +84,6 @@ Reinstall Docker Desktop or see [README.md](./README.md).
 ---
 
 **Questions?**
-- More info: [README.md](./README.md)
-- How it works: [ARCHITECTURE.md](./app/ios/ARCHITECTURE.md)
+- More info: [README.md](../README.md)
+- How it works: [ARCHITECTURE.md](./ARCHITECTURE.md)
 

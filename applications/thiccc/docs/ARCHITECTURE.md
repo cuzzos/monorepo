@@ -582,9 +582,8 @@ export RUSTC_WRAPPER=sccache
 
 ## Further Reading
 
-- **Setup:** [../../QUICKSTART.md](../../QUICKSTART.md)
-- **UniFFI Details:** [../../UNIFFI-SUMMARY.md](../../UNIFFI-SUMMARY.md)
-- **Main README:** [../../README.md](../../README.md)
+- **Setup:** [QUICKSTART.md](./QUICKSTART.md)
+- **Main README:** [../README.md](../README.md)
 - **UniFFI Official Docs:** https://mozilla.github.io/uniffi-rs/
 - **Crux Framework:** https://github.com/redbadger/crux
 
@@ -753,6 +752,6 @@ open thiccc/Thiccc.xcodeproj
 ---
 
 **Questions?**
-- Set up [QUICKSTART.md](../../QUICKSTART.md)
-- Project overview: [README.md](../../README.md)
+- Setup: [QUICKSTART.md](./QUICKSTART.md)
+- Project overview: [../README.md](../README.md)
 
