@@ -258,5 +258,5 @@ struct WorkoutView: View {
 }
 
 #Preview {
-    WorkoutView(core: RustCore())
+    WorkoutView(core: RustCoreUniffi())
 }

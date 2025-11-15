@@ -14,30 +14,42 @@ A complete guide to deploy your iOS app to TestFlight for testing.
   - https://appstoreconnect.apple.com/
 
 ### Required Information
-- [ ] App name (currently: "thiccc")
+- [ ] App name (currently: "Thiccc")
 - [ ] Bundle identifier (currently: `com.thiccc.app`)
 - [ ] App description
 - [ ] App icon (1024x1024 PNG)
 - [ ] Privacy policy URL (required for TestFlight)
+- [ ] Target devices with iOS 18.0+ for testing
 
 ---
 
 ## Phase 1: Prepare Your Xcode Project
 
-### Step 1.1: Open Project in Xcode
+### Step 1.1: Initial Setup (One-Time)
+
+First time? Run the setup script:
 ```bash
 # On your Mac
-cd /path/to/Goonlytics/applications/thiccc/app/ios
-open thiccc.xcodeproj
+cd /path/to/thiccc
+./setup-mac.sh
 ```
 
-### Step 1.2: Configure Project Settings
+This installs all dependencies and generates the Xcode project.
 
-1. **Select the project** in Xcode's left sidebar (blue icon labeled "thiccc")
-2. **Select target** "thiccc" under TARGETS
-3. **Navigate to "Signing & Capabilities" tab**
+### Step 1.2: Open Project in Xcode
+```bash
+cd app/ios
+open thiccc/Thiccc.xcodeproj
+```
 
-### Step 1.3: Set Up Signing
+### Step 1.3: Configure Project Settings
+
+1. **Select the project** in Xcode's left sidebar (blue icon labeled "Thiccc")
+2. **Select target** "Thiccc" under TARGETS
+3. **Verify iOS Deployment Target is iOS 18.0** (General tab)
+4. **Navigate to "Signing & Capabilities" tab**
+
+### Step 1.4: Set Up Signing
 
 **Option A: Automatic Signing (Recommended for beginners)**
 - [ ] Check "Automatically manage signing"
@@ -48,20 +60,21 @@ open thiccc.xcodeproj
 - [ ] Uncheck "Automatically manage signing"
 - [ ] You'll need to manually create certificates and profiles (see Appendix A)
 
-### Step 1.4: Verify Bundle Identifier
+### Step 1.5: Verify Bundle Identifier
 
 In "General" tab:
 - [ ] **Bundle Identifier**: `com.thiccc.app` (or change to your preferred reverse domain)
   - This must be unique across all iOS apps
   - Format: `com.yourcompany.appname`
+- [ ] **Minimum Deployments**: iOS 18.0 (required for this app)
 
-### Step 1.5: Set Version and Build Numbers
+### Step 1.6: Set Version and Build Numbers
 
 In "General" tab:
 - [ ] **Version**: `1.0.0` (visible to users)
 - [ ] **Build**: `1` (increment with each upload)
 
-### Step 1.6: Add App Icon
+### Step 1.7: Add App Icon
 
 1. In Xcode, click `Assets.xcassets` in the left sidebar
 2. Click `AppIcon`
@@ -406,7 +419,7 @@ In Xcode, General tab:
 **Solution**:
 - Ensure they installed TestFlight app first
 - Check invitation email isn't in spam
-- Verify device iOS version is compatible (iOS 15.0+)
+- Verify device iOS version is compatible (iOS 18.0+)
 - Confirm their Apple ID is correct
 
 ### "Could not find Developer Disk Image"

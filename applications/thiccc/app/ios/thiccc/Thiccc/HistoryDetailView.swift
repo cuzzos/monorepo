@@ -166,6 +166,6 @@ struct HistoryDetailView: View {
 
 #Preview {
     NavigationStack {
-        HistoryDetailView(core: RustCore(), workoutId: UUID())
+        HistoryDetailView(core: RustCoreUniffi(), workoutId: UUID())
     }
 }

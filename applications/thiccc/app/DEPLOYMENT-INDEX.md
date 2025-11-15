@@ -87,12 +87,12 @@ Before you start, make sure you have:
 
 | Field | Current Value | Change If Needed |
 |-------|---------------|------------------|
-| App Name | thiccc | ✏️ |
+| App Name | Thiccc | ✏️ |
 | Bundle ID | com.thiccc.app | ✏️ Required |
 | SKU | THICCC001 | ✏️ |
 | Version | 1.0.0 | ✏️ |
 | Build | 1 | 🔄 Increment each upload |
-| Platform | iOS 15.0+ | ✏️ |
+| Platform | iOS 18.0+ | ⚠️ Required |
 
 ### Timeline Summary
 
@@ -266,28 +266,29 @@ Once your beta testing is successful:
 ## 📁 Project Structure Reference
 
 ```
-app/
-├── README.md                          # Main project documentation
+thiccc/
+├── setup-mac.sh                       # ⭐ One-command setup
 ├── DEPLOYMENT-INDEX.md                # This file - start here
 ├── TESTFLIGHT-QUICKSTART.md           # Fast checklist
 ├── TESTFLIGHT-GUIDE.md                # Complete guide
 ├── TESTFLIGHT-FLOWCHART.md            # Visual reference
 ├── PRIVACY-POLICY-TEMPLATE.md         # Required for TestFlight
-├── UPGRADE-NOTES.md                   # Rust 2024 info
+├── README.md                          # Main project documentation
 │
-├── shared/                            # Rust/Crux core
-│   ├── Cargo.toml                     # Rust config (edition 2024)
-│   ├── src/
-│   │   └── lib.rs                     # App logic
-│   └── README.md                      # Core documentation
-│
-└── ios/                               # iOS shell
-    ├── thiccc.xcodeproj               # ← Open this in Xcode
-    └── thiccc/
-        ├── ThicccApp.swift            # App entry
-        ├── ContentView.swift          # UI
-        ├── Core.swift                 # Bridge to Rust
-        └── Assets.xcassets/           # App icon goes here
+└── app/
+    ├── shared/                        # Rust/Crux core
+    │   ├── Cargo.toml                 # Rust config (edition 2024)
+    │   ├── src/
+    │   │   ├── lib.rs                 # App logic + UniFFI
+    │   │   └── shared.udl             # FFI interface
+    │   └── build-ios.sh               # Initial build script
+    │
+    └── ios/                           # iOS shell
+        ├── project.yml                # XcodeGen spec
+        └── thiccc/Thiccc/             # ← Xcode project here
+            ├── ThicccApp.swift        # App entry
+            ├── CoreUniffi.swift       # Bridge to Rust
+            └── Assets.xcassets/       # App icon goes here
 ```
 
 ---

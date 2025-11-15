@@ -37,11 +37,15 @@ echo "Installing/updating XcodeGen via Mint..."
 mint bootstrap
 echo "✅ XcodeGen installed (version specified in Mintfile)"
 
-# Check for Rust
+# Install Rust (required for iOS development)
 if ! command -v rustc &> /dev/null; then
-    echo "Installing Rust..."
+    echo "📥 Installing Rust..."
+    echo "   Note: iOS targets require Rust on macOS (~700MB, like Node.js)"
+    echo "   This is ONLY for iOS builds - all development happens in devcontainer"
+    echo ""
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
     source "$HOME/.cargo/env"
+    echo "✅ Rust installed"
 else
     echo "✅ Rust already installed ($(rustc --version))"
 fi

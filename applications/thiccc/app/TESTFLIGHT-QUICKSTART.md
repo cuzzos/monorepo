@@ -19,31 +19,29 @@ A condensed checklist to get your app to TestFlight fast.
 
 ### 1️⃣ Xcode Setup (15 minutes)
 
-**First, create the Xcode project (one-time setup):**
+**Initial setup (one-time):**
 
 ```bash
-# On your Mac
-cd /path/to/thiccc/app/ios
+# On your Mac - Run the setup script
+cd /path/to/thiccc
+./setup-mac.sh
 
-# Option A: Automatic (requires XcodeGen)
-brew install xcodegen
-xcodegen generate
-
-# Option B: Manual setup
-# Follow instructions in ios/CREATE-XCODE-PROJECT.md
+# This installs Rust, XcodeGen, builds libraries, and generates Xcode project
 ```
 
 **Then open the project:**
 
 ```bash
-open thiccc.xcodeproj
+cd app/ios
+open thiccc/Thiccc.xcodeproj
 ```
 
 **In Xcode:**
-- [ ] Select project → Target "thiccc" → General tab
+- [ ] Select project → Target "Thiccc" → General tab
 - [ ] Set **Bundle Identifier**: `com.thiccc.app` (or your domain)
 - [ ] Set **Version**: `1.0.0`
 - [ ] Set **Build**: `1`
+- [ ] Verify **Deployment Target**: iOS 18.0
 - [ ] Go to **Signing & Capabilities** tab
 - [ ] ✅ Check "Automatically manage signing"
 - [ ] Select your **Team** (Apple Developer account)

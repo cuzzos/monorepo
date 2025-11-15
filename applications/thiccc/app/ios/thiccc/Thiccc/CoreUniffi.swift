@@ -2,17 +2,25 @@
 //  CoreUniffi.swift
 //  Thiccc
 //
-//  Swift bridge to Rust/Crux core using UniFFI
+//  Swift bridge to Rust/Crux core using UniFFI.
+//  This file bridges Swift UI to Rust business logic using UniFFI-generated bindings.
 //
+//  For detailed architecture documentation, see: ../ARCHITECTURE.md
+//
+//  Quick summary:
+//    • All business logic is in Rust (app/shared/src/lib.rs)
+//    • This file calls Rust via UniFFI auto-generated functions
+//    • SwiftUI views observe @Published viewModel and update automatically
+//
+//  Key files:
+//    • CoreUniffi.swift (this file) - Swift side of the bridge
+//    • app/shared/src/lib.rs - Rust business logic
+//    • app/shared/src/shared.udl - FFI interface definition
+
 
 import Foundation
 import Combine
-
-// MARK: - NOTE: Import the UniFFI-generated module
-// After running build-ios.sh, you'll need to:
-// 1. Add the Generated folder to your Xcode project
-// 2. Uncomment the following import:
-// import SharedCore
+import SharedCore  // UniFFI-generated bindings (created by build scripts)
 
 /// Bridge to Rust/Crux core using UniFFI
 /// This is a simplified version that uses UniFFI-generated bindings
@@ -54,12 +62,8 @@ class RustCoreUniffi: ObservableObject {
             let eventJson = try JSONEncoder().encode(event)
             let eventBytes = [UInt8](eventJson)
             
-            // Call UniFFI-generated processEvent function
-            // NOTE: Uncomment this line after adding the Generated folder to Xcode:
-            // let viewBytes = try processEvent(msg: eventBytes)
-            
-            // For now, as a placeholder until UniFFI bindings are generated:
-            let viewBytes = try self.processEventFallback(eventBytes)
+            // Call UniFFI-generated processEvent function (from Rust)
+            let viewBytes = try processEvent(msg: eventBytes)
             
             // Decode view model
             let viewData = Data(viewBytes)
@@ -70,14 +74,6 @@ class RustCoreUniffi: ObservableObject {
         } catch {
             print("Error dispatching event: \(error)")
         }
-    }
-    
-    /// Fallback implementation until UniFFI bindings are ready
-    /// This will be replaced by the actual UniFFI-generated function
-    private func processEventFallback(_ eventBytes: [UInt8]) throws -> [UInt8] {
-        // This is a temporary fallback that just returns the current view
-        // In production, this will be replaced by calling the UniFFI processEvent()
-        return try [UInt8](JSONEncoder().encode(viewModel))
     }
     
     /// Handle side effects that need to happen on the Swift side
@@ -128,39 +124,3 @@ class RustCoreUniffi: ObservableObject {
         // dispatch(.workoutLoaded(workout: workout))
     }
 }
-
-// MARK: - Migration Guide
-/*
- To complete the UniFFI migration:
- 
- 1. Build the Rust library with UniFFI:
-    cd app/shared
-    ./build-ios.sh
- 
- 2. Add the Generated folder to Xcode:
-    - In Xcode, right-click on the Thiccc folder
-    - Select "Add Files to Thiccc"
-    - Navigate to app/ios/thiccc/Thiccc/Generated
-    - Check "Copy items if needed"
-    - Add the folder
- 
- 3. Update the import at the top of this file:
-    Uncomment: import SharedCore
- 
- 4. Update the dispatch() method:
-    Replace: let viewBytes = try self.processEventFallback(eventBytes)
-    With:    let viewBytes = try processEvent(msg: eventBytes)
- 
- 5. Update your app to use RustCoreUniffi instead of RustCore:
-    In your app initialization, replace:
-    @StateObject private var core = RustCore()
-    With:
-    @StateObject private var core = RustCoreUniffi()
- 
- 6. Remove the old Core.swift file (keep this CoreUniffi.swift)
- 
- 7. Delete obsolete files:
-    - app/shared/shared.h
-    - app/ios/thiccc/Thiccc/shared-Bridging-Header.h
-*/
-

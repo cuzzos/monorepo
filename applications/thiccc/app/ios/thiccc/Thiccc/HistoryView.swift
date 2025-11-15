@@ -38,6 +38,6 @@ struct HistoryView: View {
 
 #Preview {
     NavigationStack {
-        HistoryView(core: RustCore())
+        HistoryView(core: RustCoreUniffi())
     }
 }
