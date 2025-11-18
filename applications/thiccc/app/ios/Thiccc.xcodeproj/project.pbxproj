@@ -1,0 +1,463 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		07FDF88D50BC1C6EE264F9BF /* StrongWorkoutRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CCA469323D847116C41AC4B /* StrongWorkoutRequest.swift */; };
+		0D911DFEA1C2A70260D9A916 /* WorkoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3328FC0E7F6055963B2FFF24 /* WorkoutView.swift */; };
+		20493BB18C3ADD9D5E5412FF /* PlateCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F23CED2C2B57C257536D749 /* PlateCalculator.swift */; };
+		277A347B68159C48A1CD35E8 /* AddExerciseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DCE4A287B666EE0533A4B59 /* AddExerciseView.swift */; };
+		446F53FD6AFE241E07FB30FB /* RestTimerModal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27319C579DF692760AA055D3 /* RestTimerModal.swift */; };
+		569E01157654958710FDC5DF /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30F18A1778489ADA84EDD7CB /* HistoryView.swift */; };
+		67ED623FBCD57F1BD0211522 /* Workout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44D8156BA6CA6EE617DB4E2D /* Workout.swift */; };
+		6DF2C32F60931E8BF9354CCF /* Plate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C97C77D20EC6D83AC40059D5 /* Plate.swift */; };
+		8213BFE87679EFB0AB3D8354 /* SharedCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 262799EDAA6DB3C5231CBFAC /* SharedCore.swift */; };
+		91BD45A346177C94EE0C8FF0 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8EB507A7444F03794BC26C3B /* Assets.xcassets */; };
+		AAB2862AE7BAAA5B2D552FC0 /* SetRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A37FC5300765B47996C890C /* SetRow.swift */; };
+		AECF1F5FF64F81CA6FA675C7 /* ThicccApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5D5411DE44DCCDC66E60AA5 /* ThicccApp.swift */; };
+		B26F598FD7138307A91F6882 /* StopwatchModal.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDF6CE489708BD30BDC46FF0 /* StopwatchModal.swift */; };
+		B59BE6A9A9E72EBED6CEEB16 /* DatabaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E04A37173DDBEDE3AF61845 /* DatabaseManager.swift */; };
+		B88DFBB349CACE789BD315B6 /* Generated in Sources */ = {isa = PBXBuildFile; fileRef = 150051EB90647F8D56669B81 /* Generated */; };
+		C0C3B14208C42101CBB15EF1 /* WorkoutDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CFF5F0325BFAA514DE12F46 /* WorkoutDetailView.swift */; };
+		C6124BA4180E328C9D37C43C /* HistoryDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC4BC7B543EF3FE9A8CC2956 /* HistoryDetailView.swift */; };
+		C961659C412DE84F8DE84DC9 /* ImportWorkoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AB1B52B2F6B62DBA3F08B54 /* ImportWorkoutView.swift */; };
+		D361D87C52C6477DEB7240A2 /* PlateCalculation.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0227C2EA3874B570FAFD3A9 /* PlateCalculation.swift */; };
+		DAE00CF977D666F94D6B2EFD /* BarType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11BC787508DC5A11A46E00BF /* BarType.swift */; };
+		E427FEA9CE2BC6AE88C2A7D1 /* PlateCalculatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E82A7EA931D43030B5E3682 /* PlateCalculatorView.swift */; };
+		E733EBB2A8AE48631F3BA51B /* CoreUniffi.swift in Sources */ = {isa = PBXBuildFile; fileRef = 838C589D6FFA46A6691A66E7 /* CoreUniffi.swift */; };
+		F654EC54539172B07478F184 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = DF09506D979B7FCC48FF3D6D /* Preview Assets.xcassets */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		11BC787508DC5A11A46E00BF /* BarType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BarType.swift; sourceTree = "<group>"; };
+		150051EB90647F8D56669B81 /* Generated */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Generated; path = thiccc/Thiccc/Generated; sourceTree = SOURCE_ROOT; };
+		1A37FC5300765B47996C890C /* SetRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetRow.swift; sourceTree = "<group>"; };
+		262799EDAA6DB3C5231CBFAC /* SharedCore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedCore.swift; sourceTree = "<group>"; };
+		27319C579DF692760AA055D3 /* RestTimerModal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestTimerModal.swift; sourceTree = "<group>"; };
+		2CFF5F0325BFAA514DE12F46 /* WorkoutDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutDetailView.swift; sourceTree = "<group>"; };
+		2E04A37173DDBEDE3AF61845 /* DatabaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabaseManager.swift; sourceTree = "<group>"; };
+		30F18A1778489ADA84EDD7CB /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
+		3328FC0E7F6055963B2FFF24 /* WorkoutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutView.swift; sourceTree = "<group>"; };
+		44D8156BA6CA6EE617DB4E2D /* Workout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Workout.swift; sourceTree = "<group>"; };
+		5AB1B52B2F6B62DBA3F08B54 /* ImportWorkoutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportWorkoutView.swift; sourceTree = "<group>"; };
+		6E82A7EA931D43030B5E3682 /* PlateCalculatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlateCalculatorView.swift; sourceTree = "<group>"; };
+		7CCA469323D847116C41AC4B /* StrongWorkoutRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrongWorkoutRequest.swift; sourceTree = "<group>"; };
+		7F23CED2C2B57C257536D749 /* PlateCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlateCalculator.swift; sourceTree = "<group>"; };
+		838C589D6FFA46A6691A66E7 /* CoreUniffi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreUniffi.swift; sourceTree = "<group>"; };
+		8DCE4A287B666EE0533A4B59 /* AddExerciseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddExerciseView.swift; sourceTree = "<group>"; };
+		8EB507A7444F03794BC26C3B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		B6265A5D3C5C51F1E73E6D2F /* Thiccc.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Thiccc.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C5D5411DE44DCCDC66E60AA5 /* ThicccApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThicccApp.swift; sourceTree = "<group>"; };
+		C97C77D20EC6D83AC40059D5 /* Plate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Plate.swift; sourceTree = "<group>"; };
+		CC4BC7B543EF3FE9A8CC2956 /* HistoryDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryDetailView.swift; sourceTree = "<group>"; };
+		DDF6CE489708BD30BDC46FF0 /* StopwatchModal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopwatchModal.swift; sourceTree = "<group>"; };
+		DF09506D979B7FCC48FF3D6D /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		E0227C2EA3874B570FAFD3A9 /* PlateCalculation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlateCalculation.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		05470793F5123F30DAF4A174 /* Preview Content */ = {
+			isa = PBXGroup;
+			children = (
+				DF09506D979B7FCC48FF3D6D /* Preview Assets.xcassets */,
+			);
+			path = "Preview Content";
+			sourceTree = "<group>";
+		};
+		24C8F21D750CFE7EDEF50502 = {
+			isa = PBXGroup;
+			children = (
+				150051EB90647F8D56669B81 /* Generated */,
+				C4A71768946B7D61A9398F22 /* Thiccc */,
+				3C3025A99C0E98AD12A18924 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		3036BFF9B53CFFBE6AF9FFE3 /* Generated */ = {
+			isa = PBXGroup;
+			children = (
+				262799EDAA6DB3C5231CBFAC /* SharedCore.swift */,
+			);
+			path = Generated;
+			sourceTree = "<group>";
+		};
+		3C3025A99C0E98AD12A18924 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				B6265A5D3C5C51F1E73E6D2F /* Thiccc.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		C4A71768946B7D61A9398F22 /* Thiccc */ = {
+			isa = PBXGroup;
+			children = (
+				8DCE4A287B666EE0533A4B59 /* AddExerciseView.swift */,
+				8EB507A7444F03794BC26C3B /* Assets.xcassets */,
+				11BC787508DC5A11A46E00BF /* BarType.swift */,
+				838C589D6FFA46A6691A66E7 /* CoreUniffi.swift */,
+				2E04A37173DDBEDE3AF61845 /* DatabaseManager.swift */,
+				CC4BC7B543EF3FE9A8CC2956 /* HistoryDetailView.swift */,
+				30F18A1778489ADA84EDD7CB /* HistoryView.swift */,
+				5AB1B52B2F6B62DBA3F08B54 /* ImportWorkoutView.swift */,
+				C97C77D20EC6D83AC40059D5 /* Plate.swift */,
+				E0227C2EA3874B570FAFD3A9 /* PlateCalculation.swift */,
+				7F23CED2C2B57C257536D749 /* PlateCalculator.swift */,
+				6E82A7EA931D43030B5E3682 /* PlateCalculatorView.swift */,
+				27319C579DF692760AA055D3 /* RestTimerModal.swift */,
+				1A37FC5300765B47996C890C /* SetRow.swift */,
+				DDF6CE489708BD30BDC46FF0 /* StopwatchModal.swift */,
+				7CCA469323D847116C41AC4B /* StrongWorkoutRequest.swift */,
+				C5D5411DE44DCCDC66E60AA5 /* ThicccApp.swift */,
+				44D8156BA6CA6EE617DB4E2D /* Workout.swift */,
+				2CFF5F0325BFAA514DE12F46 /* WorkoutDetailView.swift */,
+				3328FC0E7F6055963B2FFF24 /* WorkoutView.swift */,
+				3036BFF9B53CFFBE6AF9FFE3 /* Generated */,
+				05470793F5123F30DAF4A174 /* Preview Content */,
+			);
+			name = Thiccc;
+			path = thiccc/Thiccc;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		94E6D56D2CD64461E023F083 /* Thiccc */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 51B899A22F69DBB6CC3313B9 /* Build configuration list for PBXNativeTarget "Thiccc" */;
+			buildPhases = (
+				AA4C6E94F38071CE35264426 /* Generate UniFFI Bindings */,
+				3DD14D0A3C03A52DBAA1253F /* Sources */,
+				793B594317440858C1EA7C3D /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Thiccc;
+			packageProductDependencies = (
+			);
+			productName = Thiccc;
+			productReference = B6265A5D3C5C51F1E73E6D2F /* Thiccc.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		5C980674FFF8D4B66C3FD49B /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					94E6D56D2CD64461E023F083 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 08D46A0F2592AA18DDEBF0D7 /* Build configuration list for PBXProject "Thiccc" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 24C8F21D750CFE7EDEF50502;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				94E6D56D2CD64461E023F083 /* Thiccc */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		793B594317440858C1EA7C3D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				91BD45A346177C94EE0C8FF0 /* Assets.xcassets in Resources */,
+				F654EC54539172B07478F184 /* Preview Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		AA4C6E94F38071CE35264426 /* Generate UniFFI Bindings */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(PROJECT_DIR)/../shared/src/lib.rs",
+				"$(PROJECT_DIR)/../shared/src/shared.udl",
+			);
+			name = "Generate UniFFI Bindings";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(PROJECT_DIR)/thiccc/Thiccc/Generated/SharedCore.swift",
+				"$(PROJECT_DIR)/thiccc/Thiccc/Generated/SharedCoreFFI.h",
+				"$(PROJECT_DIR)/thiccc/Thiccc/Generated/SharedCoreFFI.modulemap",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e\n\n# Source Cargo environment if it exists (needed for Xcode build environment)\nif [ -f \"$HOME/.cargo/env\" ]; then\n  source \"$HOME/.cargo/env\"\nfi\n\n# Verify cargo is available\nif ! command -v cargo &> /dev/null; then\n  echo \"❌ Error: cargo not found. Please install Rust: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh\"\n  exit 1\nfi\n\n# Only generate if shared core was modified\nSHARED_DIR=\"$PROJECT_DIR/../shared\"\nGENERATED_DIR=\"$PROJECT_DIR/thiccc/Thiccc/Generated\"\n\necho \"📦 Checking if UniFFI bindings need regeneration...\"\n\n# Create Generated directory if it doesn't exist\nmkdir -p \"$GENERATED_DIR\"\n\n# Check if we need to regenerate (if Rust files are newer than Swift bindings)\nif [ \"$CONFIGURATION\" == \"Debug\" ]; then\n  if [ ! -f \"$GENERATED_DIR/SharedCore.swift\" ] || \\\n     [ \"$SHARED_DIR/src/lib.rs\" -nt \"$GENERATED_DIR/SharedCore.swift\" ] || \\\n     [ \"$SHARED_DIR/src/shared.udl\" -nt \"$GENERATED_DIR/SharedCore.swift\" ]; then\n\n    echo \"🔨 Building Rust shared core...\"\n    cd \"$SHARED_DIR\"\n\n    # Build for simulator (Debug builds typically target simulator)\n    cargo build --release --target aarch64-apple-ios-sim\n\n    echo \"🎨 Generating Swift bindings...\"\n    cargo run --bin uniffi-bindgen generate \\\n      --library target/aarch64-apple-ios-sim/release/libshared.dylib \\\n      --language swift \\\n      --out-dir \"$GENERATED_DIR\"\n\n    echo \"✅ UniFFI bindings generated\"\n  else\n    echo \"✅ UniFFI bindings are up to date\"\n  fi\nfi\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		3DD14D0A3C03A52DBAA1253F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				277A347B68159C48A1CD35E8 /* AddExerciseView.swift in Sources */,
+				DAE00CF977D666F94D6B2EFD /* BarType.swift in Sources */,
+				E733EBB2A8AE48631F3BA51B /* CoreUniffi.swift in Sources */,
+				B59BE6A9A9E72EBED6CEEB16 /* DatabaseManager.swift in Sources */,
+				B88DFBB349CACE789BD315B6 /* Generated in Sources */,
+				C6124BA4180E328C9D37C43C /* HistoryDetailView.swift in Sources */,
+				569E01157654958710FDC5DF /* HistoryView.swift in Sources */,
+				C961659C412DE84F8DE84DC9 /* ImportWorkoutView.swift in Sources */,
+				6DF2C32F60931E8BF9354CCF /* Plate.swift in Sources */,
+				D361D87C52C6477DEB7240A2 /* PlateCalculation.swift in Sources */,
+				20493BB18C3ADD9D5E5412FF /* PlateCalculator.swift in Sources */,
+				E427FEA9CE2BC6AE88C2A7D1 /* PlateCalculatorView.swift in Sources */,
+				446F53FD6AFE241E07FB30FB /* RestTimerModal.swift in Sources */,
+				AAB2862AE7BAAA5B2D552FC0 /* SetRow.swift in Sources */,
+				8213BFE87679EFB0AB3D8354 /* SharedCore.swift in Sources */,
+				B26F598FD7138307A91F6882 /* StopwatchModal.swift in Sources */,
+				07FDF88D50BC1C6EE264F9BF /* StrongWorkoutRequest.swift in Sources */,
+				AECF1F5FF64F81CA6FA675C7 /* ThicccApp.swift in Sources */,
+				67ED623FBCD57F1BD0211522 /* Workout.swift in Sources */,
+				C0C3B14208C42101CBB15EF1 /* WorkoutDetailView.swift in Sources */,
+				0D911DFEA1C2A70260D9A916 /* WorkoutView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		0E1AE21C9D32F2E9AF2B8C29 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MARKETING_VERSION = 1.0.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = Thiccc;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		3CF85969AC42D00B438FB3A0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				IMPORT_PATHS = "$(PROJECT_DIR)/thiccc/Thiccc/Generated";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				OTHER_LDFLAGS = "-lshared -L$(PROJECT_DIR)/../shared/target/aarch64-apple-ios-sim/release";
+				PRODUCT_BUNDLE_IDENTIFIER = com.thiccc.app;
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_INCLUDE_PATHS = "$(PROJECT_DIR)/thiccc/Thiccc/Generated";
+				SWIFT_MODULE_SEARCH_PATHS = "$(PROJECT_DIR)/thiccc/Thiccc/Generated";
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		4EAC594D1D8CD0739BC4E31B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MARKETING_VERSION = 1.0.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = Thiccc;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		6B1DE15128DD22A3B553DBB0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				IMPORT_PATHS = "$(PROJECT_DIR)/thiccc/Thiccc/Generated";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				OTHER_LDFLAGS = "-lshared -L$(PROJECT_DIR)/../shared/target/aarch64-apple-ios/release";
+				PRODUCT_BUNDLE_IDENTIFIER = com.thiccc.app;
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_INCLUDE_PATHS = "$(PROJECT_DIR)/thiccc/Thiccc/Generated";
+				SWIFT_MODULE_SEARCH_PATHS = "$(PROJECT_DIR)/thiccc/Thiccc/Generated";
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		08D46A0F2592AA18DDEBF0D7 /* Build configuration list for PBXProject "Thiccc" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0E1AE21C9D32F2E9AF2B8C29 /* Debug */,
+				4EAC594D1D8CD0739BC4E31B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		51B899A22F69DBB6CC3313B9 /* Build configuration list for PBXNativeTarget "Thiccc" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3CF85969AC42D00B438FB3A0 /* Debug */,
+				6B1DE15128DD22A3B553DBB0 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 5C980674FFF8D4B66C3FD49B /* Project object */;
+}

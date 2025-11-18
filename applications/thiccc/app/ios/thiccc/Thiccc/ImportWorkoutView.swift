@@ -49,5 +49,5 @@ struct ImportWorkoutView: View {
 }
 
 #Preview {
-    ImportWorkoutView(core: RustCoreUniffi())
+    ImportWorkoutView(core: RustCore())
 }

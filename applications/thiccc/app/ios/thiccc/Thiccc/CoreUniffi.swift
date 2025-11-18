@@ -20,11 +20,11 @@
 
 import Foundation
 import Combine
-import SharedCore  // UniFFI-generated bindings (created by build scripts)
+// SharedCore types are compiled into the same module (Thiccc), no import needed
 
 /// Bridge to Rust/Crux core using UniFFI
 /// This is a simplified version that uses UniFFI-generated bindings
-class RustCoreUniffi: ObservableObject {
+class RustCore: ObservableObject {
     @Published var viewModel: ViewModel
     
     // Database manager for persistence
@@ -34,7 +34,7 @@ class RustCoreUniffi: ObservableObject {
         // Get initial view model from Rust core
         do {
             let viewData = try view()
-            self.viewModel = try JSONDecoder().decode(ViewModel.self, from: Data(viewData))
+            self.viewModel = try JSONDecoder().decode(ViewModel.self, from: viewData)
         } catch {
             print("Error initializing view: \(error)")
             self.viewModel = Self.defaultViewModel()
@@ -58,15 +58,13 @@ class RustCoreUniffi: ObservableObject {
     /// Dispatch an event to the core
     func dispatch(_ event: Event) {
         do {
-            // Encode event to JSON bytes
-            let eventJson = try JSONEncoder().encode(event)
-            let eventBytes = [UInt8](eventJson)
+            // Encode event to JSON data
+            let eventData = try JSONEncoder().encode(event)
             
             // Call UniFFI-generated processEvent function (from Rust)
-            let viewBytes = try processEvent(msg: eventBytes)
+            let viewData = try processEvent(eventData)
             
             // Decode view model
-            let viewData = Data(viewBytes)
             self.viewModel = try JSONDecoder().decode(ViewModel.self, from: viewData)
             
             // Handle side effects

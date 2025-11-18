@@ -2,7 +2,7 @@ import SwiftUI
 
 @main
 struct ThicccApp: App {
-    @StateObject private var core = RustCoreUniffi()
+    @StateObject private var core = RustCore()
     
     var body: some Scene {
         WindowGroup {
@@ -45,5 +45,5 @@ struct AppView: View {
 }
 
 #Preview {
-    AppView(core: RustCoreUniffi())
+    AppView(core: RustCore())
 }

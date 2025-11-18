@@ -38,6 +38,6 @@ struct WorkoutDetailView: View {
 
 #Preview {
     NavigationStack {
-        WorkoutDetailView(core: RustCoreUniffi(), workoutId: UUID())
+        WorkoutDetailView(core: RustCore(), workoutId: UUID())
     }
 }
