@@ -80,13 +80,16 @@ struct WorkoutView: View {
                 .padding(.horizontal)
             
             // --- Exercise List ---
-            ScrollView {
-                LazyVStack(spacing: 20, pinnedViews: .sectionHeaders) {
-                    ForEach(model.exercises) { e in
-                        exerciseSection(for: e)
-                    }
+            List {
+                ForEach(model.exercises) { e in
+                    exerciseSection(for: e)
+                        .listRowInsets(EdgeInsets())
+                        .listRowSeparator(.hidden)
                 }
+                .onMove(perform: model.moveExercise)
             }
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
         }
         .safeAreaInset(edge: .bottom) {
             HStack {

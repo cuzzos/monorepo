@@ -153,10 +153,37 @@ class WorkoutModel: HashableObject {
         
     }
     
+    func moveExercise(from source: IndexSet, to destination: Int) {
+        $workout.withLock { workout in
+            workout.exercises.move(fromOffsets: source, toOffset: destination)
+        }
+    }
+    
     // Add a GlobalExercise as a new Exercise to the workout
     func addExercise(from global: GlobalExercise) {
+        let exerciseId = uuid()
+        
+        // Create an initial set for the new exercise
+        let initialSet = ExerciseSet(
+            id: uuid(),
+            type: .working,
+            weightUnit: .lb,
+            suggest: .init(
+                weight: nil,
+                reps: nil,
+                repRange: nil,
+                duration: nil,
+                rpe: nil,
+                restTime: 60
+            ),
+            actual: .init(),
+            exerciseId: exerciseId,
+            workoutId: workout.id,
+            setIndex: 0
+        )
+        
         let newExercise = Exercise(
-            id: UUID(),
+            id: exerciseId,
             supersetId: 0,
             workoutId: workout.id,
             name: global.name,
@@ -167,7 +194,7 @@ class WorkoutModel: HashableObject {
             weightUnit: .lb,
             defaultWarmUpTime: 60,
             defaultRestTime: 60,
-            sets: [],
+            sets: [initialSet],
             bodyPart: nil
         )
         // Add as flat exercise
