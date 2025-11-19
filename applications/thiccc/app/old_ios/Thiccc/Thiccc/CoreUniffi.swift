@@ -1,26 +1,5 @@
-//
-//  CoreUniffi.swift
-//  Thiccc
-//
-//  Swift bridge to Rust/Crux core using UniFFI.
-//  This file bridges Swift UI to Rust business logic using UniFFI-generated bindings.
-//
-//  For detailed architecture documentation, see: ../../../../docs/ARCHITECTURE.md
-//
-//  Quick summary:
-//    • All business logic is in Rust (app/shared/src/lib.rs)
-//    • This file calls Rust via UniFFI auto-generated functions
-//    • SwiftUI views observe @Published viewModel and update automatically
-//
-//  Key files:
-//    • CoreUniffi.swift (this file) - Swift side of the bridge
-//    • app/shared/src/lib.rs - Rust business logic
-//    • app/shared/src/shared.udl - FFI interface definition
-
-
 import Foundation
 import Combine
-// SharedCore types are compiled into the same module (Thiccc), no import needed
 
 /// Bridge to Rust/Crux core using UniFFI
 /// This is a simplified version that uses UniFFI-generated bindings

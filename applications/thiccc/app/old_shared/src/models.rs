@@ -67,6 +67,7 @@ pub struct ExerciseSet {
     pub weight_unit: Option<WeightUnit>,
     pub suggest: SetSuggest,
     pub actual: SetActual,
+    #[serde(skip)]
     pub is_completed: bool,
     pub exercise_id: Uuid,
     pub workout_id: Uuid,
@@ -133,13 +134,14 @@ pub struct Exercise {
     pub weight_unit: Option<WeightUnit>,
     pub default_warm_up_time: Option<i32>,
     pub default_rest_time: Option<i32>,
+    #[serde(skip)]
     pub sets: Vec<ExerciseSet>,
     pub body_part: Option<BodyPart>,
 }
 
 impl Exercise {
     pub fn is_completed(&self) -> bool {
-        !self.sets.is_empty() && self.sets.iter().all(|set| set.is_completed)
+        self.sets.iter().all(|set| set.is_completed)
     }
 }
 
@@ -155,6 +157,7 @@ pub struct Workout {
     pub start_timestamp: chrono::DateTime<chrono::Utc>,
     #[serde(with = "chrono::serde::ts_seconds_option")]
     pub end_timestamp: Option<chrono::DateTime<chrono::Utc>>,
+    #[serde(skip)]
     pub exercises: Vec<Exercise>,
 }
 
