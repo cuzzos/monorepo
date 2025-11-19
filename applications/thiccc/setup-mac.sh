@@ -43,11 +43,16 @@ if ! command -v rustc &> /dev/null; then
     echo "   Note: iOS targets require Rust on macOS (~700MB, like Node.js)"
     echo "   This is ONLY for iOS builds - all development happens in devcontainer"
     echo ""
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
     source "$HOME/.cargo/env"
     echo "✅ Rust installed"
 else
     echo "✅ Rust already installed ($(rustc --version))"
+fi
+
+# Ensure cargo environment is loaded
+if [ -f "$HOME/.cargo/env" ]; then
+    source "$HOME/.cargo/env"
 fi
 
 # Add iOS targets

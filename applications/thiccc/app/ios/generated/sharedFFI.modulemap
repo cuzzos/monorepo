@@ -1,5 +1,5 @@
-module SharedCoreFFI {
-    header "SharedCoreFFI.h"
+module sharedFFI {
+    header "sharedFFI.h"
     export *
     use "Darwin"
     use "_Builtin_stdbool"

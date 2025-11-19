@@ -6,7 +6,9 @@ class Core: ObservableObject {
     @Published var view: ViewModel
     
     init() {
-        self.view = try! .bincodeDeserialize(input: [UInt8](SimpleCounter.view()))
+        // Call the top-level view() function from the generated FFI
+        let viewData = Thiccc.view()
+        self.view = try! .bincodeDeserialize(input: [UInt8](viewData))
     }
     
     func update(_ event: Event) {
@@ -21,7 +23,8 @@ class Core: ObservableObject {
     func processEffect(_ request: Request) {
         switch request.effect {
         case .render:
-            view = try! .bincodeDeserialize(input: [UInt8](SimpleCounter.view()))
+            let viewData = Thiccc.view()
+            self.view = try! .bincodeDeserialize(input: [UInt8](viewData))
         }
     }
 }

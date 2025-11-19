@@ -19,7 +19,6 @@ targets:
       - path: ../shared/src/shared.udl
         buildPhase: sources
     dependencies:
-      - target: Shared/uniffi-bindgen-bin
       - target: Shared/shared-staticlib
       - package: SharedTypes
     info:
@@ -34,6 +33,27 @@ targets:
       OTHER_LDFLAGS: [-w]
       SWIFT_OBJC_BRIDGING_HEADER: generated/sharedFFI.h
       ENABLE_USER_SCRIPT_SANDBOXING: NO
+    preBuildScripts:
+      - name: Build uniffi-bindgen for macOS
+        script: |
+          #!/bin/bash
+          set -e
+          
+          # Build uniffi-bindgen as a native macOS tool using cargo
+          cd "${PROJECT_DIR}/.."
+          
+          # Ensure cargo is in PATH
+          export PATH="$HOME/.cargo/bin:/usr/local/bin:/opt/homebrew/bin:$PATH"
+          
+          # Create build output directory
+          mkdir -p shared/build/Debug
+          
+          # Build uniffi-bindgen for the host (macOS) - always use debug for faster builds
+          # (this is a build tool, not part of the shipped app)
+          cargo build --bin uniffi-bindgen
+          
+          # Copy to a consistent location in shared/build
+          cp target/debug/uniffi-bindgen shared/build/Debug/uniffi-bindgen
     buildRules:
       - name: Generate FFI
         filePattern: "*.udl"
@@ -54,7 +74,15 @@ targets:
           fi
 
           cd "${INPUT_FILE_DIR}/.."
-          "${BUILD_DIR}/${CONFIGURATION}/uniffi-bindgen" generate "src/${INPUT_FILE_NAME}" --language swift --out-dir "${PROJECT_DIR}/generated"
+          # uniffi-bindgen is built for macOS in the shared project's build directory
+          UNIFFI_BINDGEN="${PROJECT_DIR}/../shared/build/Debug/uniffi-bindgen"
+          if [ ! -f "$UNIFFI_BINDGEN" ]; then
+            echo "Error: uniffi-bindgen not found at $UNIFFI_BINDGEN"
+            echo "Expected location: ${PROJECT_DIR}/../shared/build/Debug/uniffi-bindgen"
+            echo "The prebuild script should have built it."
+            exit 1
+          fi
+          "$UNIFFI_BINDGEN" generate "src/${INPUT_FILE_NAME}" --language swift --out-dir "${PROJECT_DIR}/generated"
         outputFiles:
           - $(PROJECT_DIR)/generated/$(INPUT_FILE_BASE).swift
           - $(PROJECT_DIR)/generated/$(INPUT_FILE_BASE)FFI.h

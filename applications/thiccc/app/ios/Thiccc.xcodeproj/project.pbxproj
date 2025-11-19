@@ -7,9 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		46D29A9BB6B7DA10F27E06C2 /* Thiccc.xcodeproj in Resources */ = {isa = PBXBuildFile; fileRef = AF98FC750811E8CECCC5A105 /* Thiccc.xcodeproj */; };
 		485A9A483A101DEB09CD8630 /* SharedTypes in Frameworks */ = {isa = PBXBuildFile; productRef = 00D8AC0EBAB047A3C0267091 /* SharedTypes */; };
 		5B668D20D2C4FC90702027A8 /* libshared_static.a.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7F4FB8D8B2304AF3B5B09258 /* libshared_static.a.a */; };
-		6A3D2B9676B19E411CBF319A /* (null) in Resources */ = {isa = PBXBuildFile; fileRef = 36719DCE033720CD1813C1B4; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		A22E9946BB26068F5FF492D8 /* SimpleCounterApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9453EBB7E3F709A3748B0B00 /* SimpleCounterApp.swift */; };
 		EA4BAEC12B10689A998AE057 /* core.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64D60112E666258B75C7190D /* core.swift */; };
 		F183B78E9A7C8832F1E912B6 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D38BC9E58C6A5AA0AC71FF5 /* ContentView.swift */; };
@@ -31,18 +31,11 @@
 			outputFilesCompilerFlags = (
 			);
 			runOncePerArchitecture = 0;
-			script = "#!/bin/bash\nset -e\n\n# Skip during indexing phase in XCode 13+\nif [ \"$ACTION\" == \"indexbuild\" ]; then\n  echo \"Not building *.udl files during indexing.\"\n  exit 0\nfi\n\n# Skip for preview builds\nif [ \"$ENABLE_PREVIEWS\" = \"YES\" ]; then\n  echo \"Not building *.udl files during preview builds.\"\n  exit 0\nfi\n\ncd \"${INPUT_FILE_DIR}/..\"\n\"${BUILD_DIR}/${CONFIGURATION}/uniffi-bindgen\" generate \"src/${INPUT_FILE_NAME}\" --language swift --out-dir \"${PROJECT_DIR}/generated\"\n";
+			script = "#!/bin/bash\nset -e\n\n# Skip during indexing phase in XCode 13+\nif [ \"$ACTION\" == \"indexbuild\" ]; then\n  echo \"Not building *.udl files during indexing.\"\n  exit 0\nfi\n\n# Skip for preview builds\nif [ \"$ENABLE_PREVIEWS\" = \"YES\" ]; then\n  echo \"Not building *.udl files during preview builds.\"\n  exit 0\nfi\n\ncd \"${INPUT_FILE_DIR}/..\"\n# uniffi-bindgen is built for macOS in the shared project's build directory\nUNIFFI_BINDGEN=\"${PROJECT_DIR}/../shared/build/Debug/uniffi-bindgen\"\nif [ ! -f \"$UNIFFI_BINDGEN\" ]; then\n  echo \"Error: uniffi-bindgen not found at $UNIFFI_BINDGEN\"\n  echo \"Expected location: ${PROJECT_DIR}/../shared/build/Debug/uniffi-bindgen\"\n  echo \"The prebuild script should have built it.\"\n  exit 1\nfi\n\"$UNIFFI_BINDGEN\" generate \"src/${INPUT_FILE_NAME}\" --language swift --out-dir \"${PROJECT_DIR}/generated\"\n";
 		};
 /* End PBXBuildRule section */
 
 /* Begin PBXContainerItemProxy section */
-		9289C5B368A8C3B30C415792 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 5368BB02CF8DFE211F0B385F /* Shared */;
-			proxyType = 1;
-			remoteGlobalIDString = CA02FA85CE9E4296ADE0F606;
-			remoteInfo = "uniffi-bindgen-bin";
-		};
 		A4B94D45F9270E7F15F3DD4A /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 5368BB02CF8DFE211F0B385F /* Shared */;
@@ -57,13 +50,6 @@
 			remoteGlobalIDString = CA0049BF7D4FFB09138082B7;
 			remoteInfo = "shared-staticlib";
 		};
-		F149737B88B7A34099B6D57E /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 5368BB02CF8DFE211F0B385F /* Shared */;
-			proxyType = 2;
-			remoteGlobalIDString = CA02FA85CE9E8109328FB0D5;
-			remoteInfo = "uniffi-bindgen-bin";
-		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
@@ -74,6 +60,7 @@
 		64D60112E666258B75C7190D /* core.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = core.swift; sourceTree = "<group>"; };
 		87AF1C1465A7D07538014067 /* shared.udl */ = {isa = PBXFileReference; path = shared.udl; sourceTree = "<group>"; };
 		9453EBB7E3F709A3748B0B00 /* SimpleCounterApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimpleCounterApp.swift; sourceTree = "<group>"; };
+		AF98FC750811E8CECCC5A105 /* Thiccc.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Thiccc.xcodeproj; sourceTree = "<group>"; };
 		B6265A5D3C5C51F1E73E6D2F /* Thiccc.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Thiccc.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -124,6 +111,7 @@
 				64D60112E666258B75C7190D /* core.swift */,
 				06F03F79ADB5F75373E80434 /* Info.plist */,
 				9453EBB7E3F709A3748B0B00 /* SimpleCounterApp.swift */,
+				AF98FC750811E8CECCC5A105 /* Thiccc.xcodeproj */,
 			);
 			path = Thiccc;
 			sourceTree = "<group>";
@@ -148,7 +136,6 @@
 		F248F5D7F86B00B3E75EFF4F /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				36719DCE033720CD1813C1B4,
 				7F4FB8D8B2304AF3B5B09258 /* libshared_static.a.a */,
 			);
 			name = Products;
@@ -161,6 +148,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 51B899A22F69DBB6CC3313B9 /* Build configuration list for PBXNativeTarget "Thiccc" */;
 			buildPhases = (
+				F636E9E43CFC6C4492E6DE37 /* Build uniffi-bindgen for macOS */,
 				3DD14D0A3C03A52DBAA1253F /* Sources */,
 				793B594317440858C1EA7C3D /* Resources */,
 				426CBB237A87D5FDDB754644 /* Frameworks */,
@@ -169,7 +157,6 @@
 				ABAEC74AEEB521B111350887 /* PBXBuildRule */,
 			);
 			dependencies = (
-				A842202CE00C7D33AF005CFF /* PBXTargetDependency */,
 				2EE7EACB707E340937D16F96 /* PBXTargetDependency */,
 			);
 			name = Thiccc;
@@ -218,11 +205,6 @@
 /* End PBXProject section */
 
 /* Begin PBXReferenceProxy section */
-		36719DCE033720CD1813C1B4 = {
-			isa = PBXReferenceProxy;
-			remoteRef = F149737B88B7A34099B6D57E /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
 		7F4FB8D8B2304AF3B5B09258 /* libshared_static.a.a */ = {
 			isa = PBXReferenceProxy;
 			fileType = archive.ar;
@@ -237,11 +219,32 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6A3D2B9676B19E411CBF319A /* (null) in Resources */,
+				46D29A9BB6B7DA10F27E06C2 /* Thiccc.xcodeproj in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		F636E9E43CFC6C4492E6DE37 /* Build uniffi-bindgen for macOS */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Build uniffi-bindgen for macOS";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "#!/bin/bash\nset -e\n\n# Build uniffi-bindgen as a native macOS tool using cargo\ncd \"${PROJECT_DIR}/..\"\n\n# Ensure cargo is in PATH\nexport PATH=\"$HOME/.cargo/bin:/usr/local/bin:/opt/homebrew/bin:$PATH\"\n\n# Create build output directory\nmkdir -p shared/build/Debug\n\n# Build uniffi-bindgen for the host (macOS) - always use debug for faster builds\n# (this is a build tool, not part of the shipped app)\ncargo build --bin uniffi-bindgen\n\n# Copy to a consistent location in shared/build\ncp target/debug/uniffi-bindgen shared/build/Debug/uniffi-bindgen\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		3DD14D0A3C03A52DBAA1253F /* Sources */ = {
@@ -262,11 +265,6 @@
 			isa = PBXTargetDependency;
 			name = "shared-staticlib";
 			targetProxy = A4B94D45F9270E7F15F3DD4A /* PBXContainerItemProxy */;
-		};
-		A842202CE00C7D33AF005CFF /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = "uniffi-bindgen-bin";
-			targetProxy = 9289C5B368A8C3B30C415792 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -351,7 +349,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.cuzzos.Thiccc.Thiccc;
 				SDKROOT = iphoneos;
-				SWIFT_OBJC_BRIDGING_HEADER = generated/SharedCoreFFI.h;
+				SWIFT_OBJC_BRIDGING_HEADER = generated/sharedFFI.h;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -429,7 +427,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.cuzzos.Thiccc.Thiccc;
 				SDKROOT = iphoneos;
-				SWIFT_OBJC_BRIDGING_HEADER = generated/SharedCoreFFI.h;
+				SWIFT_OBJC_BRIDGING_HEADER = generated/sharedFFI.h;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
