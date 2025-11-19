@@ -1,0 +1,7 @@
+# Mintfile - Swift tool dependencies
+# Ensures reproducible builds across the team
+# Install all tools: mint bootstrap
+# Run a tool: mint run xcodegen xcodegen generate
+
+yonaskolb/xcodegen@2.42.0
+

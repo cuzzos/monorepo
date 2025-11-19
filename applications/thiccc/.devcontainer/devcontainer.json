@@ -1,11 +1,11 @@
 {
-	"name": "snaplapse-api__rust",
+	"name": "rust-env",
     "build": {
         "dockerfile": "Dockerfile.dev",
         "args": {},
         "context": "../"
     },
-    "runArgs": ["--name=snaplapse-api__rust", "--rm"],
+    "runArgs": ["--name=rust-env", "--rm"],
     "remoteEnv": {},
     "customizations": {
         "vscode": {

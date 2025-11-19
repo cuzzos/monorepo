@@ -1,6 +1,6 @@
 # Rust
-shared/target/
-shared/Cargo.lock
+target/
+shared/build/
 *.rs.bk
 
 # iOS / Xcode
