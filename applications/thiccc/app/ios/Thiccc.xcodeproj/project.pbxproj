@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		46D29A9BB6B7DA10F27E06C2 /* Thiccc.xcodeproj in Resources */ = {isa = PBXBuildFile; fileRef = AF98FC750811E8CECCC5A105 /* Thiccc.xcodeproj */; };
 		485A9A483A101DEB09CD8630 /* SharedTypes in Frameworks */ = {isa = PBXBuildFile; productRef = 00D8AC0EBAB047A3C0267091 /* SharedTypes */; };
 		5B668D20D2C4FC90702027A8 /* libshared_static.a.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7F4FB8D8B2304AF3B5B09258 /* libshared_static.a.a */; };
 		A22E9946BB26068F5FF492D8 /* SimpleCounterApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9453EBB7E3F709A3748B0B00 /* SimpleCounterApp.swift */; };
@@ -60,7 +59,6 @@
 		64D60112E666258B75C7190D /* core.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = core.swift; sourceTree = "<group>"; };
 		87AF1C1465A7D07538014067 /* shared.udl */ = {isa = PBXFileReference; path = shared.udl; sourceTree = "<group>"; };
 		9453EBB7E3F709A3748B0B00 /* SimpleCounterApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimpleCounterApp.swift; sourceTree = "<group>"; };
-		AF98FC750811E8CECCC5A105 /* Thiccc.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Thiccc.xcodeproj; sourceTree = "<group>"; };
 		B6265A5D3C5C51F1E73E6D2F /* Thiccc.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Thiccc.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -111,7 +109,6 @@
 				64D60112E666258B75C7190D /* core.swift */,
 				06F03F79ADB5F75373E80434 /* Info.plist */,
 				9453EBB7E3F709A3748B0B00 /* SimpleCounterApp.swift */,
-				AF98FC750811E8CECCC5A105 /* Thiccc.xcodeproj */,
 			);
 			path = Thiccc;
 			sourceTree = "<group>";
@@ -150,7 +147,6 @@
 			buildPhases = (
 				F636E9E43CFC6C4492E6DE37 /* Build uniffi-bindgen for macOS */,
 				3DD14D0A3C03A52DBAA1253F /* Sources */,
-				793B594317440858C1EA7C3D /* Resources */,
 				426CBB237A87D5FDDB754644 /* Frameworks */,
 			);
 			buildRules = (
@@ -213,17 +209,6 @@
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
 /* End PBXReferenceProxy section */
-
-/* Begin PBXResourcesBuildPhase section */
-		793B594317440858C1EA7C3D /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				46D29A9BB6B7DA10F27E06C2 /* Thiccc.xcodeproj in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
 		F636E9E43CFC6C4492E6DE37 /* Build uniffi-bindgen for macOS */ = {
