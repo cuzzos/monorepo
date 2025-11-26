@@ -993,11 +993,7 @@ mod tests {
         let calc = PlateCalculation {
             total_weight: 62.5,
             bar_type: BarType::new("Olympic (kg)", 20.0),
-            plates: vec![
-                Plate::new(20.0),
-                Plate::new(1.25),
-                Plate::new(1.25),
-            ],
+            plates: vec![Plate::new(20.0), Plate::new(1.25), Plate::new(1.25)],
             weight_unit: WeightUnit::Kg,
         };
 
