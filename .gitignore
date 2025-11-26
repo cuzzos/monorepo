@@ -64,3 +64,4 @@ fastlane/test_output
 Goonlytics/Goonlytics.xcodeproj
 Goonlytics/Goonlytics.xcworkspace
 .vscode/settings.json
+applications/thiccc/app/.bin
