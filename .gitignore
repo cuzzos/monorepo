@@ -64,3 +64,5 @@ fastlane/test_output
 Goonlytics/Goonlytics.xcodeproj
 Goonlytics/Goonlytics.xcworkspace
 .vscode/settings.json
+target/
+.bin/
