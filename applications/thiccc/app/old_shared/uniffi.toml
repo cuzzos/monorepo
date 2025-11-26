@@ -1,6 +1,0 @@
-[bindings.swift]
-cdylib_name = "shared"
-module_name = "SharedCore"
-omit_argument_labels = true
-generate_immutable_records = true
-
