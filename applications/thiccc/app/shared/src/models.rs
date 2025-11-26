@@ -624,19 +624,28 @@ pub struct PlateCalculation {
     pub bar_type: BarType,
     /// Plates needed on each side of the bar (sorted by weight, largest first)
     pub plates: Vec<Plate>,
+    /// Weight unit for display (lb or kg)
+    pub weight_unit: WeightUnit,
 }
 
 impl PlateCalculation {
     /// Creates a formatted description of the plates needed.
     ///
-    /// Example output: "2x45lb, 1x25lb, 1x10lb"
+    /// Example output: "2x45lb, 1x25lb, 1x10lb" or "2x20kg, 1x1.25kg"
     pub fn formatted_plate_description(&self) -> String {
         use std::collections::HashMap;
 
+        // Determine the unit suffix based on weight_unit
+        let unit_suffix = match self.weight_unit {
+            WeightUnit::Kg => "kg",
+            WeightUnit::Lb | WeightUnit::Bodyweight => "lb",
+        };
+
         // Group plates by weight (using fixed-point representation for HashMap key)
+        // Multiply by 100 and round to handle weights with up to 2 decimal places (e.g., 1.25 kg)
         let mut plate_counts: HashMap<i32, usize> = HashMap::new();
         for plate in &self.plates {
-            let weight_key = (plate.weight * 10.0) as i32; // Convert to tenths
+            let weight_key = (plate.weight * 100.0).round() as i32; // Convert to hundredths
             *plate_counts.entry(weight_key).or_insert(0) += 1;
         }
 
@@ -649,13 +658,14 @@ impl PlateCalculation {
             .iter()
             .map(|weight_key| {
                 let count = plate_counts[weight_key];
-                let weight = *weight_key as f64 / 10.0;
-                let weight_str = if (weight - 2.5).abs() < 0.01 {
-                    "2.5".to_string()
-                } else {
+                let weight = *weight_key as f64 / 100.0;
+                // Format as integer if whole number, otherwise show decimal
+                let weight_str = if weight.fract().abs() < 0.001 {
                     format!("{}", weight as i32)
+                } else {
+                    format!("{weight}")
                 };
-                format!("{}x{}lb", count, weight_str)
+                format!("{}x{}{}", count, weight_str, unit_suffix)
             })
             .collect::<Vec<_>>()
             .join(", ")
@@ -968,11 +978,32 @@ mod tests {
             total_weight: 225.0,
             bar_type: BarType::olympic(),
             plates: vec![Plate::new(45.0), Plate::new(45.0), Plate::new(2.5)],
+            weight_unit: WeightUnit::Lb,
         };
 
         let description = calc.formatted_plate_description();
         assert!(description.contains("2x45lb"));
         assert!(description.contains("1x2.5lb"));
+    }
+
+    #[test]
+    fn test_plate_calculation_description_with_1_25_kg() {
+        // Regression test: 1.25 kg plates should display correctly with kg unit
+        // Previously, truncation caused 1.25 to display as "1lb"
+        let calc = PlateCalculation {
+            total_weight: 62.5,
+            bar_type: BarType::new("Olympic (kg)", 20.0),
+            plates: vec![
+                Plate::new(20.0),
+                Plate::new(1.25),
+                Plate::new(1.25),
+            ],
+            weight_unit: WeightUnit::Kg,
+        };
+
+        let description = calc.formatted_plate_description();
+        assert!(description.contains("1x20kg"));
+        assert!(description.contains("2x1.25kg"));
     }
 
     // -------------------------------------------------------------------------
