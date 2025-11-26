@@ -65,3 +65,5 @@ Goonlytics/Goonlytics.xcodeproj
 Goonlytics/Goonlytics.xcworkspace
 .vscode/settings.json
 applications/thiccc/app/.bin
+target/
+.bin/
