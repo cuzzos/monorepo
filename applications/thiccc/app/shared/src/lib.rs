@@ -1,11 +1,25 @@
 // /shared/src/lib.rs
+
+//! Thiccc shared core library.
+//!
+//! This crate contains all the shared business logic for the Thiccc
+//! workout tracking application, built using the Crux framework.
+//!
+//! # Architecture
+//!
+//! - `app` - The Crux application with events, model, and update logic
+//! - `models` - Core data models (Workout, Exercise, ExerciseSet, etc.)
+
 pub mod app;
+pub mod models;
 
 use std::sync::LazyLock;
 
 pub use crux_core::{bridge::Bridge, Core, Request};
 
+// Re-export all public types
 pub use app::*;
+pub use models::*;
 
 // TODO hide this plumbing
 
