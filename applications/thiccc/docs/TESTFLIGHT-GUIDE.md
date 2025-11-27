@@ -31,7 +31,7 @@ First time? Run the setup script:
 ```bash
 # On your Mac
 cd /path/to/thiccc
-./setup-mac.sh
+./scripts/setup-mac.sh
 ```
 
 This installs all dependencies and generates the Xcode project.

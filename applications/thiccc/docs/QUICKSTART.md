@@ -11,7 +11,7 @@
 
 ```bash
 cd /path/to/thiccc
-./setup-mac.sh
+./scripts/setup-mac.sh
 ```
 
 **This MUST be run before opening Xcode!** It:
@@ -68,7 +68,7 @@ open app/ios/thiccc/Thiccc.xcodeproj
 First build generates it. Just hit ⌘B in Xcode.
 
 ### "Rust not found"
-Run `./setup-mac.sh` again.
+Run `./scripts/setup-mac.sh` again.
 
 ### "Devcontainer not working"
 Reinstall Docker Desktop or see [README.md](./README.md).

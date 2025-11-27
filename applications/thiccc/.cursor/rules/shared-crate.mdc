@@ -86,3 +86,23 @@ After modifications:
 ❌ Platform-specific code in shared crate  
 ❌ Panics in library code (use `Result<T, E>`)  
 ❌ Missing serde derives on public types  
+
+## MANDATORY: Pre-Handoff Verification
+
+After ANY modifications to `app/shared/` or `app/shared_types/`, you MUST run:
+
+```bash
+cd /workspaces/cuzzo_monorepo/applications/thiccc
+./scripts/verify-rust-core.sh
+```
+
+This verifies:
+- ✅ Rust compiles
+- ✅ No Clippy warnings
+- ✅ All tests pass
+- ✅ **Swift type generation succeeds** (CRITICAL - prevents iOS crashes)
+- ✅ Breaking changes are detected
+
+**DO NOT** mark task complete until verification passes.
+
+See: `docs/QUICKSTART.md` for build instructions.
