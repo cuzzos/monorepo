@@ -99,7 +99,34 @@ if from_index < exercises.len() { /* ... */ }
 - [ ] Database connections closed
 - [ ] File handles released
 
-#### 7. **Edge Cases**
+#### 7. **Swift Binding Generation (CRITICAL for Crux Apps)**
+- [ ] **Swift types must be generated** after ANY Rust type changes
+- [ ] Run `cd app/shared_types && cargo build` to verify type generation succeeds
+- [ ] **If type generation fails, iOS app will crash at runtime** with deserialization errors
+- [ ] Common causes of type generation failure:
+  - Types with `Uuid` fields that don't have `Default` implementations
+  - Complex nested generic types
+  - Types that can't be traced by serde-reflection
+- [ ] **Fix before proceeding**: Type generation is NOT optional - it's required for iOS to work
+
+**Example Type Generation Error:**
+```
+Error: while tracing: shared::app::Event. Type tracing failed:
+Failed to deserialize value: "UUID parsing failed"
+```
+
+**This means:**
+- Rust code compiles ✅
+- Rust tests pass ✅
+- BUT iOS app will crash ❌
+
+**Solutions:**
+1. **Simplify types**: Remove or wrap problematic fields
+2. **Provide samples**: Add sample values in `shared_types/build.rs`
+3. **Use JSON**: Configure Crux to use JSON instead of bincode (less efficient)
+4. **Mark fields**: Use `#[serde(skip)]` on fields that don't need serialization (rare)
+
+#### 8. **Edge Cases**
 - [ ] Empty lists/collections
 - [ ] Zero/negative numbers where unexpected
 - [ ] Very large inputs (>1000 items)
@@ -116,13 +143,20 @@ if from_index < exercises.len() { /* ... */ }
 
 2. **Run Automated Checks**
    ```bash
-   # Rust
+   # Rust Core
+   cd applications/thiccc/app/shared
    cargo clippy --all-targets
    cargo test
+   cargo fmt --check
    
-   # Swift
-   swiftlint (if configured)
-   xcodebuild test
+   # Swift Type Generation (CRITICAL!)
+   cd ../shared_types
+   cargo build
+   # If this fails, Swift bindings are broken and iOS app will crash!
+   
+   # iOS (if type generation succeeded)
+   cd ../ios
+   xcodebuild build -scheme Thiccc -destination 'platform=iOS Simulator,name=iPhone 16'
    ```
 
 3. **Manual Testing**
@@ -155,6 +189,8 @@ if from_index < exercises.len() { /* ... */ }
 - Collection manipulation
 - Event handler
 - View rendering logic
+- **ANY change to Rust types (Model, Event, ViewModel)**
+- **ANY change to serializable data structures**
 
 ### Examples from This Migration
 
@@ -163,7 +199,13 @@ if from_index < exercises.len() { /* ... */ }
 2. ❌ `JSONEncoder().encode()` to TEXT column → type mismatch
 3. ❌ `JSONDecoder` from String without conversion → would fail
 
-All caught and fixed BEFORE implementation!
+**Real bugs found during implementation:**
+4. ❌ **Swift binding generation failure** → Rust compiled fine, tests passed, but iOS app crashed with deserialization error
+   - **Cause**: Added Event variants with `Uuid` fields that TypeGen couldn't trace
+   - **Impact**: iOS engineer couldn't build the app at all
+   - **Lesson**: ALWAYS run `cargo build` in `shared_types/` after changing Rust types
+
+All caught and fixed (or documented for future resolution)!
 
 ---
 
@@ -204,6 +246,7 @@ Create the following Rust data structures in `/applications/thiccc/app/shared/sr
 - [ ] Field types match Swift equivalents
 - [ ] Can serialize/deserialize to/from JSON
 - [ ] No clippy warnings
+- [ ] **✅ Swift bindings generate successfully** (`cargo build` in `shared_types/` passes)
 - [ ] **⚠️ BUG CHECK PASSED** (see Bug Checking section above)
   - [ ] No unsafe `unwrap()` calls
   - [ ] All Option/Result types properly handled
@@ -262,6 +305,7 @@ DeleteExercise { exercise_id: Uuid },
 - [ ] Events cover all user actions for this feature
 - [ ] Event names are clear and descriptive
 - [ ] No clippy warnings
+- [ ] **✅ Swift bindings generate successfully** (`cargo build` in `shared_types/` passes)
 
 Please implement following the Crux patterns and principal engineer standards.
 ```
@@ -400,6 +444,7 @@ pub struct WorkoutViewModel {
 - [ ] Data is pre-formatted for display
 - [ ] View function properly transforms Model → ViewModel
 - [ ] No clippy warnings
+- [ ] **✅ Swift bindings generate successfully** (`cargo build` in `shared_types/` passes)
 
 Please implement following Crux patterns and principal engineer standards.
 ```

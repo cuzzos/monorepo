@@ -12,8 +12,8 @@ use crux_core::{
     App, Command,
 };
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 
+use crate::id::Id;
 use crate::models::*;
 
 // =============================================================================
@@ -44,10 +44,18 @@ pub enum Event {
 
     // ===== Exercise Management =====
     /// Add an exercise from the library to the current workout
-    AddExercise { exercise: GlobalExercise },
+    /// 
+    /// Note: Takes individual fields instead of GlobalExercise to avoid
+    /// UUID serialization issues with TypeGen. The core will construct
+    /// the Exercise with a new UUID.
+    AddExercise {
+        name: String,
+        exercise_type: String,
+        muscle_group: String,
+    },
 
     /// Delete an exercise from the current workout
-    DeleteExercise { exercise_id: Uuid },
+    DeleteExercise { exercise_id: String },
 
     /// Reorder exercises in the workout
     MoveExercise { from_index: usize, to_index: usize },
@@ -60,16 +68,16 @@ pub enum Event {
 
     // ===== Set Management =====
     /// Add a new set to an exercise
-    AddSet { exercise_id: Uuid },
+    AddSet { exercise_id: String },
 
     /// Delete a set from an exercise
-    DeleteSet { exercise_id: Uuid, set_index: usize },
+    DeleteSet { exercise_id: String, set_index: usize },
 
     /// Update the actual values for a set
-    UpdateSetActual { set_id: Uuid, actual: SetActual },
+    UpdateSetActual { set_id: String, actual: SetActual },
 
     /// Toggle whether a set is completed
-    ToggleSetCompleted { set_id: Uuid },
+    ToggleSetCompleted { set_id: String },
 
     // ===== Timer Events =====
     /// Timer tick (increments workout duration)
@@ -101,7 +109,7 @@ pub enum Event {
     LoadHistory,
 
     /// View a specific workout from history
-    ViewHistoryItem { workout_id: Uuid },
+    ViewHistoryItem { workout_id: String },
 
     /// Navigate back
     NavigateBack,
@@ -124,9 +132,12 @@ pub enum Event {
 
     // ===== Plate Calculator =====
     /// Calculate plates for a target weight
+    /// 
+    /// Note: Takes bar_weight as f64 instead of BarType to avoid
+    /// UUID serialization issues with TypeGen.
     CalculatePlates {
         target_weight: f64,
-        bar_type: BarType,
+        bar_weight: f64,
         use_percentage: Option<f64>,
     },
 
@@ -173,14 +184,15 @@ pub enum Tab {
 
 /// Result of a database operation.
 ///
-/// **Default Trait: NOT implemented (Explicit Construction)**
+/// **Default Trait: IMPLEMENTED (for TypeGen compatibility)**
 ///
-/// Reasoning: Database results are responses from capabilities and should
-/// always be constructed with specific data. There's no meaningful "default"
-/// database result - each response is contextual and explicit.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+/// Reasoning: While database results should normally be constructed explicitly,
+/// Default is needed for TypeGen to successfully trace this type for Swift binding
+/// generation. The default (WorkoutSaved) is never actually used at runtime.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Default)]
 pub enum DatabaseResult {
     /// Workout was successfully saved to the database
+    #[default]
     WorkoutSaved,
     /// Workout history was loaded from the database
     HistoryLoaded { workouts: Vec<Workout> },
@@ -190,13 +202,15 @@ pub enum DatabaseResult {
 
 /// Result of a file storage operation.
 ///
-/// **Default Trait: NOT implemented (Explicit Construction)**
+/// **Default Trait: IMPLEMENTED (for TypeGen compatibility)**
 ///
-/// Reasoning: Storage results are capability responses that should be
-/// constructed with specific outcome data. No meaningful default exists.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+/// Reasoning: While storage results should normally be constructed explicitly,
+/// Default is needed for TypeGen to successfully trace this type for Swift binding
+/// generation. The default (CurrentWorkoutSaved) is never actually used at runtime.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Default)]
 pub enum StorageResult {
     /// Current workout was saved to storage
+    #[default]
     CurrentWorkoutSaved,
     /// Current workout was loaded from storage
     CurrentWorkoutLoaded { workout: Option<Workout> },
@@ -210,12 +224,15 @@ pub enum StorageResult {
 ///
 /// Reasoning: Navigation destinations are specific to user actions and should
 /// be explicitly constructed with the relevant IDs. No default destination makes sense.
+///
+/// **Note on String IDs**: Uses String instead of Uuid for cross-platform compatibility
+/// and to enable TypeGen to trace these types for Swift binding generation.
 #[derive(Clone, Debug, PartialEq)]
 pub enum NavigationDestination {
     /// Navigate to a workout detail view (for editing active workout)
-    WorkoutDetail { workout_id: Uuid },
+    WorkoutDetail { workout_id: String },
     /// Navigate to a history detail view (for viewing past workout)
-    HistoryDetail { workout_id: Uuid },
+    HistoryDetail { workout_id: String },
 }
 
 // =============================================================================
@@ -344,24 +361,24 @@ impl Model {
     /// Find an exercise by ID in the current workout.
     ///
     /// Returns None if no workout is active or if the exercise is not found.
-    pub fn find_exercise_mut(&mut self, exercise_id: Uuid) -> Option<&mut Exercise> {
+    pub fn find_exercise_mut(&mut self, exercise_id: &Id) -> Option<&mut Exercise> {
         self.current_workout
             .as_mut()?
             .exercises
             .iter_mut()
-            .find(|e| e.id == exercise_id)
+            .find(|e| e.id == *exercise_id)
     }
 
     /// Find a set by ID across all exercises in the current workout.
     ///
     /// Returns None if no workout is active or if the set is not found.
-    pub fn find_set_mut(&mut self, set_id: Uuid) -> Option<&mut ExerciseSet> {
+    pub fn find_set_mut(&mut self, set_id: &Id) -> Option<&mut ExerciseSet> {
         self.current_workout
             .as_mut()?
             .exercises
             .iter_mut()
             .flat_map(|e| e.sets.iter_mut())
-            .find(|s| s.id == set_id)
+            .find(|s| s.id == *set_id)
     }
 
     /// Calculate total volume for the current workout.
@@ -713,7 +730,7 @@ impl Thiccc {
             .collect();
 
         ExerciseViewModel {
-            id: exercise.id.to_string(),
+            id: exercise.id.as_str().to_string(), // Convert Id to String for ViewModel
             name: exercise.name.clone(),
             sets,
         }
@@ -735,7 +752,7 @@ impl Thiccc {
         let rpe = set.actual.rpe.map(|r| r.to_string()).unwrap_or_default();
 
         SetViewModel {
-            id: set.id.to_string(),
+            id: set.id.as_str().to_string(), // Convert Id to String for ViewModel
             set_number,
             previous_display,
             weight,
@@ -764,7 +781,7 @@ impl Thiccc {
         let date = workout.start_timestamp.format("%b %d, %Y").to_string();
 
         HistoryItemViewModel {
-            id: workout.id.to_string(),
+            id: workout.id.as_str().to_string(), // Convert Id to String for ViewModel
             name: workout.name.clone(),
             date,
             exercise_count: workout.exercises.len(),
@@ -833,16 +850,30 @@ impl App for Thiccc {
             // =================================================================
             // Exercise Management
             // =================================================================
-            Event::AddExercise { exercise } => {
+            Event::AddExercise {
+                name,
+                exercise_type,
+                muscle_group,
+            } => {
                 let workout = model.get_or_create_workout();
-                let new_exercise = Exercise::from_global(&exercise, workout.id);
+                // Create GlobalExercise from the provided fields
+                let global_exercise = GlobalExercise::new(name, exercise_type, muscle_group);
+                let new_exercise = Exercise::from_global(&global_exercise, workout.id.clone());
                 workout.exercises.push(new_exercise);
                 model.showing_add_exercise = false;
             }
 
             Event::DeleteExercise { exercise_id } => {
-                if let Some(workout) = &mut model.current_workout {
-                    workout.exercises.retain(|e| e.id != exercise_id);
+                // Validate and convert String to Id type
+                match Id::from_string(exercise_id) {
+                    Ok(id) => {
+                        if let Some(workout) = &mut model.current_workout {
+                            workout.exercises.retain(|e| e.id != id);
+                        }
+                    }
+                    Err(e) => {
+                        model.error_message = Some(format!("Invalid exercise ID: {}", e));
+                    }
                 }
             }
 
@@ -870,8 +901,16 @@ impl App for Thiccc {
             // Set Management
             // =================================================================
             Event::AddSet { exercise_id } => {
-                if let Some(exercise) = model.find_exercise_mut(exercise_id) {
-                    exercise.add_set();
+                // Validate and convert String to Id type at the boundary
+                match Id::from_string(exercise_id) {
+                    Ok(id) => {
+                        if let Some(exercise) = model.find_exercise_mut(&id) {
+                            exercise.add_set();
+                        }
+                    }
+                    Err(e) => {
+                        model.error_message = Some(format!("Invalid exercise ID: {}", e));
+                    }
                 }
             }
 
@@ -879,26 +918,50 @@ impl App for Thiccc {
                 exercise_id,
                 set_index,
             } => {
-                if let Some(exercise) = model.find_exercise_mut(exercise_id) {
-                    if set_index < exercise.sets.len() {
-                        exercise.sets.remove(set_index);
-                        // Re-index remaining sets
-                        for (idx, set) in exercise.sets.iter_mut().enumerate() {
-                            set.set_index = idx as i32;
+                // Validate and convert String to Id type at the boundary
+                match Id::from_string(exercise_id) {
+                    Ok(id) => {
+                        if let Some(exercise) = model.find_exercise_mut(&id) {
+                            if set_index < exercise.sets.len() {
+                                exercise.sets.remove(set_index);
+                                // Re-index remaining sets
+                                for (idx, set) in exercise.sets.iter_mut().enumerate() {
+                                    set.set_index = idx as i32;
+                                }
+                            }
                         }
+                    }
+                    Err(e) => {
+                        model.error_message = Some(format!("Invalid exercise ID: {}", e));
                     }
                 }
             }
 
             Event::UpdateSetActual { set_id, actual } => {
-                if let Some(set) = model.find_set_mut(set_id) {
-                    set.actual = actual;
+                // Validate and convert String to Id type at the boundary
+                match Id::from_string(set_id) {
+                    Ok(id) => {
+                        if let Some(set) = model.find_set_mut(&id) {
+                            set.actual = actual;
+                        }
+                    }
+                    Err(e) => {
+                        model.error_message = Some(format!("Invalid set ID: {}", e));
+                    }
                 }
             }
 
             Event::ToggleSetCompleted { set_id } => {
-                if let Some(set) = model.find_set_mut(set_id) {
-                    set.is_completed = !set.is_completed;
+                // Validate and convert String to Id type at the boundary
+                match Id::from_string(set_id) {
+                    Ok(id) => {
+                        if let Some(set) = model.find_set_mut(&id) {
+                            set.is_completed = !set.is_completed;
+                        }
+                    }
+                    Err(e) => {
+                        model.error_message = Some(format!("Invalid set ID: {}", e));
+                    }
                 }
             }
 
@@ -950,6 +1013,8 @@ impl App for Thiccc {
             }
 
             Event::ViewHistoryItem { workout_id } => {
+                // String IDs are used directly in navigation - no parsing needed
+                // They'll be parsed when actually loading the workout from database
                 model
                     .navigation_stack
                     .push(NavigationDestination::HistoryDetail { workout_id });
@@ -999,7 +1064,7 @@ impl App for Thiccc {
             // =================================================================
             Event::CalculatePlates {
                 target_weight,
-                bar_type,
+                bar_weight,
                 use_percentage,
             } => {
                 let actual_weight = if let Some(percentage) = use_percentage {
@@ -1009,7 +1074,7 @@ impl App for Thiccc {
                 };
 
                 // Calculate weight remaining after bar
-                let weight_per_side = (actual_weight - bar_type.weight) / 2.0;
+                let weight_per_side = (actual_weight - bar_weight) / 2.0;
 
                 if weight_per_side < 0.0 {
                     model.error_message = Some("Target weight is less than bar weight".to_string());
@@ -1028,9 +1093,12 @@ impl App for Thiccc {
                         }
                     }
 
+                    // Create a BarType based on the weight for the calculation result
+                    let bar_type = BarType::new("Bar", bar_weight);
+                    
                     model.plate_calculation = Some(PlateCalculation {
                         total_weight: actual_weight,
-                        bar_type: bar_type.clone(),
+                        bar_type,
                         plates,
                         weight_unit: WeightUnit::Lb, // TODO: Use user preference
                     });
@@ -1118,9 +1186,10 @@ mod tests {
 
     #[test]
     fn test_event_serialization_add_exercise() {
-        let exercise = GlobalExercise::new("Squat", "barbell", "Quadriceps");
         let event = Event::AddExercise {
-            exercise: exercise.clone(),
+            name: "Squat".to_string(),
+            exercise_type: "barbell".to_string(),
+            muscle_group: "Quadriceps".to_string(),
         };
 
         let json = serde_json::to_string(&event).expect("Failed to serialize event");
@@ -1131,9 +1200,12 @@ mod tests {
 
     #[test]
     fn test_event_serialization_update_set_actual() {
-        let set_id = Uuid::new_v4();
+        let set_id = Id::new().as_str().to_string(); // Create Id, convert to String for Event
         let actual = SetActual::with_weight_and_reps(225.0, 5);
-        let event = Event::UpdateSetActual { set_id, actual };
+        let event = Event::UpdateSetActual {
+            set_id,
+            actual: actual.clone(),
+        };
 
         let json = serde_json::to_string(&event).expect("Failed to serialize event");
         let deserialized: Event = serde_json::from_str(&json).expect("Failed to deserialize event");
@@ -1155,7 +1227,7 @@ mod tests {
     fn test_event_serialization_calculate_plates() {
         let event = Event::CalculatePlates {
             target_weight: 225.0,
-            bar_type: BarType::olympic(),
+            bar_weight: 45.0,  // Olympic bar weight
             use_percentage: Some(90.0),
         };
 
@@ -1228,7 +1300,7 @@ mod tests {
         // Get or create should create a new workout
         let workout = model.get_or_create_workout();
         assert!(workout.exercises.is_empty());
-        let first_id = workout.id;
+        let first_id = workout.id.clone();
 
         // Should not create a second workout (same ID)
         let workout2 = model.get_or_create_workout();
@@ -1240,20 +1312,22 @@ mod tests {
         let mut model = Model::default();
 
         // Should return None when no workout exists
-        assert!(model.find_exercise_mut(Uuid::new_v4()).is_none());
+        let non_existent_id = Id::new();
+        assert!(model.find_exercise_mut(&non_existent_id).is_none());
 
         // Add a workout with an exercise
         let workout = model.get_or_create_workout();
         let exercise = workout.add_exercise("Bench Press");
-        let exercise_id = exercise.id;
+        let exercise_id = exercise.id.clone();
 
         // Should find the exercise
-        let found = model.find_exercise_mut(exercise_id);
+        let found = model.find_exercise_mut(&exercise_id);
         assert!(found.is_some());
         assert_eq!(found.unwrap().name, "Bench Press");
 
         // Should not find non-existent exercise
-        assert!(model.find_exercise_mut(Uuid::new_v4()).is_none());
+        let another_id = Id::new();
+        assert!(model.find_exercise_mut(&another_id).is_none());
     }
 
     #[test]
@@ -1264,15 +1338,16 @@ mod tests {
         let workout = model.get_or_create_workout();
         let exercise = workout.add_exercise("Squat");
         let set = exercise.add_set();
-        let set_id = set.id;
+        let set_id = set.id.clone();
 
         // Should find the set
-        let found = model.find_set_mut(set_id);
+        let found = model.find_set_mut(&set_id);
         assert!(found.is_some());
         assert_eq!(found.unwrap().id, set_id);
 
         // Should not find non-existent set
-        assert!(model.find_set_mut(Uuid::new_v4()).is_none());
+        let another_id = Id::new();
+        assert!(model.find_set_mut(&another_id).is_none());
     }
 
     #[test]
@@ -1436,7 +1511,7 @@ mod tests {
     #[test]
     fn test_exercise_view_model_serialization() {
         let vm = ExerciseViewModel {
-            id: Uuid::new_v4().to_string(),
+            id: Id::new().as_str().to_string(),
             name: "Bench Press".to_string(),
             sets: vec![],
         };
@@ -1452,7 +1527,7 @@ mod tests {
     #[test]
     fn test_set_view_model_serialization() {
         let vm = SetViewModel {
-            id: Uuid::new_v4().to_string(),
+            id: Id::new().as_str().to_string(),
             set_number: 1,
             previous_display: "225 × 10".to_string(),
             weight: "225".to_string(),
@@ -1473,7 +1548,7 @@ mod tests {
     #[test]
     fn test_history_item_view_model_serialization() {
         let vm = HistoryItemViewModel {
-            id: Uuid::new_v4().to_string(),
+            id: Id::new().as_str().to_string(),
             name: "Push Day".to_string(),
             date: "Nov 26, 2025".to_string(),
             exercise_count: 5,
@@ -1527,8 +1602,15 @@ mod tests {
         app.update(Event::StartWorkout, &mut model, &());
 
         // Add exercise
-        let exercise = GlobalExercise::new("Bench Press", "barbell", "chest");
-        app.update(Event::AddExercise { exercise }, &mut model, &());
+        app.update(
+            Event::AddExercise {
+                name: "Bench Press".to_string(),
+                exercise_type: "barbell".to_string(),
+                muscle_group: "chest".to_string(),
+            },
+            &mut model,
+            &(),
+        );
 
         // Verify model state
         assert_eq!(model.current_workout.as_ref().unwrap().exercises.len(), 1);
@@ -1550,13 +1632,28 @@ mod tests {
 
         // Start workout and add exercise
         app.update(Event::StartWorkout, &mut model, &());
-        let exercise = GlobalExercise::new("Squat", "barbell", "legs");
-        app.update(Event::AddExercise { exercise }, &mut model, &());
+        app.update(
+            Event::AddExercise {
+                name: "Squat".to_string(),
+                exercise_type: "barbell".to_string(),
+                muscle_group: "legs".to_string(),
+            },
+            &mut model,
+            &(),
+        );
 
-        let exercise_id = model.current_workout.as_ref().unwrap().exercises[0].id;
+        let exercise_id = model.current_workout.as_ref().unwrap().exercises[0]
+            .id
+            .to_string();
 
         // Add a set
-        app.update(Event::AddSet { exercise_id }, &mut model, &());
+        app.update(
+            Event::AddSet {
+                exercise_id: exercise_id.clone(),
+            },
+            &mut model,
+            &(),
+        );
 
         // Verify set was added
         let view = app.view(&model);
@@ -1564,16 +1661,22 @@ mod tests {
         assert!(!view.workout_view.exercises[0].sets[0].is_completed);
 
         // Complete the set
-        let set_id = model.current_workout.as_ref().unwrap().exercises[0].sets[0].id;
+        let set_id = model.current_workout.as_ref().unwrap().exercises[0].sets[0]
+            .id
+            .to_string();
         app.update(
             Event::UpdateSetActual {
-                set_id,
+                set_id: set_id.clone(),
                 actual: SetActual::with_weight_and_reps(225.0, 5),
             },
             &mut model,
             &(),
         );
-        app.update(Event::ToggleSetCompleted { set_id }, &mut model, &());
+        app.update(
+            Event::ToggleSetCompleted { set_id },
+            &mut model,
+            &(),
+        );
 
         // Verify set is completed and has values
         let view = app.view(&model);
@@ -1594,11 +1697,24 @@ mod tests {
         app.update(Event::StartWorkout, &mut model, &());
 
         // Add exercise and set
-        let exercise = GlobalExercise::new("Deadlift", "barbell", "back");
-        app.update(Event::AddExercise { exercise }, &mut model, &());
+        app.update(
+            Event::AddExercise {
+                name: "Deadlift".to_string(),
+                exercise_type: "barbell".to_string(),
+                muscle_group: "back".to_string(),
+            },
+            &mut model,
+            &(),
+        );
 
-        let exercise_id = model.current_workout.as_ref().unwrap().exercises[0].id;
-        app.update(Event::AddSet { exercise_id }, &mut model, &());
+        let exercise_id = model.current_workout.as_ref().unwrap().exercises[0]
+            .id
+            .to_string();
+        app.update(
+            Event::AddSet { exercise_id },
+            &mut model,
+            &(),
+        );
 
         // Finish workout
         app.update(Event::FinishWorkout, &mut model, &());
@@ -1661,7 +1777,7 @@ mod tests {
         app.update(
             Event::CalculatePlates {
                 target_weight: 225.0,
-                bar_type: BarType::olympic(), // 45 lbs
+                bar_weight: 45.0, // Olympic bar weight
                 use_percentage: None,
             },
             &mut model,

@@ -1031,8 +1031,10 @@ name = "shared_types"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "chrono",
  "crux_core",
  "shared",
+ "uuid",
 ]
 
 [[package]]
