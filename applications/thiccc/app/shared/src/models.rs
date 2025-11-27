@@ -4,9 +4,9 @@
 //! sets, and related data structures. These models are serializable for
 //! cross-platform communication between the Rust core and Swift shell.
 
+use crate::id::Id;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 
 // =============================================================================
 // MARK: - Enums
@@ -231,7 +231,7 @@ impl SetActual {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct ExerciseSet {
     /// Unique identifier for this set
-    pub id: Uuid,
+    pub id: Id,
     /// Type of set (warm-up, working, drop set, etc.)
     #[serde(rename = "type")]
     pub set_type: SetType,
@@ -244,18 +244,18 @@ pub struct ExerciseSet {
     /// Whether this set has been completed
     pub is_completed: bool,
     /// ID of the exercise this set belongs to
-    pub exercise_id: Uuid,
+    pub exercise_id: Id,
     /// ID of the workout this set belongs to
-    pub workout_id: Uuid,
+    pub workout_id: Id,
     /// Index of this set within the exercise (0-based)
     pub set_index: i32,
 }
 
 impl ExerciseSet {
     /// Creates a new empty set with the given IDs.
-    pub fn new(exercise_id: Uuid, workout_id: Uuid, set_index: i32) -> Self {
+    pub fn new(exercise_id: Id, workout_id: Id, set_index: i32) -> Self {
         Self {
-            id: Uuid::new_v4(),
+            id: Id::new(),
             set_type: SetType::default(),
             weight_unit: None,
             suggest: SetSuggest::default(),
@@ -268,7 +268,7 @@ impl ExerciseSet {
     }
 
     /// Creates a new warm-up set.
-    pub fn new_warmup(exercise_id: Uuid, workout_id: Uuid, set_index: i32) -> Self {
+    pub fn new_warmup(exercise_id: Id, workout_id: Id, set_index: i32) -> Self {
         Self {
             set_type: SetType::WarmUp,
             ..Self::new(exercise_id, workout_id, set_index)
@@ -277,8 +277,8 @@ impl ExerciseSet {
 
     /// Creates a new working set with suggested values.
     pub fn new_working(
-        exercise_id: Uuid,
-        workout_id: Uuid,
+        exercise_id: Id,
+        workout_id: Id,
         set_index: i32,
         suggest: SetSuggest,
     ) -> Self {
@@ -307,11 +307,11 @@ impl ExerciseSet {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct Exercise {
     /// Unique identifier for this exercise
-    pub id: Uuid,
+    pub id: Id,
     /// Superset grouping ID (exercises with same ID are supersetted)
     pub superset_id: Option<i32>,
     /// ID of the workout this exercise belongs to
-    pub workout_id: Uuid,
+    pub workout_id: Id,
     /// Name of the exercise (e.g., "Bench Press", "Squat")
     pub name: String,
     /// Pinned notes that persist across workouts
@@ -337,9 +337,9 @@ pub struct Exercise {
 
 impl Exercise {
     /// Creates a new exercise with the given name and workout ID.
-    pub fn new(name: String, workout_id: Uuid) -> Self {
+    pub fn new(name: String, workout_id: Id) -> Self {
         Self {
-            id: Uuid::new_v4(),
+            id: Id::new(),
             superset_id: None,
             workout_id,
             name,
@@ -356,9 +356,9 @@ impl Exercise {
     }
 
     /// Creates an exercise from a GlobalExercise template.
-    pub fn from_global(global: &GlobalExercise, workout_id: Uuid) -> Self {
+    pub fn from_global(global: &GlobalExercise, workout_id: Id) -> Self {
         Self {
-            id: Uuid::new_v4(),
+            id: Id::new(),
             superset_id: None,
             workout_id,
             name: global.name.clone(),
@@ -398,7 +398,7 @@ impl Exercise {
     /// Adds a new empty set to this exercise.
     pub fn add_set(&mut self) -> &mut ExerciseSet {
         let set_index = self.sets.len() as i32;
-        let set = ExerciseSet::new(self.id, self.workout_id, set_index);
+        let set = ExerciseSet::new(self.id.clone(), self.workout_id.clone(), set_index);
         self.sets.push(set);
         self.sets.last_mut().expect("Just pushed a set")
     }
@@ -415,7 +415,7 @@ impl Exercise {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct Workout {
     /// Unique identifier for this workout
-    pub id: Uuid,
+    pub id: Id,
     /// User-provided name for the workout (e.g., "Push Day", "Leg Day")
     pub name: String,
     /// Optional notes about the workout
@@ -434,7 +434,7 @@ impl Workout {
     /// Creates a new empty workout with the current timestamp.
     pub fn new() -> Self {
         Self {
-            id: Uuid::new_v4(),
+            id: Id::new(),
             name: String::new(),
             note: None,
             duration: None,
@@ -486,7 +486,7 @@ impl Workout {
 
     /// Adds an exercise to this workout.
     pub fn add_exercise(&mut self, name: impl Into<String>) -> &mut Exercise {
-        let exercise = Exercise::new(name.into(), self.id);
+        let exercise = Exercise::new(name.into(), self.id.clone());
         self.exercises.push(exercise);
         self.exercises.last_mut().expect("Just pushed an exercise")
     }
@@ -508,7 +508,7 @@ impl Default for Workout {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct Plate {
     /// Unique identifier for this plate
-    pub id: Uuid,
+    pub id: Id,
     /// Weight of the plate in the user's preferred unit
     pub weight: f64,
 }
@@ -517,7 +517,7 @@ impl Plate {
     /// Creates a new plate with the given weight.
     pub fn new(weight: f64) -> Self {
         Self {
-            id: Uuid::new_v4(),
+            id: Id::new(),
             weight,
         }
     }
@@ -558,7 +558,7 @@ impl Plate {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct BarType {
     /// Unique identifier for this bar type
-    pub id: Uuid,
+    pub id: Id,
     /// Display name for the bar type
     pub name: String,
     /// Weight of the bar in the user's preferred unit
@@ -569,7 +569,7 @@ impl BarType {
     /// Creates a new bar type with the given name and weight.
     pub fn new(name: impl Into<String>, weight: f64) -> Self {
         Self {
-            id: Uuid::new_v4(),
+            id: Id::new(),
             name: name.into(),
             weight,
         }
@@ -684,7 +684,7 @@ impl PlateCalculation {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct GlobalExercise {
     /// Unique identifier for this exercise template
-    pub id: Uuid,
+    pub id: Id,
     /// Display name of the exercise
     pub name: String,
     /// Type of equipment used (as a string for flexibility)
@@ -706,7 +706,7 @@ impl GlobalExercise {
         muscle_group: impl Into<String>,
     ) -> Self {
         Self {
-            id: Uuid::new_v4(),
+            id: Id::new(),
             name: name.into(),
             exercise_type: exercise_type.into(),
             additional_fk: None,
@@ -795,7 +795,7 @@ mod tests {
 
     #[test]
     fn test_exercise_serialization() {
-        let workout_id = Uuid::new_v4();
+        let workout_id = Id::new();
         let exercise = Exercise::new("Deadlift".to_string(), workout_id);
 
         let json = serde_json::to_string(&exercise).expect("Failed to serialize exercise");
@@ -810,8 +810,8 @@ mod tests {
     #[test]
     fn test_exercise_from_global() {
         let global = GlobalExercise::new("Squat", "barbell", "legs");
-        let workout_id = Uuid::new_v4();
-        let exercise = Exercise::from_global(&global, workout_id);
+        let workout_id = Id::new();
+        let exercise = Exercise::from_global(&global, workout_id.clone());
 
         assert_eq!(exercise.name, "Squat");
         assert_eq!(exercise.workout_id, workout_id);
@@ -820,7 +820,7 @@ mod tests {
 
     #[test]
     fn test_exercise_is_completed() {
-        let workout_id = Uuid::new_v4();
+        let workout_id = Id::new();
         let mut exercise = Exercise::new("Curl".to_string(), workout_id);
 
         // Empty exercise is not completed
@@ -841,8 +841,8 @@ mod tests {
 
     #[test]
     fn test_exercise_set_with_actual_values() {
-        let exercise_id = Uuid::new_v4();
-        let workout_id = Uuid::new_v4();
+        let exercise_id = Id::new();
+        let workout_id = Id::new();
 
         let mut set = ExerciseSet::new(exercise_id, workout_id, 0);
         set.complete(SetActual {
@@ -869,8 +869,8 @@ mod tests {
 
     #[test]
     fn test_exercise_set_new_warmup() {
-        let exercise_id = Uuid::new_v4();
-        let workout_id = Uuid::new_v4();
+        let exercise_id = Id::new();
+        let workout_id = Id::new();
 
         let set = ExerciseSet::new_warmup(exercise_id, workout_id, 0);
         assert_eq!(set.set_type, SetType::WarmUp);

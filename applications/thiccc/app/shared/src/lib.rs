@@ -9,8 +9,10 @@
 //!
 //! - `app` - The Crux application with events, model, and update logic
 //! - `models` - Core data models (Workout, Exercise, ExerciseSet, etc.)
+//! - `id` - Type-safe ID wrapper with UUID validation
 
 pub mod app;
+pub mod id;
 pub mod models;
 
 use std::sync::LazyLock;
@@ -19,6 +21,7 @@ pub use crux_core::{bridge::Bridge, Core, Request};
 
 // Re-export all public types
 pub use app::*;
+pub use id::Id;
 pub use models::*;
 
 // TODO hide this plumbing
