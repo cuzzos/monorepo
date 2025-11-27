@@ -184,11 +184,11 @@ mod tests {
     fn test_serialization() {
         let id = Id::new();
         let json = serde_json::to_string(&id).expect("Failed to serialize");
-        
+
         // Should serialize as a plain string (with quotes)
         assert!(json.starts_with('"'));
         assert!(json.ends_with('"'));
-        
+
         // Should deserialize back
         let deserialized: Id = serde_json::from_str(&json).expect("Failed to deserialize");
         assert_eq!(id, deserialized);
@@ -198,7 +198,7 @@ mod tests {
     fn test_deserialization_no_validation() {
         // Deserialization uses transparent serde (no validation)
         // Validation happens at the application boundary via Id::from_string()
-        
+
         // Valid UUID deserializes
         let valid_json = r#""550e8400-e29b-41d4-a716-446655440000""#;
         let id: Result<Id, _> = serde_json::from_str(valid_json);
@@ -209,7 +209,7 @@ mod tests {
         let invalid_json = r#""not-a-uuid""#;
         let id: Result<Id, _> = serde_json::from_str(invalid_json);
         assert!(id.is_ok()); // Deserializes successfully
-        
+
         // But from_string() still validates
         assert!(Id::from_string("not-a-uuid".to_string()).is_err());
     }
@@ -218,11 +218,11 @@ mod tests {
     fn test_default() {
         let id1 = Id::default();
         let id2 = Id::default();
-        
+
         // Each default should be a valid UUID
         assert!(Uuid::parse_str(id1.as_str()).is_ok());
         assert!(Uuid::parse_str(id2.as_str()).is_ok());
-        
+
         // Each default should be unique (statistically)
         assert_ne!(id1, id2);
     }
@@ -251,4 +251,3 @@ mod tests {
         assert_eq!(id1, id2);
     }
 }
-

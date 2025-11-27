@@ -44,7 +44,7 @@ pub enum Event {
 
     // ===== Exercise Management =====
     /// Add an exercise from the library to the current workout
-    /// 
+    ///
     /// Note: Takes individual fields instead of GlobalExercise to avoid
     /// UUID serialization issues with TypeGen. The core will construct
     /// the Exercise with a new UUID.
@@ -71,7 +71,10 @@ pub enum Event {
     AddSet { exercise_id: String },
 
     /// Delete a set from an exercise
-    DeleteSet { exercise_id: String, set_index: usize },
+    DeleteSet {
+        exercise_id: String,
+        set_index: usize,
+    },
 
     /// Update the actual values for a set
     UpdateSetActual { set_id: String, actual: SetActual },
@@ -132,7 +135,7 @@ pub enum Event {
 
     // ===== Plate Calculator =====
     /// Calculate plates for a target weight
-    /// 
+    ///
     /// Note: Takes bar_weight as f64 instead of BarType to avoid
     /// UUID serialization issues with TypeGen.
     CalculatePlates {
@@ -1095,7 +1098,7 @@ impl App for Thiccc {
 
                     // Create a BarType based on the weight for the calculation result
                     let bar_type = BarType::new("Bar", bar_weight);
-                    
+
                     model.plate_calculation = Some(PlateCalculation {
                         total_weight: actual_weight,
                         bar_type,
@@ -1227,7 +1230,7 @@ mod tests {
     fn test_event_serialization_calculate_plates() {
         let event = Event::CalculatePlates {
             target_weight: 225.0,
-            bar_weight: 45.0,  // Olympic bar weight
+            bar_weight: 45.0, // Olympic bar weight
             use_percentage: Some(90.0),
         };
 
@@ -1672,11 +1675,7 @@ mod tests {
             &mut model,
             &(),
         );
-        app.update(
-            Event::ToggleSetCompleted { set_id },
-            &mut model,
-            &(),
-        );
+        app.update(Event::ToggleSetCompleted { set_id }, &mut model, &());
 
         // Verify set is completed and has values
         let view = app.view(&model);
@@ -1710,11 +1709,7 @@ mod tests {
         let exercise_id = model.current_workout.as_ref().unwrap().exercises[0]
             .id
             .to_string();
-        app.update(
-            Event::AddSet { exercise_id },
-            &mut model,
-            &(),
-        );
+        app.update(Event::AddSet { exercise_id }, &mut model, &());
 
         // Finish workout
         app.update(Event::FinishWorkout, &mut model, &());
