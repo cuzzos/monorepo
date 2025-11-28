@@ -1,7 +1,7 @@
 # Thiccc iOS App Makefile
 
 # Configurable simulator (can override: make run-sim SIMULATOR="iPhone 17")
-SIMULATOR ?= iPhone 17 Pro
+SIMULATOR ?= iPhone 16 Pro
 
 .PHONY: build clean open xcode-build run-sim list-sims test check help close-sims
 
@@ -30,7 +30,7 @@ help:
 	@echo "  SIMULATOR        - Choose simulator (default: $(SIMULATOR))"
 	@echo ""
 	@echo "Examples:"
-	@echo "  make run-sim SIMULATOR=\"iPhone 17\""
+	@echo "  make run-sim SIMULATOR=\"iPhone 16\""
 	@echo "  make test SIMULATOR=\"iPhone Air\""
 	@echo ""
 	@echo "Current settings:"
@@ -44,7 +44,7 @@ build:
 	@cd shared && cargo build --release --target aarch64-apple-ios
 	@cd shared && cargo build --release --target aarch64-apple-ios-sim
 	@echo "📱 Generating Xcode project..."
-	@cd iOS && xcodegen generate
+	@cd iOS && mint run xcodegen xcodegen generate
 	@echo "✅ Build complete!"
 
 # Build iOS app using xcodebuild (no Xcode GUI needed)
