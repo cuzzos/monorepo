@@ -816,9 +816,14 @@ impl App for Thiccc {
             // Workout Management
             // =================================================================
             Event::StartWorkout => {
-                model.current_workout = Some(Workout::new());
-                model.workout_timer_seconds = 0;
-                model.timer_running = true;
+                if model.current_workout.is_some() {
+                    const WIP_MSG: &str = "A workout is already in progress. Please finish or discard it first.";
+                    model.error_message = Some(WIP_MSG.to_string());
+                } else {
+                    model.current_workout = Some(Workout::new());
+                    model.workout_timer_seconds = 0;
+                    model.timer_running = true;
+                }
             }
 
             Event::FinishWorkout => {
