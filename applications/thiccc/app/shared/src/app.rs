@@ -1081,6 +1081,7 @@ impl App for Thiccc {
 
                 if weight_per_side < 0.0 {
                     model.error_message = Some("Target weight is less than bar weight".to_string());
+                    model.plate_calculation = None;
                 } else {
                     // Get standard plates (use pounds for now)
                     let available_plates = Plate::standard();
