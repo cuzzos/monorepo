@@ -792,6 +792,65 @@ impl Thiccc {
             total_volume: workout.total_volume() as i32,
         }
     }
+
+    /// Validates all IDs in a workout to ensure they are valid UUIDs.
+    ///
+    /// The Id type uses #[serde(transparent)] which allows invalid strings
+    /// to bypass validation during deserialization. This function manually
+    /// validates all IDs to prevent data corruption from malformed imports.
+    ///
+    /// # Returns
+    /// - `Ok(())` if all IDs are valid UUIDs
+    /// - `Err(String)` with a descriptive error message if any ID is invalid
+    fn validate_workout_ids(workout: &Workout) -> Result<(), String> {
+        // Validate workout ID
+        Id::from_string(workout.id.as_str().to_string())
+            .map_err(|e| format!("Invalid workout ID: {}", e))?;
+
+        // Validate all exercise IDs and their nested set IDs
+        for (exercise_idx, exercise) in workout.exercises.iter().enumerate() {
+            // Validate exercise ID
+            Id::from_string(exercise.id.as_str().to_string())
+                .map_err(|e| format!("Invalid exercise ID at index {}: {}", exercise_idx, e))?;
+
+            // Validate exercise's workout_id reference
+            Id::from_string(exercise.workout_id.as_str().to_string()).map_err(|e| {
+                format!(
+                    "Invalid workout_id in exercise at index {}: {}",
+                    exercise_idx, e
+                )
+            })?;
+
+            // Validate all set IDs
+            for (set_idx, set) in exercise.sets.iter().enumerate() {
+                // Validate set ID
+                Id::from_string(set.id.as_str().to_string()).map_err(|e| {
+                    format!(
+                        "Invalid set ID at exercise {} set {}: {}",
+                        exercise_idx, set_idx, e
+                    )
+                })?;
+
+                // Validate set's exercise_id reference
+                Id::from_string(set.exercise_id.as_str().to_string()).map_err(|e| {
+                    format!(
+                        "Invalid exercise_id in set at exercise {} set {}: {}",
+                        exercise_idx, set_idx, e
+                    )
+                })?;
+
+                // Validate set's workout_id reference
+                Id::from_string(set.workout_id.as_str().to_string()).map_err(|e| {
+                    format!(
+                        "Invalid workout_id in set at exercise {} set {}: {}",
+                        exercise_idx, set_idx, e
+                    )
+                })?;
+            }
+        }
+
+        Ok(())
+    }
 }
 
 // =============================================================================
@@ -1044,9 +1103,16 @@ impl App for Thiccc {
             Event::ImportWorkout { json_data } => {
                 match serde_json::from_str::<Workout>(&json_data) {
                     Ok(workout) => {
-                        model.current_workout = Some(workout);
-                        model.showing_import = false;
-                        model.error_message = None;
+                        // Validate all IDs in the imported workout to prevent data corruption
+                        // The Id type uses #[serde(transparent)] which bypasses validation
+                        // during deserialization, so we must validate manually.
+                        if let Err(e) = Self::validate_workout_ids(&workout) {
+                            model.error_message = Some(format!("Invalid workout data: {}", e));
+                        } else {
+                            model.current_workout = Some(workout);
+                            model.showing_import = false;
+                            model.error_message = None;
+                        }
                     }
                     Err(e) => {
                         model.error_message = Some(format!("Failed to import workout: {}", e));
@@ -1835,5 +1901,51 @@ mod tests {
             .as_ref()
             .unwrap()
             .contains("Failed to import"));
+    }
+
+    #[test]
+    fn test_import_workout_with_invalid_uuid_is_rejected() {
+        let app = Thiccc;
+        let mut model = Model::default();
+
+        // Create JSON with an invalid UUID (bypasses serde validation due to transparent)
+        let malformed_json = r#"{
+            "id": "not-a-valid-uuid",
+            "name": "Malicious Workout",
+            "note": null,
+            "duration": null,
+            "start_timestamp": "2025-01-01T12:00:00Z",
+            "end_timestamp": null,
+            "exercises": []
+        }"#;
+
+        // Try to import it
+        app.update(
+            Event::ImportWorkout {
+                json_data: malformed_json.to_string(),
+            },
+            &mut model,
+            &(),
+        );
+
+        // Verify the malformed UUID was caught and rejected
+        assert!(model.current_workout.is_none(), "Workout with invalid UUID should not be imported");
+        assert!(model.error_message.is_some(), "Error message should be set");
+        assert!(
+            model
+                .error_message
+                .as_ref()
+                .unwrap()
+                .contains("Invalid workout data"),
+            "Error should mention invalid workout data"
+        );
+        assert!(
+            model
+                .error_message
+                .as_ref()
+                .unwrap()
+                .contains("Invalid workout ID"),
+            "Error should specifically mention the workout ID"
+        );
     }
 }
