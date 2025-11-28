@@ -39,12 +39,12 @@ help:
 # Full build: Rust libs + shared types + Xcode project
 build:
 	@echo "🔄 Generating shared types..."
-	@cd shared_types && cargo build
+	@cd app/shared_types && cargo build
 	@echo "🔨 Building Rust for iOS..."
-	@cd shared && cargo build --release --target aarch64-apple-ios
-	@cd shared && cargo build --release --target aarch64-apple-ios-sim
+	@cd app/shared && cargo build --release --target aarch64-apple-ios
+	@cd app/shared && cargo build --release --target aarch64-apple-ios-sim
 	@echo "📱 Generating Xcode project..."
-	@cd iOS && mint run xcodegen xcodegen generate
+	@cd app/iOS && mint run xcodegen xcodegen generate
 	@echo "✅ Build complete!"
 
 # Build iOS app using xcodebuild (no Xcode GUI needed)
@@ -52,7 +52,7 @@ xcode-build: build
 	@echo "🍎 Building iOS app for simulator..."
 	@echo "📱 Target: $(SIMULATOR)"
 	@echo "⏳ This may take a minute on first build..."
-	@xcodebuild -project iOS/Thiccc.xcodeproj \
+	@xcodebuild -project app/iOS/Thiccc.xcodeproj \
 		-scheme Thiccc \
 		-sdk iphonesimulator \
 		-destination 'platform=iOS Simulator,name=$(SIMULATOR)' \
@@ -90,7 +90,7 @@ list-sims:
 # Run tests
 test: build
 	@echo "🧪 Running tests on $(SIMULATOR)..."
-	@xcodebuild -project iOS/Thiccc.xcodeproj \
+	@xcodebuild -project app/iOS/Thiccc.xcodeproj \
 		-scheme Thiccc \
 		-sdk iphonesimulator \
 		-destination 'platform=iOS Simulator,name=$(SIMULATOR)' \
@@ -117,8 +117,9 @@ close-sims:
 
 clean:
 	@cargo clean
-	@rm -rf shared/build
-	@rm -rf iOS/build
+	@rm -rf app/shared/build
+	@rm -rf app/iOS/build
 
 open:
-	@open iOS/Thiccc.xcodeproj
+	@open app/iOS/Thiccc.xcodeproj
+
