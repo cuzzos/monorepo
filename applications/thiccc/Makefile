@@ -44,7 +44,7 @@ build:
 	@cd app/shared && cargo build --release --target aarch64-apple-ios
 	@cd app/shared && cargo build --release --target aarch64-apple-ios-sim
 	@echo "📱 Generating Xcode project..."
-	@cd app/iOS && mint run xcodegen xcodegen generate
+	@cd app/ios && mint run xcodegen xcodegen generate
 	@echo "✅ Build complete!"
 
 # Build iOS app using xcodebuild (no Xcode GUI needed)
@@ -52,7 +52,7 @@ xcode-build: build
 	@echo "🍎 Building iOS app for simulator..."
 	@echo "📱 Target: $(SIMULATOR)"
 	@echo "⏳ This may take a minute on first build..."
-	@xcodebuild -project app/iOS/Thiccc.xcodeproj \
+	@xcodebuild -project app/ios/Thiccc.xcodeproj \
 		-scheme Thiccc \
 		-sdk iphonesimulator \
 		-destination 'platform=iOS Simulator,name=$(SIMULATOR)' \
@@ -90,7 +90,7 @@ list-sims:
 # Run tests
 test: build
 	@echo "🧪 Running tests on $(SIMULATOR)..."
-	@xcodebuild -project app/iOS/Thiccc.xcodeproj \
+	@xcodebuild -project app/ios/Thiccc.xcodeproj \
 		-scheme Thiccc \
 		-sdk iphonesimulator \
 		-destination 'platform=iOS Simulator,name=$(SIMULATOR)' \
@@ -118,8 +118,8 @@ close-sims:
 clean:
 	@cargo clean
 	@rm -rf app/shared/build
-	@rm -rf app/iOS/build
+	@rm -rf app/ios/build
 
 open:
-	@open app/iOS/Thiccc.xcodeproj
+	@open app/ios/Thiccc.xcodeproj
 
