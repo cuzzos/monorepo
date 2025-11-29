@@ -3,7 +3,7 @@
 # Configurable simulator (can override: make run-sim SIMULATOR='iPhone 17')
 SIMULATOR ?= iPhone 16 Pro
 
-.PHONY: build clean open xcode-build run-sim list-sims test check help close-sims
+.PHONY: build clean open xcode-build run-sim list-sims test check help close-sims logs logs-all run-sim-all
 
 # Default target: show help
 .DEFAULT_GOAL := help
@@ -15,7 +15,8 @@ help:
 	@echo "Main commands:"
 	@echo "  make build       - Build Rust libraries and generate Xcode project"
 	@echo "  make xcode-build - Build Rust + iOS app (no Xcode GUI)"
-	@echo "  make run-sim     - Build and run in simulator"
+	@echo "  make run-sim     - Build and run in simulator (filtered logs)"
+	@echo "  make run-sim-all - Build and run in simulator (all system logs)"
 	@echo "  make test        - Run tests"
 	@echo "  make open        - Open Xcode project"
 	@echo "  make clean       - Clean build artifacts"
@@ -23,6 +24,8 @@ help:
 	@echo "Utilities:"
 	@echo "  make check       - Check if everything is set up correctly"
 	@echo "  make list-sims   - List available iOS simulators"
+	@echo "  make logs        - Stream logs from running app (filtered)"
+	@echo "  make logs-all    - Stream ALL system logs (unfiltered)"
 	@echo "  make close-sims  - Close all running simulators"
 	@echo "  make help        - Show this help message"
 	@echo ""
@@ -79,8 +82,36 @@ run-sim: xcode-build
 	fi; \
 	echo "Found app at: $$APP_PATH"; \
 	xcrun simctl install booted "$$APP_PATH"
-	@echo "▶️  Launching app..."
-	@xcrun simctl launch --console booted com.cuzzos.Thiccc.Thiccc
+	@echo "▶️  Launching app and streaming logs..."
+	@echo "📋 Press Ctrl+C to stop watching logs"
+	@xcrun simctl launch booted com.cuzzos.Thiccc.Thiccc &
+	@sleep 1
+	@xcrun simctl spawn booted log stream --level=debug --predicate 'processImagePath CONTAINS "Thiccc"' --style compact
+
+# Build and run in simulator with ALL system logs (unfiltered)
+run-sim-all: xcode-build
+	@echo "🛑 Shutting down any running simulators..."
+	@xcrun simctl shutdown all 2>/dev/null || true
+	@echo "🚀 Booting simulator: $(SIMULATOR)..."
+	@xcrun simctl boot "$(SIMULATOR)"
+	@open -a Simulator
+	@sleep 2
+	@echo "📲 Installing app..."
+	@APP_PATH=$$(find ~/Library/Developer/Xcode/DerivedData/Thiccc-*/Build/Products/Debug-iphonesimulator -name "Thiccc.app" -type d 2>/dev/null | head -1); \
+	if [ -z "$$APP_PATH" ]; then \
+		echo "❌ Could not find Thiccc.app in DerivedData"; \
+		echo "Searching for it..."; \
+		find ~/Library/Developer/Xcode/DerivedData -name "Thiccc.app" -type d 2>/dev/null | head -5; \
+		exit 1; \
+	fi; \
+	echo "Found app at: $$APP_PATH"; \
+	xcrun simctl install booted "$$APP_PATH"
+	@echo "▶️  Launching app and streaming ALL logs..."
+	@echo "⚠️  This will be very verbose!"
+	@echo "📋 Press Ctrl+C to stop watching logs"
+	@xcrun simctl launch booted com.cuzzos.Thiccc.Thiccc &
+	@sleep 1
+	@xcrun simctl spawn booted log stream --level=debug --style compact
 
 # List available simulators
 list-sims:
@@ -115,8 +146,21 @@ close-sims:
 	@killall Simulator 2>/dev/null || true
 	@echo "✅ All simulators closed"
 
+# Stream logs from running app (filtered to Thiccc)
+logs:
+	@echo "📋 Streaming logs from Thiccc app (filtered)..."
+	@echo "Press Ctrl+C to stop"
+	@xcrun simctl spawn booted log stream --level=debug --predicate 'processImagePath CONTAINS "Thiccc"' --style compact
+
+# Stream ALL system logs (unfiltered)
+logs-all:
+	@echo "📋 Streaming ALL system logs (unfiltered)..."
+	@echo "⚠️  This will be very verbose!"
+	@echo "Press Ctrl+C to stop"
+	@xcrun simctl spawn booted log stream --level=debug --style compact
+
 clean:
-	@cargo clean
+	@cd app && cargo clean
 	@rm -rf app/shared/build
 	@rm -rf app/ios/build
 
