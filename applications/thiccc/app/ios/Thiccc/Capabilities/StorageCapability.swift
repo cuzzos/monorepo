@@ -55,9 +55,8 @@ class StorageCapability {
         } catch {
             print("❌ [StorageCapability] Save failed: \(error)")
             
-            // Send error response (using saved as a fallback since we don't have error variant)
-            // In a production app, we'd want an error variant in StorageResult
-            let result = SharedTypes.StorageResult.currentWorkoutSaved
+            // Send error response with error details
+            let result = SharedTypes.StorageResult.error(message: error.localizedDescription)
             await core?.sendStorageResponse(requestId: requestId, result: result)
         }
     }

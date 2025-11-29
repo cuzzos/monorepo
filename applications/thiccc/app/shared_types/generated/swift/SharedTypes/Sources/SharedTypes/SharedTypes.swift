@@ -1257,6 +1257,7 @@ indirect public enum StorageResult: Hashable {
     case currentWorkoutSaved
     case currentWorkoutLoaded(workout_json: String?)
     case currentWorkoutDeleted
+    case error(message: String)
 
     public func serialize<S: Serializer>(serializer: S) throws {
         try serializer.increase_container_depth()
@@ -1268,6 +1269,9 @@ indirect public enum StorageResult: Hashable {
             try serialize_option_str(value: workout_json, serializer: serializer)
         case .currentWorkoutDeleted:
             try serializer.serialize_variant_index(value: 2)
+        case .error(let message):
+            try serializer.serialize_variant_index(value: 3)
+            try serializer.serialize_str(value: message)
         }
         try serializer.decrease_container_depth()
     }
@@ -1292,6 +1296,10 @@ indirect public enum StorageResult: Hashable {
         case 2:
             try deserializer.decrease_container_depth()
             return .currentWorkoutDeleted
+        case 3:
+            let message = try deserializer.deserialize_str()
+            try deserializer.decrease_container_depth()
+            return .error(message: message)
         default: throw DeserializationError.invalidInput(issue: "Unknown variant index for StorageResult: \(index)")
         }
     }

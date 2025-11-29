@@ -88,7 +88,7 @@ class DatabaseCapability {
         // TODO: Delete from GRDB in Phase 9
         // For now, just acknowledge
         
-        let result = SharedTypes.DatabaseResult.workoutSaved  // Using workoutSaved as placeholder
+        let result = SharedTypes.DatabaseResult.workoutDeleted
         await core?.sendDatabaseResponse(requestId: requestId, result: result)
         
         print("✅ [DatabaseCapability] Delete acknowledged (placeholder)")

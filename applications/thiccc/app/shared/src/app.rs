@@ -233,6 +233,8 @@ pub enum StorageResult {
     CurrentWorkoutLoaded { workout_json: Option<String> },
     /// Current workout was deleted from storage
     CurrentWorkoutDeleted,
+    /// An error occurred during storage operation
+    Error { message: String },
 }
 
 /// Navigation destinations for the navigation stack.
@@ -999,6 +1001,7 @@ impl App for Thiccc {
                     model.workout_history.insert(0, workout.clone());
                     model.workout_timer_seconds = 0;
                     model.timer_running = false;
+                    model.error_message = None; // Clear any stale errors on successful finish
 
                     // Save to database, delete from storage, stop timer
                     // Serialize workout to JSON for database operation
@@ -1392,6 +1395,9 @@ impl App for Thiccc {
                     }
                     StorageResult::CurrentWorkoutDeleted => {
                         // Success - no action needed
+                    }
+                    StorageResult::Error { message } => {
+                        model.error_message = Some(format!("Storage error: {}", message));
                     }
                 }
             }
