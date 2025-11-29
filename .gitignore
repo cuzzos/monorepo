@@ -67,4 +67,4 @@ Goonlytics/Goonlytics.xcworkspace
 applications/thiccc/app/.bin
 target/
 .bin/
-applications/thiccc/app/xcodebuild.log
+**/xcodebuild.log
