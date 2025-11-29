@@ -15,6 +15,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::id::Id;
 use crate::models::*;
+use crate::operations::{DatabaseOperation, StorageOperation, TimerOperation, TimerOutput};
 
 // =============================================================================
 // MARK: - Events
@@ -153,12 +154,19 @@ pub enum Event {
     /// Dismiss plate calculator view
     DismissPlateCalculator,
 
+    // ===== App Lifecycle =====
+    /// Initialize the app (load current workout from storage)
+    Initialize,
+
     // ===== Capability Responses =====
     /// Database operation completed
     DatabaseResponse { result: DatabaseResult },
 
     /// File storage operation completed
     StorageResponse { result: StorageResult },
+
+    /// Timer operation response
+    TimerResponse { output: TimerOutput },
 
     /// Error occurred
     Error { message: String },
@@ -210,13 +218,16 @@ pub enum DatabaseResult {
 /// Reasoning: While storage results should normally be constructed explicitly,
 /// Default is needed for TypeGen to successfully trace this type for Swift binding
 /// generation. The default (CurrentWorkoutSaved) is never actually used at runtime.
+///
+/// **Note**: CurrentWorkoutLoaded uses a JSON string instead of Workout to avoid
+/// TypeGen issues with complex nested types. The Rust core deserializes the JSON.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Default)]
 pub enum StorageResult {
     /// Current workout was saved to storage
     #[default]
     CurrentWorkoutSaved,
-    /// Current workout was loaded from storage
-    CurrentWorkoutLoaded { workout: Option<Workout> },
+    /// Current workout was loaded from storage (JSON string, None if no file)
+    CurrentWorkoutLoaded { workout_json: Option<String> },
     /// Current workout was deleted from storage
     CurrentWorkoutDeleted,
 }
@@ -419,9 +430,25 @@ impl Model {
 // MARK: - Effects
 // =============================================================================
 
+/// Effects the Core will request from the Shell.
+///
+/// Each variant represents a different capability that the platform shell
+/// must implement. The shell receives these effects, performs the platform
+/// operation, and sends the result back via `handle_response`.
+///
+/// The `#[effect(typegen)]` macro generates:
+/// - `From<Request<Op>>` implementations for each operation type
+/// - TypeGen registration for Swift/Kotlin code generation
 #[effect(typegen)]
 pub enum Effect {
+    /// Request a UI re-render
     Render(RenderOperation),
+    /// Database operations (save/load workouts to GRDB)
+    Database(DatabaseOperation),
+    /// File storage operations (current workout persistence)
+    Storage(StorageOperation),
+    /// Timer operations (workout duration tracking)
+    Timer(TimerOperation),
 }
 
 // =============================================================================
@@ -813,21 +840,55 @@ impl App for Thiccc {
     ) -> Command<Effect, Event> {
         match event {
             // =================================================================
+            // App Lifecycle
+            // =================================================================
+            Event::Initialize => {
+                // Load any saved in-progress workout from storage
+                return Command::request_from_shell(StorageOperation::LoadCurrentWorkout)
+                    .then_send(|result| Event::StorageResponse { result });
+            }
+
+            // =================================================================
             // Workout Management
             // =================================================================
             Event::StartWorkout => {
-                model.current_workout = Some(Workout::new());
+                let workout = Workout::new();
+                model.current_workout = Some(workout.clone());
                 model.workout_timer_seconds = 0;
                 model.timer_running = true;
+
+                // Start timer and save current workout to storage
+                // Serialize workout to JSON for storage operation
+                let workout_json = serde_json::to_string(&workout).unwrap_or_default();
+                return Command::all([
+                    Command::request_from_shell(TimerOperation::Start)
+                        .then_send(|output| Event::TimerResponse { output }),
+                    Command::request_from_shell(StorageOperation::SaveCurrentWorkout(workout_json))
+                        .then_send(|result| Event::StorageResponse { result }),
+                    render(),
+                ]);
             }
 
             Event::FinishWorkout => {
-                if let Some(workout) = &mut model.current_workout {
+                if let Some(mut workout) = model.current_workout.take() {
                     workout.finish();
                     model.workout_history.insert(0, workout.clone());
-                    // TODO: In Phase 3, trigger database save capability
+                    model.workout_timer_seconds = 0;
+                    model.timer_running = false;
+
+                    // Save to database, delete from storage, stop timer
+                    // Serialize workout to JSON for database operation
+                    let workout_json = serde_json::to_string(&workout).unwrap_or_default();
+                    return Command::all([
+                        Command::request_from_shell(DatabaseOperation::SaveWorkout(workout_json))
+                            .then_send(|result| Event::DatabaseResponse { result }),
+                        Command::request_from_shell(StorageOperation::DeleteCurrentWorkout)
+                            .then_send(|result| Event::StorageResponse { result }),
+                        Command::request_from_shell(TimerOperation::Stop)
+                            .then_send(|output| Event::TimerResponse { output }),
+                        render(),
+                    ]);
                 }
-                model.current_workout = None;
                 model.workout_timer_seconds = 0;
                 model.timer_running = false;
             }
@@ -836,6 +897,15 @@ impl App for Thiccc {
                 model.current_workout = None;
                 model.workout_timer_seconds = 0;
                 model.timer_running = false;
+
+                // Delete from storage and stop timer
+                return Command::all([
+                    Command::request_from_shell(StorageOperation::DeleteCurrentWorkout)
+                        .then_send(|result| Event::StorageResponse { result }),
+                    Command::request_from_shell(TimerOperation::Stop)
+                        .then_send(|output| Event::TimerResponse { output }),
+                    render(),
+                ]);
             }
 
             Event::UpdateWorkoutName { name } => {
@@ -979,10 +1049,14 @@ impl App for Thiccc {
 
             Event::StartTimer => {
                 model.timer_running = true;
+                return Command::request_from_shell(TimerOperation::Start)
+                    .then_send(|output| Event::TimerResponse { output });
             }
 
             Event::StopTimer => {
                 model.timer_running = false;
+                return Command::request_from_shell(TimerOperation::Stop)
+                    .then_send(|output| Event::TimerResponse { output });
             }
 
             Event::ToggleTimer => {
@@ -1010,9 +1084,8 @@ impl App for Thiccc {
             // =================================================================
             Event::LoadHistory => {
                 model.is_loading = true;
-                // TODO: In Phase 3, trigger database load capability
-                // For now, just use what's in memory
-                model.is_loading = false;
+                return Command::request_from_shell(DatabaseOperation::LoadAllWorkouts)
+                    .then_send(|result| Event::DatabaseResponse { result });
             }
 
             Event::ViewHistoryItem { workout_id } => {
@@ -1146,11 +1219,43 @@ impl App for Thiccc {
                     StorageResult::CurrentWorkoutSaved => {
                         // Success - no action needed
                     }
-                    StorageResult::CurrentWorkoutLoaded { workout } => {
-                        model.current_workout = workout;
+                    StorageResult::CurrentWorkoutLoaded { workout_json } => {
+                        // Deserialize workout from JSON if present
+                        if let Some(json) = workout_json {
+                            match serde_json::from_str::<Workout>(&json) {
+                                Ok(workout) => {
+                                    model.current_workout = Some(workout);
+                                    // If a workout was loaded, also start the timer
+                                    model.timer_running = true;
+                                    return Command::request_from_shell(TimerOperation::Start)
+                                        .then_send(|output| Event::TimerResponse { output });
+                                }
+                                Err(e) => {
+                                    model.error_message =
+                                        Some(format!("Failed to load workout: {}", e));
+                                }
+                            }
+                        }
                     }
                     StorageResult::CurrentWorkoutDeleted => {
                         // Success - no action needed
+                    }
+                }
+            }
+
+            Event::TimerResponse { output } => {
+                match output {
+                    TimerOutput::Tick => {
+                        // Timer tick - increment workout duration
+                        if model.timer_running {
+                            model.workout_timer_seconds += 1;
+                        }
+                    }
+                    TimerOutput::Started => {
+                        // Timer started - no action needed, state already set
+                    }
+                    TimerOutput::Stopped => {
+                        // Timer stopped - no action needed, state already set
                     }
                 }
             }
