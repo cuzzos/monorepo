@@ -1,6 +1,6 @@
 # Thiccc Shared Crate - Codebase/Method Map
 
-> **Last Updated:** November 2025 (Updated after Phase 1-3 Refactoring)
+> **Last Updated:** November 2025
 >
 > This document provides a comprehensive map of all structures, methods, and logic in the `app/shared` Rust crate. **Consult this first** before making any modifications to the shared crate.
 >
@@ -33,20 +33,20 @@ The `shared` crate is the **Rust core** of the Thiccc workout tracking applicati
 │  │ view_models.rs: ViewModel types                          │   │
 │  │ effects.rs: Effect enum (capabilities)                   │   │
 │  └──────────────────────────────────────────────────────────┘   │
-│                             │                                    │
+│                             │                                   │
 │  ┌──────────────────────────▼────────────────────────────────┐  │
 │  │ mod.rs: App trait impl + view builders                    │  │
 │  │   • update() → delegates to update/                       │  │
 │  │   • view() → builds ViewModels                            │  │
-│  └──────────────────────────────────────────────────────────┘   │
-│                             │                                    │
+│  └───────────────────────────────────────────────────────────┘  │
+│                             │                                   │
 │  ┌──────────────────────────▼────────────────────────────────┐  │
 │  │ update/ (Feature Modules - 10 files)                      │  │
 │  │   • mod.rs (router)                                       │  │
 │  │   • workout.rs, exercise.rs, sets.rs                      │  │
 │  │   • timer.rs, history.rs, plate_calculator.rs             │  │
 │  │   • import_export.rs, capabilities.rs, app_lifecycle.rs   │  │
-│  └──────────────────────────────────────────────────────────┘   │
+│  └───────────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────┘
                              │
 ┌────────────────────────────▼────────────────────────────────────┐
@@ -57,7 +57,7 @@ The `shared` crate is the **Rust core** of the Thiccc workout tracking applicati
 
 ---
 
-## File Structure Summary (After Refactoring)
+## File Structure Summary
 
 | File | Lines | Logic Type | Responsibility |
 |------|-------|------------|----------------|
