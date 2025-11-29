@@ -477,11 +477,13 @@ impl Workout {
         self.exercises.iter().map(|ex| ex.total_volume()).sum()
     }
 
-    /// Finishes the workout by setting the end timestamp and calculating duration.
-    pub fn finish(&mut self) {
-        let end = Utc::now();
-        self.end_timestamp = Some(end);
-        self.duration = Some((end - self.start_timestamp).num_seconds() as i32);
+    /// Finishes the workout by setting the end timestamp and duration.
+    ///
+    /// # Arguments
+    /// * `elapsed_seconds` - The actual elapsed time in seconds (excluding paused time)
+    pub fn finish(&mut self, elapsed_seconds: i32) {
+        self.end_timestamp = Some(Utc::now());
+        self.duration = Some(elapsed_seconds);
     }
 
     /// Adds an exercise to this workout.

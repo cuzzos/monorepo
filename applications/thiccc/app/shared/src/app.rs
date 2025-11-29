@@ -819,6 +819,117 @@ impl Thiccc {
             total_volume: workout.total_volume() as i32,
         }
     }
+
+    /// Performs the plate calculation after all validations have passed.
+    ///
+    /// # Arguments
+    /// * `model` - The model to update with the calculation result
+    /// * `target_weight` - The target weight to load (pre-validated as > 0)
+    /// * `bar_weight` - The weight of the bar (pre-validated as > 0)
+    /// * `percentage` - Optional percentage to apply (pre-validated as 0-100)
+    fn perform_plate_calculation(
+        model: &mut Model,
+        target_weight: f64,
+        bar_weight: f64,
+        percentage: Option<f64>,
+    ) {
+        let actual_weight = if let Some(pct) = percentage {
+            target_weight * (pct / 100.0)
+        } else {
+            target_weight
+        };
+
+        // Calculate weight remaining after bar
+        let weight_per_side = (actual_weight - bar_weight) / 2.0;
+
+        if weight_per_side < 0.0 {
+            model.error_message = Some("Target weight is less than bar weight".to_string());
+            model.plate_calculation = None;
+        } else {
+            // Get standard plates (use pounds for now)
+            let available_plates = Plate::standard();
+            let mut remaining = weight_per_side;
+            let mut plates = Vec::new();
+
+            // Greedy algorithm: use largest plates first
+            for plate in &available_plates {
+                while remaining >= plate.weight - 0.01 {
+                    // Small epsilon for floating point
+                    plates.push(plate.clone());
+                    remaining -= plate.weight;
+                }
+            }
+
+            // Create a BarType based on the weight for the calculation result
+            let bar_type = BarType::new("Bar", bar_weight);
+
+            model.plate_calculation = Some(PlateCalculation {
+                total_weight: actual_weight,
+                bar_type,
+                plates,
+                weight_unit: WeightUnit::Lb, // TODO: Use user preference
+            });
+        }
+    }
+
+    /// Validates all IDs in a workout to ensure they are valid UUIDs.
+    ///
+    /// The Id type uses #[serde(transparent)] which allows invalid strings
+    /// to bypass validation during deserialization. This function manually
+    /// validates all IDs to prevent data corruption from malformed imports.
+    ///
+    /// # Returns
+    /// - `Ok(())` if all IDs are valid UUIDs
+    /// - `Err(String)` with a descriptive error message if any ID is invalid
+    fn validate_workout_ids(workout: &Workout) -> Result<(), String> {
+        // Validate workout ID
+        Id::from_string(workout.id.as_str().to_string())
+            .map_err(|e| format!("Invalid workout ID: {}", e))?;
+
+        // Validate all exercise IDs and their nested set IDs
+        for (exercise_idx, exercise) in workout.exercises.iter().enumerate() {
+            // Validate exercise ID
+            Id::from_string(exercise.id.as_str().to_string())
+                .map_err(|e| format!("Invalid exercise ID at index {}: {}", exercise_idx, e))?;
+
+            // Validate exercise's workout_id reference
+            Id::from_string(exercise.workout_id.as_str().to_string()).map_err(|e| {
+                format!(
+                    "Invalid workout_id in exercise at index {}: {}",
+                    exercise_idx, e
+                )
+            })?;
+
+            // Validate all set IDs
+            for (set_idx, set) in exercise.sets.iter().enumerate() {
+                // Validate set ID
+                Id::from_string(set.id.as_str().to_string()).map_err(|e| {
+                    format!(
+                        "Invalid set ID at exercise {} set {}: {}",
+                        exercise_idx, set_idx, e
+                    )
+                })?;
+
+                // Validate set's exercise_id reference
+                Id::from_string(set.exercise_id.as_str().to_string()).map_err(|e| {
+                    format!(
+                        "Invalid exercise_id in set at exercise {} set {}: {}",
+                        exercise_idx, set_idx, e
+                    )
+                })?;
+
+                // Validate set's workout_id reference
+                Id::from_string(set.workout_id.as_str().to_string()).map_err(|e| {
+                    format!(
+                        "Invalid workout_id in set at exercise {} set {}: {}",
+                        exercise_idx, set_idx, e
+                    )
+                })?;
+            }
+        }
+
+        Ok(())
+    }
 }
 
 // =============================================================================
@@ -856,6 +967,7 @@ impl App for Thiccc {
                 model.current_workout = Some(workout.clone());
                 model.workout_timer_seconds = 0;
                 model.timer_running = true;
+                model.error_message = None; // Clear any previous error
 
                 // Start timer and save current workout to storage
                 // Serialize workout to JSON for storage operation
@@ -870,8 +982,9 @@ impl App for Thiccc {
             }
 
             Event::FinishWorkout => {
+                model.error_message = None; // Clear any previous error
                 if let Some(mut workout) = model.current_workout.take() {
-                    workout.finish();
+                    workout.finish(model.workout_timer_seconds);
                     model.workout_history.insert(0, workout.clone());
                     model.workout_timer_seconds = 0;
                     model.timer_running = false;
@@ -897,6 +1010,7 @@ impl App for Thiccc {
                 model.current_workout = None;
                 model.workout_timer_seconds = 0;
                 model.timer_running = false;
+                model.error_message = None; // Clear any stale errors on discard
 
                 // Delete from storage and stop timer
                 return Command::all([
@@ -905,7 +1019,7 @@ impl App for Thiccc {
                     Command::request_from_shell(TimerOperation::Stop)
                         .then_send(|output| Event::TimerResponse { output }),
                     render(),
-                ]);
+                ]);                
             }
 
             Event::UpdateWorkoutName { name } => {
@@ -934,6 +1048,7 @@ impl App for Thiccc {
                 let new_exercise = Exercise::from_global(&global_exercise, workout.id.clone());
                 workout.exercises.push(new_exercise);
                 model.showing_add_exercise = false;
+                model.error_message = None; // Clear any stale errors on successful add
             }
 
             Event::DeleteExercise { exercise_id } => {
@@ -958,6 +1073,13 @@ impl App for Thiccc {
                     if from_index < workout.exercises.len() && to_index < workout.exercises.len() {
                         let exercise = workout.exercises.remove(from_index);
                         workout.exercises.insert(to_index, exercise);
+                    } else {
+                        model.error_message = Some(format!(
+                            "Cannot move exercise: invalid position (from: {}, to: {}, total: {})",
+                            from_index,
+                            to_index,
+                            workout.exercises.len()
+                        ));
                     }
                 }
             }
@@ -979,6 +1101,7 @@ impl App for Thiccc {
                     Ok(id) => {
                         if let Some(exercise) = model.find_exercise_mut(&id) {
                             exercise.add_set();
+                            model.error_message = None; // Clear any stale errors on successful add
                         }
                     }
                     Err(e) => {
@@ -1001,6 +1124,12 @@ impl App for Thiccc {
                                 for (idx, set) in exercise.sets.iter_mut().enumerate() {
                                     set.set_index = idx as i32;
                                 }
+                            } else {
+                                model.error_message = Some(format!(
+                                    "Cannot delete set: index {} is out of bounds (total sets: {})",
+                                    set_index,
+                                    exercise.sets.len()
+                                ));
                             }
                         }
                     }
@@ -1084,6 +1213,7 @@ impl App for Thiccc {
             // =================================================================
             Event::LoadHistory => {
                 model.is_loading = true;
+                model.is_loading = false;
                 return Command::request_from_shell(DatabaseOperation::LoadAllWorkouts)
                     .then_send(|result| Event::DatabaseResponse { result });
             }
@@ -1104,6 +1234,7 @@ impl App for Thiccc {
                 model.selected_tab = tab;
                 // Clear navigation stack when changing tabs
                 model.navigation_stack.clear();
+                model.error_message = None; // Clear stale errors when navigating
             }
 
             // =================================================================
@@ -1112,9 +1243,16 @@ impl App for Thiccc {
             Event::ImportWorkout { json_data } => {
                 match serde_json::from_str::<Workout>(&json_data) {
                     Ok(workout) => {
-                        model.current_workout = Some(workout);
-                        model.showing_import = false;
-                        model.error_message = None;
+                        // Validate all IDs in the imported workout to prevent data corruption
+                        // The Id type uses #[serde(transparent)] which bypasses validation
+                        // during deserialization, so we must validate manually.
+                        if let Err(e) = Self::validate_workout_ids(&workout) {
+                            model.error_message = Some(format!("Invalid workout data: {}", e));
+                        } else {
+                            model.current_workout = Some(workout);
+                            model.showing_import = false;
+                            model.error_message = None;
+                        }
                     }
                     Err(e) => {
                         model.error_message = Some(format!("Failed to import workout: {}", e));
@@ -1143,42 +1281,32 @@ impl App for Thiccc {
                 bar_weight,
                 use_percentage,
             } => {
-                let actual_weight = if let Some(percentage) = use_percentage {
-                    target_weight * (percentage / 100.0)
-                } else {
-                    target_weight
-                };
-
-                // Calculate weight remaining after bar
-                let weight_per_side = (actual_weight - bar_weight) / 2.0;
-
-                if weight_per_side < 0.0 {
-                    model.error_message = Some("Target weight is less than bar weight".to_string());
+                // Validate inputs before calculation
+                if target_weight <= 0.0 {
+                    model.error_message = Some("Target weight must be greater than 0".to_string());
                     model.plate_calculation = None;
-                } else {
-                    // Get standard plates (use pounds for now)
-                    let available_plates = Plate::standard();
-                    let mut remaining = weight_per_side;
-                    let mut plates = Vec::new();
-
-                    // Greedy algorithm: use largest plates first
-                    for plate in &available_plates {
-                        while remaining >= plate.weight - 0.01 {
-                            // Small epsilon for floating point
-                            plates.push(plate.clone());
-                            remaining -= plate.weight;
-                        }
+                } else if bar_weight <= 0.0 {
+                    model.error_message = Some("Bar weight must be greater than 0".to_string());
+                    model.plate_calculation = None;
+                } else if let Some(percentage) = use_percentage {
+                    if percentage < 0.0 || percentage > 100.0 {
+                        model.error_message = Some(format!(
+                            "Percentage must be between 0 and 100 (got {})",
+                            percentage
+                        ));
+                        model.plate_calculation = None;
+                    } else {
+                        // All validations passed, perform calculation
+                        Self::perform_plate_calculation(
+                            model,
+                            target_weight,
+                            bar_weight,
+                            Some(percentage),
+                        );
                     }
-
-                    // Create a BarType based on the weight for the calculation result
-                    let bar_type = BarType::new("Bar", bar_weight);
-
-                    model.plate_calculation = Some(PlateCalculation {
-                        total_weight: actual_weight,
-                        bar_type,
-                        plates,
-                        weight_unit: WeightUnit::Lb, // TODO: Use user preference
-                    });
+                } else {
+                    // No percentage, perform calculation directly
+                    Self::perform_plate_calculation(model, target_weight, bar_weight, None);
                 }
             }
 
@@ -1853,6 +1981,187 @@ mod tests {
     }
 
     #[test]
+    fn test_finish_workout_uses_timer_seconds_not_wall_clock() {
+        let app = Thiccc;
+        let mut model = Model::default();
+
+        // Start workout
+        app.update(Event::StartWorkout, &mut model, &());
+
+        // Simulate 60 seconds of active workout time
+        for _ in 0..60 {
+            app.update(Event::TimerTick, &mut model, &());
+        }
+        assert_eq!(model.workout_timer_seconds, 60);
+
+        // Pause the timer
+        app.update(Event::StopTimer, &mut model, &());
+
+        // Simulate wall-clock time passing (e.g., 120 seconds)
+        // but timer doesn't increment because it's paused
+        for _ in 0..120 {
+            app.update(Event::TimerTick, &mut model, &());
+        }
+        assert_eq!(model.workout_timer_seconds, 60, "Timer should not increment while paused");
+
+        // Resume and add 30 more seconds
+        app.update(Event::StartTimer, &mut model, &());
+        for _ in 0..30 {
+            app.update(Event::TimerTick, &mut model, &());
+        }
+        assert_eq!(model.workout_timer_seconds, 90);
+
+        // Finish workout
+        app.update(Event::FinishWorkout, &mut model, &());
+
+        // Verify the saved duration is 90 seconds (actual active time),
+        // not 210 seconds (wall-clock time: 60 + 120 + 30)
+        assert_eq!(model.workout_history.len(), 1);
+        let finished_workout = &model.workout_history[0];
+        assert_eq!(
+            finished_workout.duration,
+            Some(90),
+            "Workout duration should be 90s (active time), not wall-clock time"
+        );
+    }
+
+    #[test]
+    fn test_delete_set_with_invalid_index_shows_error() {
+        let app = Thiccc;
+        let mut model = Model::default();
+
+        // Start workout and add exercise with one set
+        app.update(Event::StartWorkout, &mut model, &());
+        app.update(
+            Event::AddExercise {
+                name: "Bench Press".to_string(),
+                exercise_type: "barbell".to_string(),
+                muscle_group: "chest".to_string(),
+            },
+            &mut model,
+            &(),
+        );
+
+        let exercise_id = model.current_workout.as_ref().unwrap().exercises[0]
+            .id
+            .to_string();
+
+        app.update(
+            Event::AddSet {
+                exercise_id: exercise_id.clone(),
+            },
+            &mut model,
+            &(),
+        );
+
+        // Verify we have 1 set
+        assert_eq!(model.current_workout.as_ref().unwrap().exercises[0].sets.len(), 1);
+
+        // Try to delete set at index 5 (out of bounds)
+        app.update(
+            Event::DeleteSet {
+                exercise_id: exercise_id.clone(),
+                set_index: 5,
+            },
+            &mut model,
+            &(),
+        );
+
+        // Verify error message was set
+        assert!(model.error_message.is_some(), "Error message should be set");
+        assert!(
+            model
+                .error_message
+                .as_ref()
+                .unwrap()
+                .contains("Cannot delete set"),
+            "Error should mention deletion failure"
+        );
+        assert!(
+            model
+                .error_message
+                .as_ref()
+                .unwrap()
+                .contains("out of bounds"),
+            "Error should mention out of bounds"
+        );
+
+        // Verify the set was NOT deleted
+        assert_eq!(
+            model.current_workout.as_ref().unwrap().exercises[0].sets.len(),
+            1,
+            "Set should not have been deleted"
+        );
+    }
+
+    #[test]
+    fn test_move_exercise_with_invalid_indices_shows_error() {
+        let app = Thiccc;
+        let mut model = Model::default();
+
+        // Start workout and add two exercises
+        app.update(Event::StartWorkout, &mut model, &());
+        app.update(
+            Event::AddExercise {
+                name: "Squat".to_string(),
+                exercise_type: "barbell".to_string(),
+                muscle_group: "legs".to_string(),
+            },
+            &mut model,
+            &(),
+        );
+        app.update(
+            Event::AddExercise {
+                name: "Deadlift".to_string(),
+                exercise_type: "barbell".to_string(),
+                muscle_group: "back".to_string(),
+            },
+            &mut model,
+            &(),
+        );
+
+        // Verify we have 2 exercises
+        assert_eq!(model.current_workout.as_ref().unwrap().exercises.len(), 2);
+        let first_exercise_name = model.current_workout.as_ref().unwrap().exercises[0].name.clone();
+
+        // Try to move exercise from index 0 to index 10 (out of bounds)
+        app.update(
+            Event::MoveExercise {
+                from_index: 0,
+                to_index: 10,
+            },
+            &mut model,
+            &(),
+        );
+
+        // Verify error message was set
+        assert!(model.error_message.is_some(), "Error message should be set");
+        assert!(
+            model
+                .error_message
+                .as_ref()
+                .unwrap()
+                .contains("Cannot move exercise"),
+            "Error should mention move failure"
+        );
+        assert!(
+            model
+                .error_message
+                .as_ref()
+                .unwrap()
+                .contains("invalid position"),
+            "Error should mention invalid position"
+        );
+
+        // Verify exercise order was NOT changed
+        assert_eq!(
+            model.current_workout.as_ref().unwrap().exercises[0].name,
+            first_exercise_name,
+            "Exercise order should not have changed"
+        );
+    }
+
+    #[test]
     fn test_change_tab_flow() {
         let app = Thiccc;
         let mut model = Model::default();
@@ -1867,6 +2176,129 @@ mod tests {
         assert_eq!(model.selected_tab, Tab::History);
         let view = app.view(&model);
         assert_eq!(view.selected_tab, Tab::History);
+    }
+
+    #[test]
+    fn test_error_message_cleared_on_start_workout() {
+        let app = Thiccc;
+        let mut model = Model::default();
+
+        // Set an error message
+        model.error_message = Some("Previous error".to_string());
+
+        // Start workout (should clear error on success)
+        app.update(Event::StartWorkout, &mut model, &());
+
+        // Verify error was cleared
+        assert!(model.error_message.is_none(), "Error should be cleared on successful StartWorkout");
+    }
+
+    #[test]
+    fn test_error_message_cleared_on_add_exercise() {
+        let app = Thiccc;
+        let mut model = Model::default();
+
+        // Start workout
+        app.update(Event::StartWorkout, &mut model, &());
+
+        // Set an error message
+        model.error_message = Some("Previous error".to_string());
+
+        // Add exercise (should clear error)
+        app.update(
+            Event::AddExercise {
+                name: "Squat".to_string(),
+                exercise_type: "barbell".to_string(),
+                muscle_group: "legs".to_string(),
+            },
+            &mut model,
+            &(),
+        );
+
+        // Verify error was cleared
+        assert!(model.error_message.is_none(), "Error should be cleared on successful AddExercise");
+    }
+
+    #[test]
+    fn test_error_message_cleared_on_add_set() {
+        let app = Thiccc;
+        let mut model = Model::default();
+
+        // Start workout and add exercise
+        app.update(Event::StartWorkout, &mut model, &());
+        app.update(
+            Event::AddExercise {
+                name: "Squat".to_string(),
+                exercise_type: "barbell".to_string(),
+                muscle_group: "legs".to_string(),
+            },
+            &mut model,
+            &(),
+        );
+
+        let exercise_id = model.current_workout.as_ref().unwrap().exercises[0]
+            .id
+            .to_string();
+
+        // Set an error message
+        model.error_message = Some("Previous error".to_string());
+
+        // Add set (should clear error)
+        app.update(Event::AddSet { exercise_id }, &mut model, &());
+
+        // Verify error was cleared
+        assert!(model.error_message.is_none(), "Error should be cleared on successful AddSet");
+    }
+
+    #[test]
+    fn test_error_message_cleared_on_change_tab() {
+        let app = Thiccc;
+        let mut model = Model::default();
+
+        // Set an error message
+        model.error_message = Some("Previous error".to_string());
+
+        // Change tab (should clear error)
+        app.update(Event::ChangeTab { tab: Tab::History }, &mut model, &());
+
+        // Verify error was cleared
+        assert!(model.error_message.is_none(), "Error should be cleared when changing tabs");
+    }
+
+    #[test]
+    fn test_error_message_cleared_on_finish_workout() {
+        let app = Thiccc;
+        let mut model = Model::default();
+
+        // Start workout
+        app.update(Event::StartWorkout, &mut model, &());
+
+        // Set an error message
+        model.error_message = Some("Previous error".to_string());
+
+        // Finish workout (should clear error)
+        app.update(Event::FinishWorkout, &mut model, &());
+
+        // Verify error was cleared
+        assert!(model.error_message.is_none(), "Error should be cleared on FinishWorkout");
+    }
+
+    #[test]
+    fn test_error_message_cleared_on_discard_workout() {
+        let app = Thiccc;
+        let mut model = Model::default();
+
+        // Start workout
+        app.update(Event::StartWorkout, &mut model, &());
+
+        // Set an error message
+        model.error_message = Some("Previous error".to_string());
+
+        // Discard workout (should clear error)
+        app.update(Event::DiscardWorkout, &mut model, &());
+
+        // Verify error was cleared
+        assert!(model.error_message.is_none(), "Error should be cleared on DiscardWorkout");
     }
 
     #[test]
@@ -1894,6 +2326,157 @@ mod tests {
         // Should use: 2x45 (90 lbs total)
         let description = calc.formatted_plate_description();
         assert!(description.contains("45lb"));
+    }
+
+    #[test]
+    fn test_plate_calculator_rejects_negative_target_weight() {
+        let app = Thiccc;
+        let mut model = Model::default();
+
+        app.update(
+            Event::CalculatePlates {
+                target_weight: -100.0,
+                bar_weight: 45.0,
+                use_percentage: None,
+            },
+            &mut model,
+            &(),
+        );
+
+        // Verify error message was set
+        assert!(model.error_message.is_some());
+        assert!(model
+            .error_message
+            .as_ref()
+            .unwrap()
+            .contains("Target weight must be greater than 0"));
+        assert!(model.plate_calculation.is_none());
+    }
+
+    #[test]
+    fn test_plate_calculator_rejects_zero_target_weight() {
+        let app = Thiccc;
+        let mut model = Model::default();
+
+        app.update(
+            Event::CalculatePlates {
+                target_weight: 0.0,
+                bar_weight: 45.0,
+                use_percentage: None,
+            },
+            &mut model,
+            &(),
+        );
+
+        // Verify error message was set
+        assert!(model.error_message.is_some());
+        assert!(model
+            .error_message
+            .as_ref()
+            .unwrap()
+            .contains("Target weight must be greater than 0"));
+        assert!(model.plate_calculation.is_none());
+    }
+
+    #[test]
+    fn test_plate_calculator_rejects_negative_bar_weight() {
+        let app = Thiccc;
+        let mut model = Model::default();
+
+        app.update(
+            Event::CalculatePlates {
+                target_weight: 225.0,
+                bar_weight: -45.0,
+                use_percentage: None,
+            },
+            &mut model,
+            &(),
+        );
+
+        // Verify error message was set
+        assert!(model.error_message.is_some());
+        assert!(model
+            .error_message
+            .as_ref()
+            .unwrap()
+            .contains("Bar weight must be greater than 0"));
+        assert!(model.plate_calculation.is_none());
+    }
+
+    #[test]
+    fn test_plate_calculator_rejects_negative_percentage() {
+        let app = Thiccc;
+        let mut model = Model::default();
+
+        app.update(
+            Event::CalculatePlates {
+                target_weight: 225.0,
+                bar_weight: 45.0,
+                use_percentage: Some(-50.0),
+            },
+            &mut model,
+            &(),
+        );
+
+        // Verify error message was set
+        assert!(model.error_message.is_some());
+        assert!(model
+            .error_message
+            .as_ref()
+            .unwrap()
+            .contains("Percentage must be between 0 and 100"));
+        assert!(model.plate_calculation.is_none());
+    }
+
+    #[test]
+    fn test_plate_calculator_rejects_percentage_over_100() {
+        let app = Thiccc;
+        let mut model = Model::default();
+
+        app.update(
+            Event::CalculatePlates {
+                target_weight: 225.0,
+                bar_weight: 45.0,
+                use_percentage: Some(150.0),
+            },
+            &mut model,
+            &(),
+        );
+
+        // Verify error message was set
+        assert!(model.error_message.is_some());
+        assert!(model
+            .error_message
+            .as_ref()
+            .unwrap()
+            .contains("Percentage must be between 0 and 100"));
+        assert!(model
+            .error_message
+            .as_ref()
+            .unwrap()
+            .contains("150"));
+        assert!(model.plate_calculation.is_none());
+    }
+
+    #[test]
+    fn test_plate_calculator_accepts_percentage_100() {
+        let app = Thiccc;
+        let mut model = Model::default();
+
+        app.update(
+            Event::CalculatePlates {
+                target_weight: 225.0,
+                bar_weight: 45.0,
+                use_percentage: Some(100.0),
+            },
+            &mut model,
+            &(),
+        );
+
+        // Verify calculation succeeded (100% of 225 = 225)
+        assert!(model.error_message.is_none());
+        assert!(model.plate_calculation.is_some());
+        assert_eq!(model.plate_calculation.as_ref().unwrap().total_weight, 225.0);
     }
 
     #[test]
@@ -1935,5 +2518,51 @@ mod tests {
             .as_ref()
             .unwrap()
             .contains("Failed to import"));
+    }
+
+    #[test]
+    fn test_import_workout_with_invalid_uuid_is_rejected() {
+        let app = Thiccc;
+        let mut model = Model::default();
+
+        // Create JSON with an invalid UUID (bypasses serde validation due to transparent)
+        let malformed_json = r#"{
+            "id": "not-a-valid-uuid",
+            "name": "Malicious Workout",
+            "note": null,
+            "duration": null,
+            "start_timestamp": "2025-01-01T12:00:00Z",
+            "end_timestamp": null,
+            "exercises": []
+        }"#;
+
+        // Try to import it
+        app.update(
+            Event::ImportWorkout {
+                json_data: malformed_json.to_string(),
+            },
+            &mut model,
+            &(),
+        );
+
+        // Verify the malformed UUID was caught and rejected
+        assert!(model.current_workout.is_none(), "Workout with invalid UUID should not be imported");
+        assert!(model.error_message.is_some(), "Error message should be set");
+        assert!(
+            model
+                .error_message
+                .as_ref()
+                .unwrap()
+                .contains("Invalid workout data"),
+            "Error should mention invalid workout data"
+        );
+        assert!(
+            model
+                .error_message
+                .as_ref()
+                .unwrap()
+                .contains("Invalid workout ID"),
+            "Error should specifically mention the workout ID"
+        );
     }
 }

@@ -5,6 +5,7 @@ import SwiftUI
 ///
 /// During Phase 3 development, this includes a Debug tab for testing capabilities.
 /// The main Workout and History views will be implemented in later phases.
+/// To be replaced with proper WorkoutView in Phase 6
 struct ContentView: View {
     @ObservedObject var core: Core
     @State private var selectedTab: Tab = .workout
@@ -61,6 +62,11 @@ struct WorkoutPlaceholderView: View {
             Spacer()
             
             Text("Workout view will be implemented in Phase 6")
+            Text("Core is connected and ready")
+                .font(.caption)
+                .foregroundColor(.secondary)
+            
+            Text("Implement tab navigation and workout views to continue")
                 .font(.caption)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
