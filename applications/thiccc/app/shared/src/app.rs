@@ -887,7 +887,8 @@ impl App for Thiccc {
 
             Event::FinishWorkout => {
                 if let Some(workout) = &mut model.current_workout {
-                    workout.finish();
+                    // Use the actual elapsed time from the timer (respects pause state)
+                    workout.finish(model.workout_timer_seconds);
                     model.workout_history.insert(0, workout.clone());
                     // TODO: In Phase 3, trigger database save capability
                 }
@@ -1816,6 +1817,51 @@ mod tests {
         // Verify view formatting
         let view = app.view(&model);
         assert_eq!(view.workout_view.formatted_duration, "01:05");
+    }
+
+    #[test]
+    fn test_finish_workout_uses_timer_seconds_not_wall_clock() {
+        let app = Thiccc;
+        let mut model = Model::default();
+
+        // Start workout
+        app.update(Event::StartWorkout, &mut model, &());
+
+        // Simulate 60 seconds of active workout time
+        for _ in 0..60 {
+            app.update(Event::TimerTick, &mut model, &());
+        }
+        assert_eq!(model.workout_timer_seconds, 60);
+
+        // Pause the timer
+        app.update(Event::StopTimer, &mut model, &());
+
+        // Simulate wall-clock time passing (e.g., 120 seconds)
+        // but timer doesn't increment because it's paused
+        for _ in 0..120 {
+            app.update(Event::TimerTick, &mut model, &());
+        }
+        assert_eq!(model.workout_timer_seconds, 60, "Timer should not increment while paused");
+
+        // Resume and add 30 more seconds
+        app.update(Event::StartTimer, &mut model, &());
+        for _ in 0..30 {
+            app.update(Event::TimerTick, &mut model, &());
+        }
+        assert_eq!(model.workout_timer_seconds, 90);
+
+        // Finish workout
+        app.update(Event::FinishWorkout, &mut model, &());
+
+        // Verify the saved duration is 90 seconds (actual active time),
+        // not 210 seconds (wall-clock time: 60 + 120 + 30)
+        assert_eq!(model.workout_history.len(), 1);
+        let finished_workout = &model.workout_history[0];
+        assert_eq!(
+            finished_workout.duration,
+            Some(90),
+            "Workout duration should be 90s (active time), not wall-clock time"
+        );
     }
 
     #[test]
