@@ -1006,6 +1006,7 @@ impl App for Thiccc {
                         render(),
                     ]);
                 }
+                model.current_workout = None;
                 model.workout_timer_seconds = 0;
                 model.timer_running = false;
                 model.error_message = None; // Clear any previous error
