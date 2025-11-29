@@ -68,7 +68,7 @@ echo "3️⃣  Building iOS app in Xcode..."
 cd ../ios
 
 # Try to find a suitable simulator
-SIMULATOR=$(xcrun simctl list devices available | grep "iPhone" | grep -v "unavailable" | head -n 1 | sed -E 's/.*\(([A-F0-9-]+)\).*/\1/')
+SIMULATOR=$(xcrun simctl list devices available | grep "iPhone" | grep -v "unavailable" | head -n 1 | sed -E 's/.*\(([A-Fa-f0-9-]+)\).*/\1/')
 
 if [ -z "$SIMULATOR" ]; then
     echo "⚠️  No iPhone simulator found, trying generic iOS Simulator"
