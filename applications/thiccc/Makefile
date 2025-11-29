@@ -1,6 +1,6 @@
 # Thiccc iOS App Makefile
 
-# Configurable simulator (can override: make run-sim SIMULATOR="iPhone 17")
+# Configurable simulator (can override: make run-sim SIMULATOR='iPhone 17')
 SIMULATOR ?= iPhone 16 Pro
 
 .PHONY: build clean open xcode-build run-sim list-sims test check help close-sims
@@ -30,8 +30,8 @@ help:
 	@echo "  SIMULATOR        - Choose simulator (default: $(SIMULATOR))"
 	@echo ""
 	@echo "Examples:"
-	@echo "  make run-sim SIMULATOR=\"iPhone 16\""
-	@echo "  make test SIMULATOR=\"iPhone Air\""
+	@echo "  make run-sim SIMULATOR='iPhone 16'"
+	@echo "  make test SIMULATOR='iPhone Air'"
 	@echo ""
 	@echo "Current settings:"
 	@echo "  Simulator: $(SIMULATOR)"
