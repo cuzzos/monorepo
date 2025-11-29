@@ -968,18 +968,19 @@ impl App for Thiccc {
                     const WIP_MSG: &str = "A workout is already in progress. Please finish or discard it first.";
                     model.error_message = Some(WIP_MSG.to_string());
                 } else {
-                    let workout = Workout::new();
-                    model.current_workout = Some(workout.clone());
+                    model.current_workout = Some(Workout::new());
                     model.workout_timer_seconds = 0;
                     model.timer_running = true;
                     model.error_message = None; // Clear any stale errors on successful start
 
                     // Start timer and save current workout to storage
                     // Serialize workout to JSON for storage operation
-                    let workout_json = serde_json::to_string(&workout).unwrap_or_else(|e| {
-                        eprintln!("ERROR: Failed to serialize workout for storage: {}", e);
-                        "{}".to_string() // Return valid empty JSON as fallback
-                    });
+                    let workout_json = model.current_workout.as_ref()
+                        .and_then(|w| serde_json::to_string(w).ok())
+                        .unwrap_or_else(|| {
+                            eprintln!("ERROR: Failed to serialize workout for storage");
+                            "{}".to_string() // Return valid empty JSON as fallback
+                        });
                     return Command::all([
                         Command::request_from_shell(TimerOperation::Start)
                             .then_send(|output| Event::TimerResponse { output }),
