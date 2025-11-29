@@ -976,7 +976,10 @@ impl App for Thiccc {
 
                     // Start timer and save current workout to storage
                     // Serialize workout to JSON for storage operation
-                    let workout_json = serde_json::to_string(&workout).unwrap_or_default();
+                    let workout_json = serde_json::to_string(&workout).unwrap_or_else(|e| {
+                        eprintln!("ERROR: Failed to serialize workout for storage: {}", e);
+                        "{}".to_string() // Return valid empty JSON as fallback
+                    });
                     return Command::all([
                         Command::request_from_shell(TimerOperation::Start)
                             .then_send(|output| Event::TimerResponse { output }),
@@ -996,7 +999,10 @@ impl App for Thiccc {
 
                     // Save to database, delete from storage, stop timer
                     // Serialize workout to JSON for database operation
-                    let workout_json = serde_json::to_string(&workout).unwrap_or_default();
+                    let workout_json = serde_json::to_string(&workout).unwrap_or_else(|e| {
+                        eprintln!("ERROR: Failed to serialize workout for database: {}", e);
+                        "{}".to_string() // Return valid empty JSON as fallback
+                    });
                     return Command::all([
                         Command::request_from_shell(DatabaseOperation::SaveWorkout(workout_json))
                             .then_send(|result| Event::DatabaseResponse { result }),
