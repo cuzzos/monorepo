@@ -1,765 +1,431 @@
-# iOS App Architecture - Swift ↔ Rust Bridge
+# Thiccc Application Architecture
 
-This document explains how the Thiccc iOS app bridges Swift UI with Rust business logic.
+**Last Updated:** November 2025
 
----
-
-## SWIFT ↔ RUST BRIDGE ARCHITECTURE
-
-The iOS app acts as a "thin shell" around a Rust core, with **all business logic in Rust** and **only UI in Swift**.
+This document provides a high-level architectural overview of the Thiccc workout tracking application.
 
 ---
 
-## 📋 Table of Contents
+## Table of Contents
 
-1. [Why This Architecture?](#why-this-architecture)
-2. [How It Works (Step by Step)](#how-it-works-step-by-step)
-3. [The Bridge Metaphor](#the-bridge-metaphor)
-4. [Data Flow Example](#data-flow-example)
-5. [Automatic Build Process](#automatic-build-process)
-6. [File Structure](#file-structure)
-7. [Key Files Explained](#key-files-explained)
-
----
-
-## Why This Architecture?
-
-### The Problem
-
-Your app is written in **TWO languages**:
-
-- **Swift** (iOS UI layer) ← SwiftUI views, navigation, presentation
-- **Rust** (Business logic) ← Workout management, timer, calculations, database
-
-**Problem:** Swift can't directly talk to Rust. They have different:
-- Memory models (ARC vs ownership)
-- Function calling conventions
-- Type systems
-- Data representations
-
-### The Solution
-
-We use **UniFFI** - Mozilla's tool that **automatically generates** the "translation layer" between Swift and Rust.
-
-**Key Benefits:**
-- ✅ **Type-safe**: Compiler catches mistakes across the FFI boundary
-- ✅ **Automatic**: No manual pointer management or marshalling
-- ✅ **Single source of truth**: Define interface once in `.udl` file
-- ✅ **Memory safe**: Automatic reference counting across languages
+- [Technology Stack](#technology-stack)
+- [Architectural Pattern](#architectural-pattern)
+- [Project Structure](#project-structure)
+- [Data Flow](#data-flow)
+- [Key Design Decisions](#key-design-decisions)
+- [Development Workflow](#development-workflow)
 
 ---
 
-## How It Works (Step by Step)
+## Technology Stack
 
-### 1️⃣ **Write Rust Code**
+### Core (Business Logic)
+- **Rust (2024 Edition)** - All business logic, state management, and data models
+- **Crux Framework** - Cross-platform application framework
+- **Serde** - Serialization for data transfer across FFI boundary
+- **UniFFI** - Automatic Rust ↔ Swift bindings generation
+- **Chrono** - Date and time handling
 
-**File:** `app/shared/src/lib.rs`
+### Shell (iOS UI)
+- **Swift 6.0+** - iOS shell implementation
+- **SwiftUI** - Declarative UI framework
+- **iOS 18.0+** - Minimum deployment target (latest only)
 
-This contains ALL your business logic:
-- Workout creation and management
-- Exercise and set tracking
-- Timer logic
-- Plate calculator
-- Database operations
-
-```rust
-// Example from lib.rs
-pub fn process_event(msg: &[u8]) -> Result<Vec<u8>, CoreError> {
-    // Deserialize event from Swift
-    let event: Event = serde_json::from_slice(msg)?;
-    
-    // Update app state
-    let updated_state = match event {
-        Event::CreateWorkout { name } => {
-            // Business logic here
-        }
-        // ... more events
-    };
-    
-    // Serialize state back to Swift
-    Ok(serde_json::to_vec(&updated_state)?)
-}
-```
-
-**Key Point:** This code has ZERO knowledge of iOS. It's pure logic.
+### Testing
+- **Rust built-in test framework** - Unit and integration tests
+- **XCTest** - iOS UI tests (planned)
 
 ---
 
-### 2️⃣ **Define the Interface (shared.udl)**
+## Architectural Pattern
 
-**File:** `app/shared/src/shared.udl`
+Thiccc follows the **Crux architecture pattern**, which separates business logic from platform-specific code:
 
-This is like a "menu" of functions Swift can call:
-
-```udl
-namespace shared {
-    // These functions will be available in Swift
-    bytes process_event([ByRef] bytes msg);
-    bytes view();
-    bytes handle_response(u32 id, [ByRef] bytes res);
-};
+```
+┌──────────────────────────────────────────────────────┐
+│                   iOS Shell (Swift)                  │
+│              Thin UI layer - SwiftUI Views           │
+│                                                      │
+│  - Renders ViewModels                                │
+│  - Captures user interactions                        │
+│  - Implements platform capabilities                  │
+└──────────────┬───────────────────────┬───────────────┘
+               │                       │
+          Events (↓)            ViewModels (↑)
+        (serialized bytes)      (serialized bytes)
+               │                       │
+┌──────────────▼───────────────────────▼───────────────┐
+│              Rust Core (Business Logic)              │
+│                                                      │
+│  ┌────────────────────────────────────────────────┐  │
+│  │  Event → Update → Model → View → ViewModel    │  │
+│  └────────────────────────────────────────────────┘  │
+│                                                      │
+│  - All state management                              │
+│  - All business rules                                │
+│  - All data validation                               │
+│  - Platform-agnostic                                 │
+└──────────────────────────────────────────────────────┘
 ```
 
-**What this means:**
-- `namespace shared` → Swift will `import SharedCore`
-- `bytes process_event(...)` → Swift can call `processEvent(msg:)`
-- `[ByRef]` → Pass by reference (efficient for large data)
+### Why This Architecture?
 
-**This is the single source of truth for the FFI boundary.**
+1. **Shared Logic**: Write business logic once, use across platforms (iOS, Android, Web)
+2. **Testability**: Pure Rust logic is easy to test without UI
+3. **Type Safety**: Rust's type system prevents entire classes of bugs
+4. **Clear Boundaries**: Strict separation between UI and logic
+5. **Platform Independence**: Core logic never depends on platform APIs
 
 ---
 
-### 3️⃣ **UniFFI Auto-Generates Swift Code**
-
-When you build:
-
-1. **Build script** (`build.rs`) runs
-2. **Reads** `shared.udl`
-3. **Generates** Swift bindings:
-   - `shared.swift` - Swift functions that call Rust
-   - `sharedFFI.h` - C header (FFI uses C ABI)
-   - `sharedFFI.modulemap` - Makes it importable as module
-
-**Output location:** `app/ios/thiccc/Thiccc/Generated/`
-
-**Swift imports this as:** `import SharedCore`
-
-**Example Generated Code:**
-```swift
-// Generated by UniFFI - you never write this!
-public func processEvent(msg: [UInt8]) throws -> [UInt8] {
-    // Complex FFI code that calls Rust
-    // Handles memory management, error conversion, etc.
-}
-```
-
----
-
-### 4️⃣ **CoreUniffi.swift Uses Those Generated Functions**
-
-**File:** `app/ios/thiccc/Thiccc/CoreUniffi.swift`
-
-This is YOUR code that uses the generated functions:
-
-```swift
-import SharedCore  // The generated module
-
-class RustCoreUniffi: ObservableObject {
-    func dispatch(_ event: Event) {
-        // Encode to bytes
-        let eventBytes = [UInt8](try JSONEncoder().encode(event))
-        
-        // Call Rust! (looks like normal Swift, but calls across FFI)
-        let viewBytes = try processEvent(msg: eventBytes)
-        
-        // Decode response
-        self.viewModel = try JSONDecoder().decode(ViewModel.self, from: Data(viewBytes))
-    }
-}
-```
-
-**Key observations:**
-- Line 28: `let viewData = try view()` ← Calling Rust!
-- Line 53: `let viewBytes = try processEvent(msg: eventBytes)` ← Calling Rust!
-- These **look** like normal Swift functions
-- But they're actually **crossing the FFI boundary** into Rust
-
----
-
-## The Bridge Metaphor
-
-Think of `CoreUniffi.swift` as a **translator at the United Nations**:
+## Project Structure
 
 ```
-Swift (English) ◄──► CoreUniffi.swift (Translator) ◄──► Rust (French)
-```
-
-**The translator does:**
-1. Takes Swift types → Converts to bytes
-2. Calls Rust function (via UniFFI)
-3. Takes bytes back → Converts to Swift types
-4. Updates UI via `@Published` properties
-
----
-
-## Data Flow Example
-
-Let's trace what happens when you tap **"Create Workout"** in the UI:
-
-### 1. User Action (SwiftUI)
-```swift
-Button("Create Workout") {
-    core.dispatch(.createWorkout(name: "Leg Day"))
-}
-```
-
-### 2. Swift Bridge (CoreUniffi.swift)
-```swift
-func dispatch(_ event: Event) {
-    // Convert Swift enum → JSON → bytes
-    let eventJson = try JSONEncoder().encode(event)
-    let eventBytes = [UInt8](eventJson)
-    
-    // Cross FFI boundary into Rust
-    let viewBytes = try processEvent(msg: eventBytes)
-    
-    // Convert bytes → JSON → Swift struct
-    self.viewModel = try JSONDecoder().decode(ViewModel.self, from: Data(viewBytes))
-}
-```
-
-### 3. Rust Core (lib.rs)
-```rust
-pub fn process_event(msg: &[u8]) -> Result<Vec<u8>, CoreError> {
-    let event: Event = serde_json::from_slice(msg)?;
-    
-    match event {
-        Event::CreateWorkout { name } => {
-            // Create workout
-            let workout = Workout::new(name);
-            // Update state
-            app.model.workout = Some(workout);
-            // Generate view model
-            let view_model = app.view();
-            // Return as bytes
-            Ok(serde_json::to_vec(&view_model)?)
-        }
-    }
-}
-```
-
-### 4. UI Update (Automatic!)
-```swift
-// Because viewModel is @Published
-self.viewModel = ... // Triggers SwiftUI refresh
-```
-
-**Total data journey:**
-```
-SwiftUI → Swift Event → JSON bytes → Rust → Updated state → JSON bytes → Swift ViewModel → SwiftUI
-```
-
----
-
-## Automatic Build Process
-
-After initial setup (`./scripts/setup-mac.sh`), Xcode has a **pre-build script** that:
-
-### What Happens on Every Build
-
-```bash
-# 1. Check if Rust code changed
-if [[ Rust files modified ]]; then
-    # 2. Rebuild Rust library
-    cargo build --release --target aarch64-apple-ios-sim
-    
-    # 3. Regenerate Swift bindings
-    uniffi-bindgen generate shared.udl --language swift
-    
-    # 4. Copy to Generated/ folder
-fi
-
-# 5. Xcode links everything together
-```
-
-### What This Means for You
-
-**Just hit ⌘R in Xcode!**
-
-- Changed Rust code? → Automatically rebuilds
-- Changed Swift code? → Automatically rebuilds
-- Changed `.udl` interface? → Regenerates bindings
-
-**You never manually run build scripts during development.**
-
----
-
-## File Structure
-
-```
-app/
-├── shared/                           # Rust Core (Business Logic)
-│   ├── src/
-│   │   ├── lib.rs                    # Main Rust code + Crux app
-│   │   ├── models.rs                 # Data models (Workout, Exercise, etc.)
-│   │   ├── database.rs               # SQLite operations
-│   │   ├── shared.udl                # ⭐ UniFFI interface definition
-│   │   └── bin/
-│   │       └── uniffi-bindgen.rs     # CLI tool for binding generation
-│   ├── build.rs                      # Build script (generates scaffolding)
-│   ├── uniffi.toml                   # UniFFI configuration
-│   └── Cargo.toml                    # Rust dependencies
+applications/thiccc/
+├── app/
+│   ├── iOS/                          # iOS Shell (Swift/SwiftUI)
+│   │   ├── Thiccc/
+│   │   │   ├── Views/                # SwiftUI Views
+│   │   │   ├── Capabilities/         # Platform implementations
+│   │   │   └── Core.swift            # Crux bridge
+│   │   └── Thiccc.xcodeproj/
+│   │
+│   ├── shared/                       # Rust Core (Business Logic)
+│   │   ├── src/
+│   │   │   ├── lib.rs                # FFI bridge & exports
+│   │   │   ├── models.rs             # Domain models (Workout, Exercise, etc.)
+│   │   │   ├── id.rs                 # Type-safe UUID wrapper
+│   │   │   ├── operations.rs        # Capability operation types
+│   │   │   └── app/                  # Crux App implementation
+│   │   │       ├── mod.rs            # App trait impl, orchestration
+│   │   │       ├── events.rs         # Event definitions (40+ variants)
+│   │   │       ├── model.rs          # App state
+│   │   │       ├── view_models.rs    # ViewModels for UI
+│   │   │       ├── effects.rs        # Capability effects
+│   │   │       ├── update/           # Business logic by feature
+│   │   │       │   ├── mod.rs        # Event routing
+│   │   │       │   ├── workout.rs
+│   │   │       │   ├── exercise.rs
+│   │   │       │   ├── sets.rs
+│   │   │       │   ├── timer.rs
+│   │   │       │   ├── history.rs
+│   │   │       │   ├── import_export.rs
+│   │   │       │   ├── plate_calculator.rs
+│   │   │       │   ├── capabilities.rs
+│   │   │       │   └── app_lifecycle.rs
+│   │   │       └── tests/            # Comprehensive test suite
+│   │   │           ├── mod.rs
+│   │   │           ├── event_tests.rs
+│   │   │           ├── model_tests.rs
+│   │   │           ├── view_model_tests.rs
+│   │   │           └── integration_tests.rs
+│   │   └── Cargo.toml
+│   │
+│   └── shared_types/                 # Generated Swift types
+│       └── generated/swift/
 │
-└── ios/                              # Swift Shell (UI Only)
-    ├── project.yml                   # XcodeGen spec (generates .xcodeproj)
-    ├── ARCHITECTURE.md               # ⭐ This file
-    ├── README.md                     # Setup instructions
-    └── thiccc/Thiccc/
-        ├── ThicccApp.swift           # App entry point
-        ├── CoreUniffi.swift          # ⭐ Swift ↔ Rust bridge
-        ├── Views/                    # SwiftUI views
-        │   ├── WorkoutView.swift
-        │   ├── HistoryView.swift
-        │   └── ...
-        ├── Models/                   # Swift models (mirror Rust)
-        ├── Assets.xcassets/          # App icon, colors
-        └── Generated/                # ⭐ Auto-generated (don't edit!)
-            ├── shared.swift          # Generated Swift API
-            ├── sharedFFI.h           # Generated C header
-            └── sharedFFI.modulemap   # Module definition
+├── docs/                             # Documentation
+│   ├── ARCHITECTURE.md               # This file
+│   ├── ADDING-FEATURES-GUIDE.md      # Developer guide
+│   ├── SHARED-CRATE-MAP.md           # Detailed code map
+│   └── code_migration_plans/         # Refactoring plans
+│
+└── Makefile                          # Build commands
 ```
 
 ---
 
-## Key Files Explained
+## Data Flow
 
-### `shared.udl` - The Contract
+### Event Flow (User Action → State Update)
 
-```udl
-// This defines what Swift can call
-namespace shared {
-    bytes process_event([ByRef] bytes msg);  // Send events
-    bytes view();                             // Get current state
-    bytes handle_response(u32 id, [ByRef] bytes res);  // Handle effects
-};
+```
+1. User taps "Add Exercise" button in SwiftUI
+   ↓
+2. Swift calls: core.process_event(Event.addExercise(...))
+   ↓
+3. Event serialized to bytes, crosses FFI boundary
+   ↓
+4. Rust deserializes Event
+   ↓
+5. update::handle_event() routes to exercise.rs module
+   ↓
+6. exercise::handle_event() mutates Model, returns Command
+   ↓
+7. Command executed (may trigger capabilities)
+   ↓
+8. Rust serializes ViewModel, returns bytes
+   ↓
+9. Swift deserializes ViewModel, updates UI
 ```
 
-**When to modify:**
-- Adding new Rust functions that Swift needs to call
-- Changing function signatures
-- Exposing new types
+### Capability Flow (Async Operations)
 
-**After modifying:** Build runs automatically, bindings regenerate
-
----
-
-### `CoreUniffi.swift` - The Bridge
-
-**Responsibilities:**
-1. **Import generated module:** `import SharedCore`
-2. **Wrap Rust calls** in Swift-friendly API
-3. **Manage `@Published` state** for SwiftUI
-4. **Handle side effects** (database, timers)
-
-**What it does NOT do:**
-- ❌ Business logic (that's in Rust)
-- ❌ Database queries (that's in Rust)
-- ❌ Calculations (that's in Rust)
-
-**It ONLY:**
-- ✅ Calls Rust
-- ✅ Updates SwiftUI
-- ✅ Coordinates Swift-side effects (if needed)
+```
+1. Core needs data from database
+   ↓
+2. Returns Command::request_from_shell(DatabaseOperation::LoadWorkouts)
+   ↓
+3. iOS capability receives request
+   ↓
+4. iOS performs database query
+   ↓
+5. iOS calls: core.handle_response(id, result)
+   ↓
+6. Core receives DatabaseResult, updates Model
+   ↓
+7. Returns updated ViewModel to iOS
+```
 
 ---
 
-### `build.rs` - The Build Script
+## Key Design Decisions
 
-Runs **before** Rust compilation:
+### 1. String IDs at FFI Boundary
+
+**Decision:** Use `String` for IDs in Events/ViewModels, convert to type-safe `Id` in Rust.
+
+**Rationale:**
+- UniFFI doesn't support custom wrappers well
+- Validation happens at the boundary
+- Type safety maintained within Rust core
 
 ```rust
-fn main() {
-    // Generate Rust scaffolding from shared.udl
-    uniffi::generate_scaffolding("./src/shared.udl").unwrap();
+// In Event
+Event::DeleteExercise { exercise_id: String }
+
+// In Rust handler
+match Id::from_string(exercise_id) {
+    Ok(id) => { /* use validated ID */ }
+    Err(e) => { /* handle error */ }
 }
 ```
 
-This creates the Rust side of the FFI boundary.
+### 2. Feature-Based Update Modules
+
+**Decision:** Split update logic into feature modules (workout.rs, exercise.rs, etc.).
+
+**Rationale:**
+- Each module averages ~70 lines (highly maintainable)
+- Clear separation of concerns
+- Easy to locate feature logic
+- Scales well as app grows
+
+### 3. Immutable Model + Command Pattern
+
+**Decision:** Update functions mutate Model and return Commands for side effects.
+
+**Rationale:**
+- Clear distinction between state changes and side effects
+- Testable: Can verify state without executing capabilities
+- Crux framework requirement
+
+### 4. Comprehensive Test Coverage
+
+**Decision:** Tests organized by concern (events, model, viewmodels, integration).
+
+**Rationale:**
+- Fast feedback during development
+- Prevents regressions
+- Documents expected behavior
+- Enables confident refactoring
+
+### 5. iOS 18.0+ Only
+
+**Decision:** No backward compatibility, latest iOS SDK only.
+
+**Rationale:**
+- Always use latest Swift/SwiftUI features
+- Simpler codebase (no version checks)
+- Better performance and security
+- Follows 2025 best practices
 
 ---
 
-### `Generated/` - Auto-Generated Files
+## Development Workflow
 
-**⚠️ NEVER EDIT THESE FILES MANUALLY**
+### Adding a New Feature
 
-They are regenerated on every build if `shared.udl` changes.
+1. **Define Event** (events.rs)
+2. **Update Model** (model.rs)
+3. **Create/Update Module** (update/feature.rs)
+4. **Route Event** (update/mod.rs)
+5. **Add ViewModel** (view_models.rs)
+6. **Update View Builder** (mod.rs)
+7. **Write Tests** (tests/)
+8. **Build** (`make build-shared` generates Swift types)
+9. **Implement Swift UI** (iOS/)
 
-- `shared.swift` - Swift functions that call Rust
-- `sharedFFI.h` - C header (FFI uses C ABI)
-- `sharedFFI.modulemap` - Makes it a Swift module
+See [ADDING-FEATURES-GUIDE.md](./ADDING-FEATURES-GUIDE.md) for detailed instructions.
 
----
-
-## Common Questions
-
-### Q: What serialization format is used?
-
-**A:** **Bincode** (binary serialization). This is the Crux framework default.
-
-**Why Bincode?**
-- ✅ Faster (3-4x faster than JSON)
-- ✅ Smaller (50% smaller payloads)
-- ✅ Type-safe (exact Rust↔️Swift type matching)
-- ✅ Mobile-optimized (better battery life)
-- ✅ Crux best practice
-
-**For details**: See `docs/SERIALIZATION-BEST-PRACTICES.md`
-
----
-
-### Q: Isn't binary serialization hard to debug?
-
-**A:** Manageable with logging. Benefits outweigh costs:
-- ✅ Much faster performance
-- ✅ Type safety catches errors early
-- ✅ Generated types handle all complexity
-- ✅ Can add debug logging in Rust for inspection
-- ✅ Tests can use JSON for readability
-
-For a mobile app, performance matters more than inspectability. JSON is still used for import/export features where human-readability is valuable.
-
----
-
-### Q: Can I call Swift from Rust?
-
-**A:** Not directly. The pattern is:
-
-1. Rust returns "effects" (commands to execute)
-2. Swift receives effects
-3. Swift executes them (e.g., show notification, save file)
-4. Swift sends result back to Rust
-
-This is the **Crux pattern**. Keeps Rust pure and testable.
-
----
-
-### Q: What if I change `shared.udl`?
-
-**A:** Just rebuild! Xcode will:
-1. Regenerate bindings
-2. Show compile errors if Swift code is incompatible
-3. You fix Swift code
-4. Done!
-
-The compiler catches FFI mistakes.
-
----
-
-### Q: How do I debug across the FFI boundary?
-
-**Tools:**
-- **Rust side:** `cargo test`, `println!`, `dbg!`
-- **Swift side:** Xcode debugger, breakpoints in `CoreUniffi.swift`
-- **FFI boundary:** Log JSON before/after crossing
-
-**Pro tip:** Put `print!` statements in Rust. They show in Xcode console.
-
----
-
-## Performance Characteristics
-
-### FFI Call Overhead
-
-**Typical call:**
-```
-Swift: 10-50 ns (encode to JSON)
-   ↓
-FFI: ~100-500 ns (cross boundary)
-   ↓
-Rust: 10-50 ns (decode JSON)
-   ↓
-[Business logic executes]
-   ↓
-Rust: 10-50 ns (encode to JSON)
-   ↓
-FFI: ~100-500 ns (cross boundary)
-   ↓
-Swift: 10-50 ns (decode JSON)
-```
-
-**Total FFI overhead: ~300-1300 ns per call**
-
-For comparison, **16ms = 60 FPS**. One call is **0.0013ms**. You can make thousands per frame.
-
-**TL;DR:** Don't worry about FFI performance for this app.
-
----
-
-## Testing Strategy
-
-### Rust Tests (Majority)
+### Testing Strategy
 
 ```bash
+# Rust tests (fast, run frequently)
 cd app/shared
-cargo test
+cargo test --lib
+
+# Type generation
+cargo build
+
+# Full iOS build
+cd app/iOS
+xcodebuild ...
 ```
 
-**Test coverage:**
-- ✅ Business logic
-- ✅ State management
-- ✅ Database operations
-- ✅ Edge cases
-
-**Advantage:** Fast, no iOS simulator needed.
-
----
-
-### Swift Tests (UI & Integration)
+### Build Commands
 
 ```bash
-# In Xcode: ⌘U
+# Development
+make dev              # Start full dev environment
+
+# Rust core
+make build-shared     # Build Rust, generate types
+make test-shared      # Run Rust tests
+make check-shared     # Check compilation
+
+# iOS
+make build-ios        # Build iOS app
+make run-ios          # Run in simulator
 ```
 
-**Test coverage:**
-- ✅ UI navigation
-- ✅ View rendering
-- ✅ FFI integration
-- ✅ User flows
+---
+
+## Capability System
+
+Capabilities are platform-specific operations that the core can request:
+
+| Capability | Purpose | Operations |
+|------------|---------|------------|
+| **Database** | Persistent workout storage | Save, Load, Delete workouts |
+| **Storage** | Temporary workout storage | Save/Load in-progress workout |
+| **Timer** | Workout timer | Start, Stop, Tick |
+| **Render** | UI update trigger | Force re-render |
+
+**Pattern:**
+```rust
+// Core requests operation
+Command::request_from_shell(DatabaseOperation::LoadWorkouts)
+    .then_send(|result| Event::DatabaseResponse { result })
+
+// Platform executes, returns result
+// Core handles response in capabilities.rs
+```
 
 ---
 
-## Security Considerations
+## State Management
 
-### Memory Safety
+All application state lives in the `Model` struct:
 
-**Rust side:** Memory-safe by default (ownership system)
+```rust
+pub struct Model {
+    // Active workout state
+    current_workout: Option<Workout>,
+    workout_timer_seconds: i32,
+    timer_running: bool,
+    
+    // History
+    workout_history: Vec<Workout>,
+    
+    // Navigation
+    selected_tab: Tab,
+    navigation_stack: Vec<NavigationDestination>,
+    
+    // UI state (modals, loading, errors)
+    showing_add_exercise: bool,
+    is_loading: bool,
+    error_message: Option<String>,
+    // ... etc
+}
+```
 
-**Swift side:** Memory-safe by default (ARC)
-
-**FFI boundary:** **UniFFI handles this!** No manual pointer management.
-
-**Result:** ✅ No memory leaks, no use-after-free, no buffer overflows
+**Rules:**
+- Model is the **single source of truth**
+- Only update() functions mutate Model
+- Swift UI is **derived from ViewModels** (never holds state)
 
 ---
+
+## Error Handling
+
+### Rust Core
+- Use `Result<T, E>` for recoverable errors
+- Set `model.error_message` for user-facing errors
+- Log errors for debugging
+
+### Swift Shell
+- Display `error_message` from ViewModel
+- Present user-friendly alerts
+- Log errors for diagnostics
+
+---
+
+## Performance Considerations
+
+### Serialization Overhead
+- Events/ViewModels cross FFI boundary as bytes
+- Serde serialization is fast but not free
+- Keep ViewModels lean (only UI-necessary data)
+
+### Memory Management
+- Rust core owns all data
+- Swift only holds ViewModels (lightweight)
+- No shared memory across FFI
+
+### Rendering
+- Only trigger renders when state changes
+- Batch updates when possible
+- SwiftUI efficiently diffs ViewModels
+
+---
+
+## Security
 
 ### Data Validation
+- **Always validate at boundaries** (FFI, JSON import)
+- IDs validated when converting from String
+- User input sanitized before database operations
 
-**Important:** Validate data at the FFI boundary!
-
-```rust
-pub fn process_event(msg: &[u8]) -> Result<Vec<u8>, CoreError> {
-    // Deserialization validates JSON structure
-    let event: Event = serde_json::from_slice(msg)
-        .map_err(|_| CoreError::InvalidInput)?;
-    
-    // Additional validation
-    match event {
-        Event::CreateWorkout { name } if name.is_empty() => {
-            return Err(CoreError::InvalidInput);
-        }
-        _ => {}
-    }
-    
-    // Process validated event
-    // ...
-}
-```
-
-**Never trust input, even from your own UI!**
+### Storage
+- Sensitive data encrypted (planned)
+- Database access restricted to app sandbox
+- No hardcoded secrets
 
 ---
 
-## Troubleshooting
+## Future Considerations
 
-### "No such module 'SharedCore'"
+### Potential Features
+- [ ] Android support (reuse Rust core)
+- [ ] Web version (WASM + Rust core)
+- [ ] Apple Watch companion app
+- [ ] Workout templates
+- [ ] Social features (share workouts)
+- [ ] Analytics/insights
+- [ ] Cloud sync
 
-**Cause:** UniFFI bindings not generated yet.
-
-**Fix:** Run `./scripts/setup-mac.sh` or build in Xcode (⌘B)
-
----
-
-### "Undefined symbols for architecture"
-
-**Cause:** Rust library not built for correct target.
-
-**Fix:**
-```bash
-cd app/shared
-./build-ios.sh
-```
-
-Make sure you're building for `aarch64-apple-ios-sim` (simulator) or `aarch64-apple-ios` (device).
+### Technical Debt
+- [ ] Add workout template system
+- [ ] Implement comprehensive iOS UI tests
+- [ ] Add performance benchmarks
+- [ ] Consider pagination for large history
 
 ---
 
-### Build is Slow
+## References
 
-**First build:** Slow (compiles all Rust dependencies)
-
-**Subsequent builds:** Fast (incremental compilation)
-
-**Speed up:**
-```bash
-# Use sccache (caching compiler)
-cargo install sccache
-export RUSTC_WRAPPER=sccache
-```
+- **Crux Framework**: https://github.com/redbadger/crux
+- **UniFFI**: https://mozilla.github.io/uniffi-rs/
+- **Rust Book**: https://doc.rust-lang.org/book/
+- **SwiftUI**: https://developer.apple.com/documentation/swiftui/
 
 ---
 
-## Further Reading
+## Questions?
 
-- **Setup:** [QUICKSTART.md](./QUICKSTART.md)
-- **Main README:** [../README.md](../README.md)
-- **UniFFI Official Docs:** https://mozilla.github.io/uniffi-rs/
-- **Crux Framework:** https://github.com/redbadger/crux
+1. **Adding Features?** → [ADDING-FEATURES-GUIDE.md](./ADDING-FEATURES-GUIDE.md)
+2. **Code Details?** → [SHARED-CRATE-MAP.md](./SHARED-CRATE-MAP.md)
+3. **Refactoring History?** → [code_migration_plans/README.md](./code_migration_plans/README.md)
 
----
-
-## Contributing to the Architecture
-
-When modifying the FFI boundary:
-
-1. **Update `shared.udl`** first (the contract)
-2. **Implement in Rust** (`lib.rs`)
-3. **Build** (bindings regenerate automatically)
-4. **Update Swift** (`CoreUniffi.swift` or views)
-5. **Test** both Rust and Swift sides
-
-**Remember:** The `.udl` file is the source of truth!
-
----
-
-## Appendix A: UniFFI Migration Details
-
-### What Changed During Migration
-
-- ✅ Added UniFFI 0.30 dependencies
-- ✅ Created `shared.udl` interface definition (single source of truth)
-- ✅ Removed 325 lines of manual FFI code from `lib.rs`
-- ✅ Added clean UniFFI integration (~65 lines)
-- ✅ Created `CoreUniffi.swift` - simplified Swift wrapper
-- ✅ Removed obsolete files: `shared.h`, `shared-Bridging-Header.h`
-- ✅ Updated build scripts for automatic binding generation
-
-### Code Impact Metrics
-
-| Metric | Before | After | Improvement |
-|--------|--------|-------|-------------|
-| **FFI Code Lines** | 328 | 65 | -80% |
-| **Manual Memory Mgmt** | Yes | No | ✅ Automatic |
-| **Type Safety** | None | Full | ✅ Compiler-verified |
-| **Maintainability** | 3 files to sync | 1 .udl file | ✅ Single source |
-| **Error Handling** | Null pointers | Result types | ✅ Safe |
-
-### Before vs After Architecture
-
-**Before (Manual FFI):**
-```
-Swift → Manual @_silgen_name → C Header → Manual #[no_mangle] → Rust
-       Manual OpaquePointer        shared.h        Box::into_raw
-       Manual CString                              Manual memory mgmt
-```
-
-**After (UniFFI):**
-```
-Swift → import SharedCore → Auto-generated → uniffi::include_scaffolding!() → Rust
-       Generated API          Swift/C/ModMap      Auto memory mgmt
-       Type-safe             sharedFFI.*          Safe Result types
-```
-
----
-
-## Appendix B: Setup & Build Details
-
-### Initial Setup (One-Time)
-
-The `./scripts/setup-mac.sh` script at project root does everything:
-
-```bash
-cd /path/to/thiccc
-./scripts/setup-mac.sh
-```
-
-**What it installs:**
-1. Mint (Swift tool manager)
-2. XcodeGen from Mintfile (version-pinned)
-3. Rust toolchain with iOS targets
-4. Builds Rust libraries for iOS
-5. Generates UniFFI Swift bindings
-6. Generates Xcode project
-
-**Then run:**
-```bash
-cd app/ios
-open thiccc/Thiccc.xcodeproj
-# Hit ⌘R - everything works!
-```
-
-### Manual Setup (Advanced Users)
-
-<details>
-<summary>Click to expand manual setup instructions</summary>
-
-#### 1. Install Prerequisites
-
-```bash
-# Install Homebrew (if not already installed)
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-# Install Mint
-brew install mint
-
-# Install XcodeGen from Mintfile (version-pinned)
-cd /path/to/thiccc
-mint bootstrap
-```
-
-#### 2. Install Rust
-
-```bash
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-rustup target add aarch64-apple-ios aarch64-apple-ios-sim
-```
-
-#### 3. Build Rust Libraries
-
-```bash
-cd app/shared
-./build-ios.sh
-```
-
-This generates:
-- Static libraries for iOS device and simulator
-- UniFFI Swift bindings in `app/ios/thiccc/Thiccc/Generated/`
-
-#### 4. Generate Xcode Project
-
-```bash
-cd ../ios
-mint run xcodegen xcodegen generate
-```
-
-This creates `Thiccc.xcodeproj` with:
-- ✅ Automatic Rust rebuilds configured
-- ✅ Pre-build scripts set up
-- ✅ Library search paths configured
-
-#### 5. Open & Build
-
-```bash
-open thiccc/Thiccc.xcodeproj
-# Hit ⌘B to build or ⌘R to run
-```
-
-</details>
-
-### Build System Details
-
-**XcodeGen** (`project.yml`) generates the `.xcodeproj` with:
-- Pre-build script that rebuilds Rust if changed
-- Correct library search paths
-- Framework linking configuration
-
-**UniFFI** (`build-ios.sh` + `uniffi-bindgen`) generates:
-- `shared.swift` - Swift API to call Rust
-- `sharedFFI.h` - C header
-- `sharedFFI.modulemap` - Makes it a Swift module
-
-### Troubleshooting Build Issues
-
-| Issue | Solution |
-|-------|----------|
-| "XcodeGen not found" or "Mint not found" | Run `./scripts/setup-mac.sh` |
-| "No such module 'SharedCore'" | Hit ⌘B to build (generates module) |
-| Pre-build script fails | Check Rust installed: `rustup show` |
-| Wrong XcodeGen version | `mint bootstrap` (reinstalls from Mintfile) |
-| Files appear red in Xcode | Regenerate: `mint run xcodegen xcodegen generate` |
-
----
-
-**Questions?**
-- Setup: [QUICKSTART.md](./QUICKSTART.md)
-- Project overview: [../README.md](../README.md)
-
+**For architecture questions or suggestions, open an issue or PR!**
