@@ -963,22 +963,27 @@ impl App for Thiccc {
             // Workout Management
             // =================================================================
             Event::StartWorkout => {
-                let workout = Workout::new();
-                model.current_workout = Some(workout.clone());
-                model.workout_timer_seconds = 0;
-                model.timer_running = true;
-                model.error_message = None; // Clear any previous error
+                if model.current_workout.is_some() {
+                    const WIP_MSG: &str = "A workout is already in progress. Please finish or discard it first.";
+                    model.error_message = Some(WIP_MSG.to_string());
+                } else {
+                    let workout = Workout::new();
+                    model.current_workout = Some(workout.clone());
+                    model.workout_timer_seconds = 0;
+                    model.timer_running = true;
+                    model.error_message = None; // Clear any stale errors on successful start
 
-                // Start timer and save current workout to storage
-                // Serialize workout to JSON for storage operation
-                let workout_json = serde_json::to_string(&workout).unwrap_or_default();
-                return Command::all([
-                    Command::request_from_shell(TimerOperation::Start)
-                        .then_send(|output| Event::TimerResponse { output }),
-                    Command::request_from_shell(StorageOperation::SaveCurrentWorkout(workout_json))
-                        .then_send(|result| Event::StorageResponse { result }),
-                    render(),
-                ]);
+                    // Start timer and save current workout to storage
+                    // Serialize workout to JSON for storage operation
+                    let workout_json = serde_json::to_string(&workout).unwrap_or_default();
+                    return Command::all([
+                        Command::request_from_shell(TimerOperation::Start)
+                            .then_send(|output| Event::TimerResponse { output }),
+                        Command::request_from_shell(StorageOperation::SaveCurrentWorkout(workout_json))
+                            .then_send(|result| Event::StorageResponse { result }),
+                        render(),
+                    ]);
+                }
             }
 
             Event::FinishWorkout => {
