@@ -1,0 +1,108 @@
+---
+description: Reference guide for modifying the Rust shared crate - MUST read codebase map first
+globs:
+  - app/shared/**/*
+  - app/shared_types/**/*
+alwaysApply: false
+---
+
+# Shared Crate Modification Guidelines
+
+**CRITICAL**: Before making ANY modifications to files in `app/shared/`, you MUST first read and understand the codebase map at:
+
+📄 **`docs/SHARED-CRATE-MAP.md`**
+
+This document contains:
+- Complete architecture diagram
+- All Events, Model, and ViewModel definitions
+- All domain models (Workout, Exercise, ExerciseSet, etc.)
+- Method signatures and purposes
+- Quick reference for where to make changes
+
+## Mandatory Pre-Work
+
+1. **Read `docs/SHARED-CRATE-MAP.md`** to understand the existing structure
+2. **Identify which file(s)** need modification using the "Quick Reference" section
+3. **Check existing patterns** - search for similar implementations in the codebase
+4. **Understand the Crux architecture** - all business logic stays in Rust core
+
+## File Responsibilities
+
+| File | Contains | When to Modify |
+|------|----------|----------------|
+| `src/app.rs` | Events, Model, ViewModels, update(), view() | Adding user interactions, UI state, event handling |
+| `src/models.rs` | Domain entities (Workout, Exercise, etc.) | Adding data structures, business rules |
+| `src/lib.rs` | FFI bridge, re-exports | Rarely - only for new module exports |
+| `src/shared.udl` | UniFFI interface | Only if changing FFI function signatures |
+
+## Common Modification Patterns
+
+### Adding a New Event
+1. Add variant to `Event` enum in `app.rs`
+2. Add handler in `update()` match block
+3. Ensure event is serializable (serde derives already present)
+
+### Adding New App State
+1. Add field to `Model` struct in `app.rs`
+2. Initialize in `Default` impl
+3. If UI needs it, add to appropriate ViewModel
+4. Update `view()` or builder methods
+
+### Adding a New Domain Model
+1. Add struct/enum to `models.rs`
+2. Derive: `Serialize, Deserialize, Clone, Debug, PartialEq`
+3. Add constructors and methods
+4. Add tests in the `#[cfg(test)]` module
+
+### Adding a Modal/Sheet
+1. Add `showing_X: bool` to `Model`
+2. Add `ShowX` and `DismissX` events
+3. Handle in `update()`
+4. Expose in ViewModel if UI needs reactive state
+
+## Serialization Requirements
+
+All types crossing the FFI boundary MUST have:
+```rust
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+```
+
+Use serde attributes for field naming:
+- `#[serde(rename_all = "camelCase")]` for enums
+- `#[serde(rename = "type")]` for reserved keyword fields
+
+## Testing Requirements
+
+After modifications:
+1. Add unit tests for new methods
+2. Add serialization tests for new types
+3. Add integration tests for new event flows
+4. Run: `cd app/shared && cargo test`
+
+## Architecture Violations to Avoid
+
+❌ Business logic in Swift shell  
+❌ Direct state mutation outside `update()`  
+❌ Platform-specific code in shared crate  
+❌ Panics in library code (use `Result<T, E>`)  
+❌ Missing serde derives on public types  
+
+## MANDATORY: Pre-Handoff Verification
+
+After ANY modifications to `app/shared/` or `app/shared_types/`, you MUST run:
+
+```bash
+cd /workspaces/cuzzo_monorepo/applications/thiccc
+./scripts/verify-rust-core.sh
+```
+
+This verifies:
+- ✅ Rust compiles
+- ✅ No Clippy warnings
+- ✅ All tests pass
+- ✅ **Swift type generation succeeds** (CRITICAL - prevents iOS crashes)
+- ✅ Breaking changes are detected
+
+**DO NOT** mark task complete until verification passes.
+
+See: `docs/QUICKSTART.md` for build instructions.

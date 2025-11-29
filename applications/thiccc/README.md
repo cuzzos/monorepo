@@ -5,7 +5,7 @@ iOS workout tracker with **Rust business logic** + **SwiftUI UI**.
 ## ⚡ Get Started (2 steps)
 
 ```bash
-./setup-mac.sh          # Run once (installs everything)
+./scripts/setup-mac.sh  # Run once (installs everything)
 open app/ios/thiccc/Thiccc.xcodeproj && # ⌘R to run
 ```
 
@@ -27,7 +27,10 @@ open app/ios/thiccc/Thiccc.xcodeproj && # ⌘R to run
 
 ```
 thiccc/
-├── setup-mac.sh              # Run this first!
+├── scripts/
+│   ├── setup-mac.sh          # Run this first!
+│   ├── verify-rust-core.sh   # Verify Rust core
+│   └── verify-ios-build.sh   # Verify iOS build
 ├── docs/                     # All documentation here
 ├── app/
 │   ├── shared/               # Rust (business logic)
@@ -50,7 +53,7 @@ cargo check         # Check compilation
 | Issue | Solution |
 |-------|----------|
 | "No such module 'SharedCore'" | Hit ⌘B in Xcode (first build) |
-| Build errors | Run `./setup-mac.sh` again |
+| Build errors | Run `./scripts/setup-mac.sh` again |
 | How does it work? | See [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) |
 | Deploy to TestFlight | See [docs/DEPLOYMENT-INDEX.md](./docs/DEPLOYMENT-INDEX.md) |
 

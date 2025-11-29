@@ -267,7 +267,10 @@ Once your beta testing is successful:
 
 ```
 thiccc/
-├── setup-mac.sh                       # ⭐ One-command setup
+├── scripts/
+│   ├── setup-mac.sh                   # ⭐ One-command setup
+│   ├── verify-rust-core.sh            # Verify Rust build
+│   └── verify-ios-build.sh            # Verify iOS build
 ├── DEPLOYMENT-INDEX.md                # This file - start here
 ├── TESTFLIGHT-QUICKSTART.md           # Fast checklist
 ├── TESTFLIGHT-GUIDE.md                # Complete guide

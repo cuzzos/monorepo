@@ -24,7 +24,7 @@ A condensed checklist to get your app to TestFlight fast.
 ```bash
 # On your Mac - Run the setup script
 cd /path/to/thiccc
-./setup-mac.sh
+./scripts/setup-mac.sh
 
 # This installs Rust, XcodeGen, builds libraries, and generates Xcode project
 ```

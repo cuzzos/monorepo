@@ -243,7 +243,7 @@ SwiftUI → Swift Event → JSON bytes → Rust → Updated state → JSON bytes
 
 ## Automatic Build Process
 
-After initial setup (`./setup-mac.sh`), Xcode has a **pre-build script** that:
+After initial setup (`./scripts/setup-mac.sh`), Xcode has a **pre-build script** that:
 
 ### What Happens on Every Build
 
@@ -382,23 +382,31 @@ They are regenerated on every build if `shared.udl` changes.
 
 ## Common Questions
 
-### Q: Why JSON serialization?
+### Q: What serialization format is used?
 
-**A:** Simplest cross-language format. Both Swift and Rust have excellent JSON support.
+**A:** **Bincode** (binary serialization). This is the Crux framework default.
 
-**Alternative:** Could use Protobuf, MessagePack, etc. But JSON is human-readable and easier to debug.
+**Why Bincode?**
+- ✅ Faster (3-4x faster than JSON)
+- ✅ Smaller (50% smaller payloads)
+- ✅ Type-safe (exact Rust↔️Swift type matching)
+- ✅ Mobile-optimized (better battery life)
+- ✅ Crux best practice
+
+**For details**: See `docs/SERIALIZATION-BEST-PRACTICES.md`
 
 ---
 
-### Q: Isn't JSON serialization slow?
+### Q: Isn't binary serialization hard to debug?
 
-**A:** For this app size, no. Benefits:
-- ✅ Type safety
-- ✅ Easy debugging
-- ✅ No manual marshalling
-- ✅ Automatic with Serde + Codable
+**A:** Manageable with logging. Benefits outweigh costs:
+- ✅ Much faster performance
+- ✅ Type safety catches errors early
+- ✅ Generated types handle all complexity
+- ✅ Can add debug logging in Rust for inspection
+- ✅ Tests can use JSON for readability
 
-If you had huge data (MBs), you'd consider binary formats. For typical workout data, JSON is fast enough.
+For a mobile app, performance matters more than inspectability. JSON is still used for import/export features where human-readability is valuable.
 
 ---
 
@@ -547,7 +555,7 @@ pub fn process_event(msg: &[u8]) -> Result<Vec<u8>, CoreError> {
 
 **Cause:** UniFFI bindings not generated yet.
 
-**Fix:** Run `./setup-mac.sh` or build in Xcode (⌘B)
+**Fix:** Run `./scripts/setup-mac.sh` or build in Xcode (⌘B)
 
 ---
 
@@ -647,11 +655,11 @@ Swift → import SharedCore → Auto-generated → uniffi::include_scaffolding!(
 
 ### Initial Setup (One-Time)
 
-The `./setup-mac.sh` script at project root does everything:
+The `./scripts/setup-mac.sh` script at project root does everything:
 
 ```bash
 cd /path/to/thiccc
-./setup-mac.sh
+./scripts/setup-mac.sh
 ```
 
 **What it installs:**
@@ -743,7 +751,7 @@ open thiccc/Thiccc.xcodeproj
 
 | Issue | Solution |
 |-------|----------|
-| "XcodeGen not found" or "Mint not found" | Run `./setup-mac.sh` |
+| "XcodeGen not found" or "Mint not found" | Run `./scripts/setup-mac.sh` |
 | "No such module 'SharedCore'" | Hit ⌘B to build (generates module) |
 | Pre-build script fails | Check Rust installed: `rustup show` |
 | Wrong XcodeGen version | `mint bootstrap` (reinstalls from Mintfile) |
