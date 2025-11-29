@@ -12,6 +12,7 @@ use crux_core::{
     App, Command,
 };
 use serde::{Deserialize, Serialize};
+use chrono::Utc;
 
 use crate::id::Id;
 use crate::models::*;
@@ -1361,6 +1362,10 @@ impl App for Thiccc {
                         if let Some(json) = workout_json {
                             match serde_json::from_str::<Workout>(&json) {
                                 Ok(workout) => {
+                                    // Calculate elapsed time since workout started
+                                    let elapsed = Utc::now().signed_duration_since(workout.start_timestamp);
+                                    model.workout_timer_seconds = elapsed.num_seconds().max(0) as i32;
+                                    
                                     model.current_workout = Some(workout);
                                     // If a workout was loaded, also start the timer
                                     model.timer_running = true;
