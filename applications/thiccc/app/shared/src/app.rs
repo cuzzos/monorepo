@@ -953,6 +953,13 @@ impl App for Thiccc {
                     if from_index < workout.exercises.len() && to_index < workout.exercises.len() {
                         let exercise = workout.exercises.remove(from_index);
                         workout.exercises.insert(to_index, exercise);
+                    } else {
+                        model.error_message = Some(format!(
+                            "Cannot move exercise: invalid position (from: {}, to: {}, total: {})",
+                            from_index,
+                            to_index,
+                            workout.exercises.len()
+                        ));
                     }
                 }
             }
@@ -996,6 +1003,12 @@ impl App for Thiccc {
                                 for (idx, set) in exercise.sets.iter_mut().enumerate() {
                                     set.set_index = idx as i32;
                                 }
+                            } else {
+                                model.error_message = Some(format!(
+                                    "Cannot delete set: index {} is out of bounds (total sets: {})",
+                                    set_index,
+                                    exercise.sets.len()
+                                ));
                             }
                         }
                     }
@@ -1861,6 +1874,142 @@ mod tests {
             finished_workout.duration,
             Some(90),
             "Workout duration should be 90s (active time), not wall-clock time"
+        );
+    }
+
+    #[test]
+    fn test_delete_set_with_invalid_index_shows_error() {
+        let app = Thiccc;
+        let mut model = Model::default();
+
+        // Start workout and add exercise with one set
+        app.update(Event::StartWorkout, &mut model, &());
+        app.update(
+            Event::AddExercise {
+                name: "Bench Press".to_string(),
+                exercise_type: "barbell".to_string(),
+                muscle_group: "chest".to_string(),
+            },
+            &mut model,
+            &(),
+        );
+
+        let exercise_id = model.current_workout.as_ref().unwrap().exercises[0]
+            .id
+            .to_string();
+
+        app.update(
+            Event::AddSet {
+                exercise_id: exercise_id.clone(),
+            },
+            &mut model,
+            &(),
+        );
+
+        // Verify we have 1 set
+        assert_eq!(model.current_workout.as_ref().unwrap().exercises[0].sets.len(), 1);
+
+        // Try to delete set at index 5 (out of bounds)
+        app.update(
+            Event::DeleteSet {
+                exercise_id: exercise_id.clone(),
+                set_index: 5,
+            },
+            &mut model,
+            &(),
+        );
+
+        // Verify error message was set
+        assert!(model.error_message.is_some(), "Error message should be set");
+        assert!(
+            model
+                .error_message
+                .as_ref()
+                .unwrap()
+                .contains("Cannot delete set"),
+            "Error should mention deletion failure"
+        );
+        assert!(
+            model
+                .error_message
+                .as_ref()
+                .unwrap()
+                .contains("out of bounds"),
+            "Error should mention out of bounds"
+        );
+
+        // Verify the set was NOT deleted
+        assert_eq!(
+            model.current_workout.as_ref().unwrap().exercises[0].sets.len(),
+            1,
+            "Set should not have been deleted"
+        );
+    }
+
+    #[test]
+    fn test_move_exercise_with_invalid_indices_shows_error() {
+        let app = Thiccc;
+        let mut model = Model::default();
+
+        // Start workout and add two exercises
+        app.update(Event::StartWorkout, &mut model, &());
+        app.update(
+            Event::AddExercise {
+                name: "Squat".to_string(),
+                exercise_type: "barbell".to_string(),
+                muscle_group: "legs".to_string(),
+            },
+            &mut model,
+            &(),
+        );
+        app.update(
+            Event::AddExercise {
+                name: "Deadlift".to_string(),
+                exercise_type: "barbell".to_string(),
+                muscle_group: "back".to_string(),
+            },
+            &mut model,
+            &(),
+        );
+
+        // Verify we have 2 exercises
+        assert_eq!(model.current_workout.as_ref().unwrap().exercises.len(), 2);
+        let first_exercise_name = model.current_workout.as_ref().unwrap().exercises[0].name.clone();
+
+        // Try to move exercise from index 0 to index 10 (out of bounds)
+        app.update(
+            Event::MoveExercise {
+                from_index: 0,
+                to_index: 10,
+            },
+            &mut model,
+            &(),
+        );
+
+        // Verify error message was set
+        assert!(model.error_message.is_some(), "Error message should be set");
+        assert!(
+            model
+                .error_message
+                .as_ref()
+                .unwrap()
+                .contains("Cannot move exercise"),
+            "Error should mention move failure"
+        );
+        assert!(
+            model
+                .error_message
+                .as_ref()
+                .unwrap()
+                .contains("invalid position"),
+            "Error should mention invalid position"
+        );
+
+        // Verify exercise order was NOT changed
+        assert_eq!(
+            model.current_workout.as_ref().unwrap().exercises[0].name,
+            first_exercise_name,
+            "Exercise order should not have changed"
         );
     }
 
