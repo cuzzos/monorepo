@@ -987,7 +987,6 @@ impl App for Thiccc {
             }
 
             Event::FinishWorkout => {
-                model.error_message = None; // Clear any previous error
                 if let Some(mut workout) = model.current_workout.take() {
                     workout.finish(model.workout_timer_seconds);
                     model.workout_history.insert(0, workout.clone());
@@ -1009,6 +1008,7 @@ impl App for Thiccc {
                 }
                 model.workout_timer_seconds = 0;
                 model.timer_running = false;
+                model.error_message = None; // Clear any previous error
             }
 
             Event::DiscardWorkout => {
