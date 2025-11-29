@@ -934,6 +934,7 @@ impl App for Thiccc {
                     model.current_workout = Some(Workout::new());
                     model.workout_timer_seconds = 0;
                     model.timer_running = true;
+                    model.error_message = None; // Clear any stale errors on successful start
                 }
             }
 
@@ -947,12 +948,14 @@ impl App for Thiccc {
                 model.current_workout = None;
                 model.workout_timer_seconds = 0;
                 model.timer_running = false;
+                model.error_message = None; // Clear any stale errors on finish
             }
 
             Event::DiscardWorkout => {
                 model.current_workout = None;
                 model.workout_timer_seconds = 0;
                 model.timer_running = false;
+                model.error_message = None; // Clear any stale errors on discard
             }
 
             Event::UpdateWorkoutName { name } => {
@@ -981,6 +984,7 @@ impl App for Thiccc {
                 let new_exercise = Exercise::from_global(&global_exercise, workout.id.clone());
                 workout.exercises.push(new_exercise);
                 model.showing_add_exercise = false;
+                model.error_message = None; // Clear any stale errors on successful add
             }
 
             Event::DeleteExercise { exercise_id } => {
@@ -1033,6 +1037,7 @@ impl App for Thiccc {
                     Ok(id) => {
                         if let Some(exercise) = model.find_exercise_mut(&id) {
                             exercise.add_set();
+                            model.error_message = None; // Clear any stale errors on successful add
                         }
                     }
                     Err(e) => {
@@ -1161,6 +1166,7 @@ impl App for Thiccc {
                 model.selected_tab = tab;
                 // Clear navigation stack when changing tabs
                 model.navigation_stack.clear();
+                model.error_message = None; // Clear stale errors when navigating
             }
 
             // =================================================================
@@ -2070,6 +2076,129 @@ mod tests {
         assert_eq!(model.selected_tab, Tab::History);
         let view = app.view(&model);
         assert_eq!(view.selected_tab, Tab::History);
+    }
+
+    #[test]
+    fn test_error_message_cleared_on_start_workout() {
+        let app = Thiccc;
+        let mut model = Model::default();
+
+        // Set an error message
+        model.error_message = Some("Previous error".to_string());
+
+        // Start workout (should clear error on success)
+        app.update(Event::StartWorkout, &mut model, &());
+
+        // Verify error was cleared
+        assert!(model.error_message.is_none(), "Error should be cleared on successful StartWorkout");
+    }
+
+    #[test]
+    fn test_error_message_cleared_on_add_exercise() {
+        let app = Thiccc;
+        let mut model = Model::default();
+
+        // Start workout
+        app.update(Event::StartWorkout, &mut model, &());
+
+        // Set an error message
+        model.error_message = Some("Previous error".to_string());
+
+        // Add exercise (should clear error)
+        app.update(
+            Event::AddExercise {
+                name: "Squat".to_string(),
+                exercise_type: "barbell".to_string(),
+                muscle_group: "legs".to_string(),
+            },
+            &mut model,
+            &(),
+        );
+
+        // Verify error was cleared
+        assert!(model.error_message.is_none(), "Error should be cleared on successful AddExercise");
+    }
+
+    #[test]
+    fn test_error_message_cleared_on_add_set() {
+        let app = Thiccc;
+        let mut model = Model::default();
+
+        // Start workout and add exercise
+        app.update(Event::StartWorkout, &mut model, &());
+        app.update(
+            Event::AddExercise {
+                name: "Squat".to_string(),
+                exercise_type: "barbell".to_string(),
+                muscle_group: "legs".to_string(),
+            },
+            &mut model,
+            &(),
+        );
+
+        let exercise_id = model.current_workout.as_ref().unwrap().exercises[0]
+            .id
+            .to_string();
+
+        // Set an error message
+        model.error_message = Some("Previous error".to_string());
+
+        // Add set (should clear error)
+        app.update(Event::AddSet { exercise_id }, &mut model, &());
+
+        // Verify error was cleared
+        assert!(model.error_message.is_none(), "Error should be cleared on successful AddSet");
+    }
+
+    #[test]
+    fn test_error_message_cleared_on_change_tab() {
+        let app = Thiccc;
+        let mut model = Model::default();
+
+        // Set an error message
+        model.error_message = Some("Previous error".to_string());
+
+        // Change tab (should clear error)
+        app.update(Event::ChangeTab { tab: Tab::History }, &mut model, &());
+
+        // Verify error was cleared
+        assert!(model.error_message.is_none(), "Error should be cleared when changing tabs");
+    }
+
+    #[test]
+    fn test_error_message_cleared_on_finish_workout() {
+        let app = Thiccc;
+        let mut model = Model::default();
+
+        // Start workout
+        app.update(Event::StartWorkout, &mut model, &());
+
+        // Set an error message
+        model.error_message = Some("Previous error".to_string());
+
+        // Finish workout (should clear error)
+        app.update(Event::FinishWorkout, &mut model, &());
+
+        // Verify error was cleared
+        assert!(model.error_message.is_none(), "Error should be cleared on FinishWorkout");
+    }
+
+    #[test]
+    fn test_error_message_cleared_on_discard_workout() {
+        let app = Thiccc;
+        let mut model = Model::default();
+
+        // Start workout
+        app.update(Event::StartWorkout, &mut model, &());
+
+        // Set an error message
+        model.error_message = Some("Previous error".to_string());
+
+        // Discard workout (should clear error)
+        app.update(Event::DiscardWorkout, &mut model, &());
+
+        // Verify error was cleared
+        assert!(model.error_message.is_none(), "Error should be cleared on DiscardWorkout");
     }
 
     #[test]
