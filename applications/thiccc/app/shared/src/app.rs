@@ -206,6 +206,8 @@ pub enum DatabaseResult {
     /// Workout was successfully saved to the database
     #[default]
     WorkoutSaved,
+    /// Workout was successfully deleted from the database
+    WorkoutDeleted,
     /// Workout history was loaded from the database
     HistoryLoaded { workouts: Vec<Workout> },
     /// A specific workout was loaded from the database
@@ -1347,6 +1349,9 @@ impl App for Thiccc {
                 match result {
                     DatabaseResult::WorkoutSaved => {
                         // Success - no action needed
+                    }
+                    DatabaseResult::WorkoutDeleted => {
+                        // Success - workout removed from database
                     }
                     DatabaseResult::HistoryLoaded { workouts } => {
                         model.workout_history = workouts;

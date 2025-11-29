@@ -149,6 +149,7 @@ indirect public enum DatabaseOperation: Hashable {
 
 indirect public enum DatabaseResult: Hashable {
     case workoutSaved
+    case workoutDeleted
     case historyLoaded(workouts: [SharedTypes.Workout])
     case workoutLoaded(workout: SharedTypes.Workout?)
 
@@ -157,11 +158,13 @@ indirect public enum DatabaseResult: Hashable {
         switch self {
         case .workoutSaved:
             try serializer.serialize_variant_index(value: 0)
-        case .historyLoaded(let workouts):
+        case .workoutDeleted:
             try serializer.serialize_variant_index(value: 1)
+        case .historyLoaded(let workouts):
+            try serializer.serialize_variant_index(value: 2)
             try serialize_vector_Workout(value: workouts, serializer: serializer)
         case .workoutLoaded(let workout):
-            try serializer.serialize_variant_index(value: 2)
+            try serializer.serialize_variant_index(value: 3)
             try serialize_option_Workout(value: workout, serializer: serializer)
         }
         try serializer.decrease_container_depth()
@@ -181,10 +184,13 @@ indirect public enum DatabaseResult: Hashable {
             try deserializer.decrease_container_depth()
             return .workoutSaved
         case 1:
+            try deserializer.decrease_container_depth()
+            return .workoutDeleted
+        case 2:
             let workouts = try deserialize_vector_Workout(deserializer: deserializer)
             try deserializer.decrease_container_depth()
             return .historyLoaded(workouts: workouts)
-        case 2:
+        case 3:
             let workout = try deserialize_option_Workout(deserializer: deserializer)
             try deserializer.decrease_container_depth()
             return .workoutLoaded(workout: workout)
