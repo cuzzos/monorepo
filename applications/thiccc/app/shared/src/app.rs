@@ -1196,6 +1196,9 @@ impl App for Thiccc {
 
             Event::ToggleTimer => {
                 model.timer_running = !model.timer_running;
+                let operation = if model.timer_running {TimerOperation::Start} else {TimerOperation::Stop};
+                return Command::request_from_shell(operation)
+                    .then_send(|output| Event::TimerResponse { output });
             }
 
             Event::ShowStopwatch => {
