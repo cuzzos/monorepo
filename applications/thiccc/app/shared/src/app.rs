@@ -793,6 +793,58 @@ impl Thiccc {
         }
     }
 
+    /// Performs the plate calculation after all validations have passed.
+    ///
+    /// # Arguments
+    /// * `model` - The model to update with the calculation result
+    /// * `target_weight` - The target weight to load (pre-validated as > 0)
+    /// * `bar_weight` - The weight of the bar (pre-validated as > 0)
+    /// * `percentage` - Optional percentage to apply (pre-validated as 0-100)
+    fn perform_plate_calculation(
+        model: &mut Model,
+        target_weight: f64,
+        bar_weight: f64,
+        percentage: Option<f64>,
+    ) {
+        let actual_weight = if let Some(pct) = percentage {
+            target_weight * (pct / 100.0)
+        } else {
+            target_weight
+        };
+
+        // Calculate weight remaining after bar
+        let weight_per_side = (actual_weight - bar_weight) / 2.0;
+
+        if weight_per_side < 0.0 {
+            model.error_message = Some("Target weight is less than bar weight".to_string());
+            model.plate_calculation = None;
+        } else {
+            // Get standard plates (use pounds for now)
+            let available_plates = Plate::standard();
+            let mut remaining = weight_per_side;
+            let mut plates = Vec::new();
+
+            // Greedy algorithm: use largest plates first
+            for plate in &available_plates {
+                while remaining >= plate.weight - 0.01 {
+                    // Small epsilon for floating point
+                    plates.push(plate.clone());
+                    remaining -= plate.weight;
+                }
+            }
+
+            // Create a BarType based on the weight for the calculation result
+            let bar_type = BarType::new("Bar", bar_weight);
+
+            model.plate_calculation = Some(PlateCalculation {
+                total_weight: actual_weight,
+                bar_type,
+                plates,
+                weight_unit: WeightUnit::Lb, // TODO: Use user preference
+            });
+        }
+    }
+
     /// Validates all IDs in a workout to ensure they are valid UUIDs.
     ///
     /// The Id type uses #[serde(transparent)] which allows invalid strings
@@ -1155,42 +1207,32 @@ impl App for Thiccc {
                 bar_weight,
                 use_percentage,
             } => {
-                let actual_weight = if let Some(percentage) = use_percentage {
-                    target_weight * (percentage / 100.0)
-                } else {
-                    target_weight
-                };
-
-                // Calculate weight remaining after bar
-                let weight_per_side = (actual_weight - bar_weight) / 2.0;
-
-                if weight_per_side < 0.0 {
-                    model.error_message = Some("Target weight is less than bar weight".to_string());
+                // Validate inputs before calculation
+                if target_weight <= 0.0 {
+                    model.error_message = Some("Target weight must be greater than 0".to_string());
                     model.plate_calculation = None;
-                } else {
-                    // Get standard plates (use pounds for now)
-                    let available_plates = Plate::standard();
-                    let mut remaining = weight_per_side;
-                    let mut plates = Vec::new();
-
-                    // Greedy algorithm: use largest plates first
-                    for plate in &available_plates {
-                        while remaining >= plate.weight - 0.01 {
-                            // Small epsilon for floating point
-                            plates.push(plate.clone());
-                            remaining -= plate.weight;
-                        }
+                } else if bar_weight <= 0.0 {
+                    model.error_message = Some("Bar weight must be greater than 0".to_string());
+                    model.plate_calculation = None;
+                } else if let Some(percentage) = use_percentage {
+                    if percentage < 0.0 || percentage > 100.0 {
+                        model.error_message = Some(format!(
+                            "Percentage must be between 0 and 100 (got {})",
+                            percentage
+                        ));
+                        model.plate_calculation = None;
+                    } else {
+                        // All validations passed, perform calculation
+                        Self::perform_plate_calculation(
+                            model,
+                            target_weight,
+                            bar_weight,
+                            Some(percentage),
+                        );
                     }
-
-                    // Create a BarType based on the weight for the calculation result
-                    let bar_type = BarType::new("Bar", bar_weight);
-
-                    model.plate_calculation = Some(PlateCalculation {
-                        total_weight: actual_weight,
-                        bar_type,
-                        plates,
-                        weight_unit: WeightUnit::Lb, // TODO: Use user preference
-                    });
+                } else {
+                    // No percentage, perform calculation directly
+                    Self::perform_plate_calculation(model, target_weight, bar_weight, None);
                 }
             }
 
@@ -2055,6 +2097,157 @@ mod tests {
         // Should use: 2x45 (90 lbs total)
         let description = calc.formatted_plate_description();
         assert!(description.contains("45lb"));
+    }
+
+    #[test]
+    fn test_plate_calculator_rejects_negative_target_weight() {
+        let app = Thiccc;
+        let mut model = Model::default();
+
+        app.update(
+            Event::CalculatePlates {
+                target_weight: -100.0,
+                bar_weight: 45.0,
+                use_percentage: None,
+            },
+            &mut model,
+            &(),
+        );
+
+        // Verify error message was set
+        assert!(model.error_message.is_some());
+        assert!(model
+            .error_message
+            .as_ref()
+            .unwrap()
+            .contains("Target weight must be greater than 0"));
+        assert!(model.plate_calculation.is_none());
+    }
+
+    #[test]
+    fn test_plate_calculator_rejects_zero_target_weight() {
+        let app = Thiccc;
+        let mut model = Model::default();
+
+        app.update(
+            Event::CalculatePlates {
+                target_weight: 0.0,
+                bar_weight: 45.0,
+                use_percentage: None,
+            },
+            &mut model,
+            &(),
+        );
+
+        // Verify error message was set
+        assert!(model.error_message.is_some());
+        assert!(model
+            .error_message
+            .as_ref()
+            .unwrap()
+            .contains("Target weight must be greater than 0"));
+        assert!(model.plate_calculation.is_none());
+    }
+
+    #[test]
+    fn test_plate_calculator_rejects_negative_bar_weight() {
+        let app = Thiccc;
+        let mut model = Model::default();
+
+        app.update(
+            Event::CalculatePlates {
+                target_weight: 225.0,
+                bar_weight: -45.0,
+                use_percentage: None,
+            },
+            &mut model,
+            &(),
+        );
+
+        // Verify error message was set
+        assert!(model.error_message.is_some());
+        assert!(model
+            .error_message
+            .as_ref()
+            .unwrap()
+            .contains("Bar weight must be greater than 0"));
+        assert!(model.plate_calculation.is_none());
+    }
+
+    #[test]
+    fn test_plate_calculator_rejects_negative_percentage() {
+        let app = Thiccc;
+        let mut model = Model::default();
+
+        app.update(
+            Event::CalculatePlates {
+                target_weight: 225.0,
+                bar_weight: 45.0,
+                use_percentage: Some(-50.0),
+            },
+            &mut model,
+            &(),
+        );
+
+        // Verify error message was set
+        assert!(model.error_message.is_some());
+        assert!(model
+            .error_message
+            .as_ref()
+            .unwrap()
+            .contains("Percentage must be between 0 and 100"));
+        assert!(model.plate_calculation.is_none());
+    }
+
+    #[test]
+    fn test_plate_calculator_rejects_percentage_over_100() {
+        let app = Thiccc;
+        let mut model = Model::default();
+
+        app.update(
+            Event::CalculatePlates {
+                target_weight: 225.0,
+                bar_weight: 45.0,
+                use_percentage: Some(150.0),
+            },
+            &mut model,
+            &(),
+        );
+
+        // Verify error message was set
+        assert!(model.error_message.is_some());
+        assert!(model
+            .error_message
+            .as_ref()
+            .unwrap()
+            .contains("Percentage must be between 0 and 100"));
+        assert!(model
+            .error_message
+            .as_ref()
+            .unwrap()
+            .contains("150"));
+        assert!(model.plate_calculation.is_none());
+    }
+
+    #[test]
+    fn test_plate_calculator_accepts_percentage_100() {
+        let app = Thiccc;
+        let mut model = Model::default();
+
+        app.update(
+            Event::CalculatePlates {
+                target_weight: 225.0,
+                bar_weight: 45.0,
+                use_percentage: Some(100.0),
+            },
+            &mut model,
+            &(),
+        );
+
+        // Verify calculation succeeded (100% of 225 = 225)
+        assert!(model.error_message.is_none());
+        assert!(model.plate_calculation.is_some());
+        assert_eq!(model.plate_calculation.as_ref().unwrap().total_weight, 225.0);
     }
 
     #[test]
