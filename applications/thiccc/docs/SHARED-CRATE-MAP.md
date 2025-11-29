@@ -1,8 +1,10 @@
 # Thiccc Shared Crate - Codebase/Method Map
 
-> **Last Updated:** November 2025
+> **Last Updated:** November 2025 (Updated after Phase 1-3 Refactoring)
 >
 > This document provides a comprehensive map of all structures, methods, and logic in the `app/shared` Rust crate. **Consult this first** before making any modifications to the shared crate.
+>
+> **📚 New to the codebase?** See [ADDING-FEATURES-GUIDE.md](./ADDING-FEATURES-GUIDE.md) for step-by-step instructions on adding features.
 
 ## Overview
 
@@ -24,16 +26,27 @@ The `shared` crate is the **Rust core** of the Thiccc workout tracking applicati
 └────────────────────────────┬────────────────────────────────────┘
                              │
 ┌────────────────────────────▼────────────────────────────────────┐
-│                        app.rs (Crux App)                        │
-│  ┌─────────────┐  ┌──────────────┐  ┌────────────────────────┐  │
-│  │   Events    │──│    update()  │──│      Model             │  │
-│  │  (40+ types)│  │ (state logic)│  │ (app state)            │  │
-│  └─────────────┘  └──────────────┘  └────────────────────────┘  │
-│                           │                                      │
-│                   ┌───────▼──────┐                               │
-│                   │    view()    │                               │
-│                   │ Model→ViewModel                              │
-│                   └──────────────┘                               │
+│                     app/ (Crux App Module)                      │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │ events.rs: Event enum (40+ variants)                     │   │
+│  │ model.rs: Model struct (app state)                       │   │
+│  │ view_models.rs: ViewModel types                          │   │
+│  │ effects.rs: Effect enum (capabilities)                   │   │
+│  └──────────────────────────────────────────────────────────┘   │
+│                             │                                    │
+│  ┌──────────────────────────▼────────────────────────────────┐  │
+│  │ mod.rs: App trait impl + view builders                    │  │
+│  │   • update() → delegates to update/                       │  │
+│  │   • view() → builds ViewModels                            │  │
+│  └──────────────────────────────────────────────────────────┘   │
+│                             │                                    │
+│  ┌──────────────────────────▼────────────────────────────────┐  │
+│  │ update/ (Feature Modules - 10 files)                      │  │
+│  │   • mod.rs (router)                                       │  │
+│  │   • workout.rs, exercise.rs, sets.rs                      │  │
+│  │   • timer.rs, history.rs, plate_calculator.rs             │  │
+│  │   • import_export.rs, capabilities.rs, app_lifecycle.rs   │  │
+│  └──────────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────┘
                              │
 ┌────────────────────────────▼────────────────────────────────────┐
@@ -44,15 +57,38 @@ The `shared` crate is the **Rust core** of the Thiccc workout tracking applicati
 
 ---
 
-## File Structure Summary
+## File Structure Summary (After Refactoring)
 
 | File | Lines | Logic Type | Responsibility |
 |------|-------|------------|----------------|
-| `src/lib.rs` | 66 | **Infrastructure** | FFI bridge, serialization, singleton core |
-| `src/app.rs` | 1723 | **Application** | State machine, event handling, view transformation |
-| `src/models.rs` | 1020 | **Domain** | Business entities, data structures, business rules |
+| **Core Infrastructure** ||||
+| `src/lib.rs` | 72 | **Infrastructure** | FFI bridge, serialization, singleton core |
 | `src/shared.udl` | 6 | **Interface** | FFI contract definition for UniFFI |
-| `src/bin/uniffi-bindgen.rs` | 4 | **Build** | Code generation tool for Swift bindings |
+| **Application Module** ||||
+| `src/app/mod.rs` | 291 | **Application** | Crux App impl, orchestration, view builders |
+| `src/app/events.rs` | 246 | **Types** | Event definitions (40+ variants) |
+| `src/app/model.rs` | 186 | **State** | Core application state + helpers |
+| `src/app/view_models.rs` | 265 | **Types** | UI-friendly ViewModels |
+| `src/app/effects.rs` | 34 | **Types** | Capability effect definitions |
+| **Update Logic (Feature Modules)** ||||
+| `src/app/update/mod.rs` | 84 | **Routing** | Event routing to feature modules |
+| `src/app/update/workout.rs` | 114 | **Business Logic** | Workout management (start, finish, update) |
+| `src/app/update/exercise.rs` | 78 | **Business Logic** | Exercise management (add, delete, move) |
+| `src/app/update/sets.rs` | 93 | **Business Logic** | Set management (add, delete, update) |
+| `src/app/update/timer.rs` | 67 | **Business Logic** | Timer operations |
+| `src/app/update/history.rs` | 45 | **Business Logic** | History & navigation |
+| `src/app/update/plate_calculator.rs` | 66 | **Business Logic** | Plate calculation |
+| `src/app/update/import_export.rs` | 54 | **Business Logic** | Workout import/export |
+| `src/app/update/capabilities.rs` | 104 | **Business Logic** | Capability response handling |
+| `src/app/update/app_lifecycle.rs` | 22 | **Business Logic** | App initialization |
+| **Domain Models** ||||
+| `src/models.rs` | 1020 | **Domain** | Business entities, data structures, business rules |
+| `src/id.rs` | 254 | **Domain** | Type-safe UUID wrapper |
+| `src/operations.rs` | 237 | **Domain** | Capability operation types |
+| **Tests** ||||
+| `src/app/tests/*.rs` | 1,172 | **Testing** | Comprehensive test suite (5 files) |
+
+**Note:** File previously named `src/app.rs` (2,469 lines) has been refactored into a modular `src/app/` directory with 20 files totaling 2,921 lines (includes better organization and spacing).
 
 ---
 
@@ -75,11 +111,19 @@ The `shared` crate is the **Rust core** of the Thiccc workout tracking applicati
 
 ---
 
-### 2. `src/app.rs` - Crux Application Logic
+### 2. `src/app/` - Crux Application Module (Refactored)
 
-**Purpose:** Core application implementation with events, model, view models, and update logic.
+**Purpose:** Modular Crux application implementation organized by concern (events, state, view, update logic).
+
+**Structure:** After Phase 1-3 refactoring, the monolithic `app.rs` (2,469 lines) has been split into a well-organized module directory:
+- **Type definitions**: `events.rs`, `model.rs`, `view_models.rs`, `effects.rs`
+- **Business logic**: `update/` directory with feature-based modules
+- **Tests**: `tests/` directory with organized test files
+- **Orchestration**: `mod.rs` with App trait implementation
 
 #### 2.1 Events (User Interactions & System Events)
+
+**File:** `src/app/events.rs` (246 lines)
 
 ```rust
 pub enum Event {
@@ -188,6 +232,8 @@ pub struct Model {
 
 #### 2.4 ViewModels (UI State)
 
+**File:** `src/app/view_models.rs` (265 lines)
+
 | ViewModel | Key Fields | Purpose |
 |-----------|------------|---------|
 | `ViewModel` | `selected_tab`, `workout_view`, `history_view`, `error_message`, `is_loading` | Root app state |
@@ -202,6 +248,27 @@ pub struct Model {
 | `PlateCalculatorViewModel` | `target_weight`, `percentage`, `bar_type_name`, `calculation`, `is_shown` | Calculator state |
 | `PlateCalculationResult` | `total_weight`, `bar_weight`, `plates_per_side`, `plates` | Calculation result |
 | `PlateViewModel` | `weight`, `count`, `color` | Single plate display |
+
+#### 2.5 Update Logic (Feature Modules)
+
+**Directory:** `src/app/update/` (10 modules, 715 lines total)
+
+The update logic is organized into feature-based modules for better maintainability:
+
+| Module | Lines | Handles Events | Purpose |
+|--------|-------|----------------|---------|
+| `mod.rs` | 84 | - | Routes events to appropriate feature modules |
+| `app_lifecycle.rs` | 22 | `Initialize` | App initialization and startup |
+| `workout.rs` | 114 | `StartWorkout`, `FinishWorkout`, `DiscardWorkout`, `UpdateWorkoutName`, `UpdateWorkoutNotes` | Workout lifecycle management |
+| `exercise.rs` | 78 | `AddExercise`, `DeleteExercise`, `MoveExercise`, `Show/DismissAddExerciseView` | Exercise CRUD operations |
+| `sets.rs` | 93 | `AddSet`, `DeleteSet`, `UpdateSetActual`, `ToggleSetCompleted` | Set management |
+| `timer.rs` | 67 | `TimerTick`, `Start/Stop/ToggleTimer`, `Show/DismissStopwatch`, `Show/DismissRestTimer` | Timer and stopwatch features |
+| `history.rs` | 45 | `LoadHistory`, `ViewHistoryItem`, `NavigateBack`, `ChangeTab` | History viewing and navigation |
+| `import_export.rs` | 54 | `ImportWorkout`, `Show/DismissImportView`, `LoadWorkoutTemplate` | Workout import/export |
+| `plate_calculator.rs` | 66 | `CalculatePlates`, `ClearPlateCalculation`, `Show/DismissPlateCalculator` | Plate loading calculator |
+| `capabilities.rs` | 104 | `DatabaseResponse`, `StorageResponse`, `TimerResponse`, `Error` | Capability response handling |
+
+**Pattern:** Each module exports a `handle_event(Event, &mut Model) -> Command<Effect, Event>` function.
 
 #### 2.5 Thiccc App Implementation
 
