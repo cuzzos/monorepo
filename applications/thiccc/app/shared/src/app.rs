@@ -1223,7 +1223,6 @@ impl App for Thiccc {
             // =================================================================
             Event::LoadHistory => {
                 model.is_loading = true;
-                model.is_loading = false;
                 return Command::request_from_shell(DatabaseOperation::LoadAllWorkouts)
                     .then_send(|result| Event::DatabaseResponse { result });
             }
