@@ -1,5 +1,5 @@
 use crux_core::typegen::TypeGen;
-use shared::{app::*, models::*, Thiccc};
+use shared::{app::*, models::*, operations::*, Thiccc};
 use std::path::PathBuf;
 
 /// Creates a complete sample workout with all nested types populated.
@@ -51,10 +51,22 @@ fn main() -> anyhow::Result<()> {
 
     let mut gen = TypeGen::new();
 
-    // Provide samples for enums containing complex types
-    // DatabaseResult and StorageResult contain Vec<Workout> and Option<Workout>, so we need samples
-    // CRITICAL: Must use fully populated samples so TypeGen can trace all nested types
+    // IMPORTANT: Registration order matters for TypeGen tracing
+    // Register simple types first, then types that contain them
+    
+    // 1. Register simple enum types first
     gen.register_type_with_samples::<Tab>(vec![Tab::default()])?;
+    gen.register_type_with_samples::<TimerOutput>(vec![
+        TimerOutput::Tick,
+        TimerOutput::Started,
+        TimerOutput::Stopped,
+    ])?;
+    gen.register_type_with_samples::<TimerOperation>(vec![
+        TimerOperation::Start,
+        TimerOperation::Stop,
+    ])?;
+
+    // 2. Register database and storage result types (they contain Workout)
     gen.register_type_with_samples::<DatabaseResult>(vec![
         DatabaseResult::WorkoutSaved,
         DatabaseResult::HistoryLoaded { workouts: vec![sample_workout()] },
@@ -63,12 +75,27 @@ fn main() -> anyhow::Result<()> {
     ])?;
     gen.register_type_with_samples::<StorageResult>(vec![
         StorageResult::CurrentWorkoutSaved,
-        StorageResult::CurrentWorkoutLoaded { workout: Some(sample_workout()) },
-        StorageResult::CurrentWorkoutLoaded { workout: None },
+        StorageResult::CurrentWorkoutLoaded { workout_json: Some("{}".to_string()) },
+        StorageResult::CurrentWorkoutLoaded { workout_json: None },
         StorageResult::CurrentWorkoutDeleted,
     ])?;
 
-    // Register the app (auto-discovers Event and ViewModel types)
+    // 3. Register operation types
+    // Note: DatabaseOperation and StorageOperation now use JSON strings for workout data
+    // to avoid TypeGen issues with complex nested types in Request<T>
+    gen.register_type_with_samples::<DatabaseOperation>(vec![
+        DatabaseOperation::SaveWorkout("{}".to_string()),  // JSON placeholder
+        DatabaseOperation::LoadAllWorkouts,
+        DatabaseOperation::LoadWorkoutById("00000000-0000-0000-0000-000000000000".to_string()),
+        DatabaseOperation::DeleteWorkout("00000000-0000-0000-0000-000000000000".to_string()),
+    ])?;
+    gen.register_type_with_samples::<StorageOperation>(vec![
+        StorageOperation::SaveCurrentWorkout("{}".to_string()),  // JSON placeholder
+        StorageOperation::LoadCurrentWorkout,
+        StorageOperation::DeleteCurrentWorkout,
+    ])?;
+
+    // 4. Register the app (auto-discovers Event, ViewModel, Effect and their nested types)
     gen.register_app::<Thiccc>()?;
 
     // Generate Swift bindings

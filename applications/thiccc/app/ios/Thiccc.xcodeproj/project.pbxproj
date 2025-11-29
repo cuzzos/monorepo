@@ -7,8 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		260CC865727115F9CBBE8E90 /* StorageCapability.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00DE93C7DE77AC651BA0F6CA /* StorageCapability.swift */; };
+		3651BF6AD3FE556DCB83F25C /* TimerCapability.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88D1B9BA738DABC487406A7E /* TimerCapability.swift */; };
 		485A9A483A101DEB09CD8630 /* SharedTypes in Frameworks */ = {isa = PBXBuildFile; productRef = 00D8AC0EBAB047A3C0267091 /* SharedTypes */; };
 		5B668D20D2C4FC90702027A8 /* libshared_static.a.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7F4FB8D8B2304AF3B5B09258 /* libshared_static.a.a */; };
+		6A45C4EFA9BF0A53ED45DA17 /* DebugCapabilitiesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC7747CCA51DDAB11D627F24 /* DebugCapabilitiesView.swift */; };
+		7E345A65230C9416CBD260FF /* DatabaseCapability.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDCE5DAA42536AC375A7A174 /* DatabaseCapability.swift */; };
 		A22E9946BB26068F5FF492D8 /* SimpleCounterApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9453EBB7E3F709A3748B0B00 /* SimpleCounterApp.swift */; };
 		EA4BAEC12B10689A998AE057 /* core.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64D60112E666258B75C7190D /* core.swift */; };
 		F183B78E9A7C8832F1E912B6 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D38BC9E58C6A5AA0AC71FF5 /* ContentView.swift */; };
@@ -52,14 +56,18 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		00DE93C7DE77AC651BA0F6CA /* StorageCapability.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageCapability.swift; sourceTree = "<group>"; };
 		06F03F79ADB5F75373E80434 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		32EC6679CDA35CB17C8176C1 /* SharedTypes */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SharedTypes; path = ../shared_types/generated/swift/SharedTypes; sourceTree = SOURCE_ROOT; };
 		5368BB02CF8DFE211F0B385F /* Shared */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = Shared; path = ../shared/shared.xcodeproj; sourceTree = "<group>"; };
 		5D38BC9E58C6A5AA0AC71FF5 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		64D60112E666258B75C7190D /* core.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = core.swift; sourceTree = "<group>"; };
 		87AF1C1465A7D07538014067 /* shared.udl */ = {isa = PBXFileReference; path = shared.udl; sourceTree = "<group>"; };
+		88D1B9BA738DABC487406A7E /* TimerCapability.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerCapability.swift; sourceTree = "<group>"; };
 		9453EBB7E3F709A3748B0B00 /* SimpleCounterApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimpleCounterApp.swift; sourceTree = "<group>"; };
 		B6265A5D3C5C51F1E73E6D2F /* Thiccc.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Thiccc.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		CC7747CCA51DDAB11D627F24 /* DebugCapabilitiesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugCapabilitiesView.swift; sourceTree = "<group>"; };
+		CDCE5DAA42536AC375A7A174 /* DatabaseCapability.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabaseCapability.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -81,6 +89,16 @@
 				5368BB02CF8DFE211F0B385F /* Shared */,
 			);
 			name = Projects;
+			sourceTree = "<group>";
+		};
+		1B213BFAB08401F64DA0A1FE /* Capabilities */ = {
+			isa = PBXGroup;
+			children = (
+				CDCE5DAA42536AC375A7A174 /* DatabaseCapability.swift */,
+				00DE93C7DE77AC651BA0F6CA /* StorageCapability.swift */,
+				88D1B9BA738DABC487406A7E /* TimerCapability.swift */,
+			);
+			path = Capabilities;
 			sourceTree = "<group>";
 		};
 		24C8F21D750CFE7EDEF50502 = {
@@ -107,8 +125,10 @@
 			children = (
 				5D38BC9E58C6A5AA0AC71FF5 /* ContentView.swift */,
 				64D60112E666258B75C7190D /* core.swift */,
+				CC7747CCA51DDAB11D627F24 /* DebugCapabilitiesView.swift */,
 				06F03F79ADB5F75373E80434 /* Info.plist */,
 				9453EBB7E3F709A3748B0B00 /* SimpleCounterApp.swift */,
+				1B213BFAB08401F64DA0A1FE /* Capabilities */,
 			);
 			path = Thiccc;
 			sourceTree = "<group>";
@@ -237,7 +257,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				F183B78E9A7C8832F1E912B6 /* ContentView.swift in Sources */,
+				7E345A65230C9416CBD260FF /* DatabaseCapability.swift in Sources */,
+				6A45C4EFA9BF0A53ED45DA17 /* DebugCapabilitiesView.swift in Sources */,
 				A22E9946BB26068F5FF492D8 /* SimpleCounterApp.swift in Sources */,
+				260CC865727115F9CBBE8E90 /* StorageCapability.swift in Sources */,
+				3651BF6AD3FE556DCB83F25C /* TimerCapability.swift in Sources */,
 				EA4BAEC12B10689A998AE057 /* core.swift in Sources */,
 				F1F36C507E0977FF5BD85432 /* shared.udl in Sources */,
 			);

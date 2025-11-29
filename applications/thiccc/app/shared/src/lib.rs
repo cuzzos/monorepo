@@ -10,10 +10,12 @@
 //! - `app` - The Crux application with events, model, and update logic
 //! - `models` - Core data models (Workout, Exercise, ExerciseSet, etc.)
 //! - `id` - Type-safe ID wrapper with UUID validation
+//! - `operations` - Platform operations for shell communication
 
 pub mod app;
 pub mod id;
 pub mod models;
+pub mod operations;
 
 use std::sync::LazyLock;
 
@@ -23,6 +25,7 @@ pub use crux_core::{bridge::Bridge, Core, Request};
 pub use app::*;
 pub use id::Id;
 pub use models::*;
+pub use operations::*;
 
 // TODO hide this plumbing
 

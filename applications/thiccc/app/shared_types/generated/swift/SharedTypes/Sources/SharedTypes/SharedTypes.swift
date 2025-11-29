@@ -84,8 +84,72 @@ indirect public enum BodyPartMain: Hashable {
     }
 }
 
+indirect public enum DatabaseOperation: Hashable {
+    case saveWorkout(String)
+    case loadAllWorkouts
+    case loadWorkoutById(String)
+    case deleteWorkout(String)
+
+    public func serialize<S: Serializer>(serializer: S) throws {
+        try serializer.increase_container_depth()
+        switch self {
+        case .saveWorkout(let x):
+            try serializer.serialize_variant_index(value: 0)
+            try serializer.serialize_str(value: x)
+        case .loadAllWorkouts:
+            try serializer.serialize_variant_index(value: 1)
+        case .loadWorkoutById(let x):
+            try serializer.serialize_variant_index(value: 2)
+            try serializer.serialize_str(value: x)
+        case .deleteWorkout(let x):
+            try serializer.serialize_variant_index(value: 3)
+            try serializer.serialize_str(value: x)
+        }
+        try serializer.decrease_container_depth()
+    }
+
+    public func bincodeSerialize() throws -> [UInt8] {
+        let serializer = BincodeSerializer.init();
+        try self.serialize(serializer: serializer)
+        return serializer.get_bytes()
+    }
+
+    public static func deserialize<D: Deserializer>(deserializer: D) throws -> DatabaseOperation {
+        let index = try deserializer.deserialize_variant_index()
+        try deserializer.increase_container_depth()
+        switch index {
+        case 0:
+            let x = try deserializer.deserialize_str()
+            try deserializer.decrease_container_depth()
+            return .saveWorkout(x)
+        case 1:
+            try deserializer.decrease_container_depth()
+            return .loadAllWorkouts
+        case 2:
+            let x = try deserializer.deserialize_str()
+            try deserializer.decrease_container_depth()
+            return .loadWorkoutById(x)
+        case 3:
+            let x = try deserializer.deserialize_str()
+            try deserializer.decrease_container_depth()
+            return .deleteWorkout(x)
+        default: throw DeserializationError.invalidInput(issue: "Unknown variant index for DatabaseOperation: \(index)")
+        }
+    }
+
+    public static func bincodeDeserialize(input: [UInt8]) throws -> DatabaseOperation {
+        let deserializer = BincodeDeserializer.init(input: input);
+        let obj = try deserialize(deserializer: deserializer)
+        if deserializer.get_buffer_offset() < input.count {
+            throw DeserializationError.invalidInput(issue: "Some input bytes were not read")
+        }
+        return obj
+    }
+}
+
 indirect public enum DatabaseResult: Hashable {
     case workoutSaved
+    case workoutDeleted
     case historyLoaded(workouts: [SharedTypes.Workout])
     case workoutLoaded(workout: SharedTypes.Workout?)
 
@@ -94,11 +158,13 @@ indirect public enum DatabaseResult: Hashable {
         switch self {
         case .workoutSaved:
             try serializer.serialize_variant_index(value: 0)
-        case .historyLoaded(let workouts):
+        case .workoutDeleted:
             try serializer.serialize_variant_index(value: 1)
+        case .historyLoaded(let workouts):
+            try serializer.serialize_variant_index(value: 2)
             try serialize_vector_Workout(value: workouts, serializer: serializer)
         case .workoutLoaded(let workout):
-            try serializer.serialize_variant_index(value: 2)
+            try serializer.serialize_variant_index(value: 3)
             try serialize_option_Workout(value: workout, serializer: serializer)
         }
         try serializer.decrease_container_depth()
@@ -118,10 +184,13 @@ indirect public enum DatabaseResult: Hashable {
             try deserializer.decrease_container_depth()
             return .workoutSaved
         case 1:
+            try deserializer.decrease_container_depth()
+            return .workoutDeleted
+        case 2:
             let workouts = try deserialize_vector_Workout(deserializer: deserializer)
             try deserializer.decrease_container_depth()
             return .historyLoaded(workouts: workouts)
-        case 2:
+        case 3:
             let workout = try deserialize_option_Workout(deserializer: deserializer)
             try deserializer.decrease_container_depth()
             return .workoutLoaded(workout: workout)
@@ -141,12 +210,24 @@ indirect public enum DatabaseResult: Hashable {
 
 indirect public enum Effect: Hashable {
     case render(SharedTypes.RenderOperation)
+    case database(SharedTypes.DatabaseOperation)
+    case storage(SharedTypes.StorageOperation)
+    case timer(SharedTypes.TimerOperation)
 
     public func serialize<S: Serializer>(serializer: S) throws {
         try serializer.increase_container_depth()
         switch self {
         case .render(let x):
             try serializer.serialize_variant_index(value: 0)
+            try x.serialize(serializer: serializer)
+        case .database(let x):
+            try serializer.serialize_variant_index(value: 1)
+            try x.serialize(serializer: serializer)
+        case .storage(let x):
+            try serializer.serialize_variant_index(value: 2)
+            try x.serialize(serializer: serializer)
+        case .timer(let x):
+            try serializer.serialize_variant_index(value: 3)
             try x.serialize(serializer: serializer)
         }
         try serializer.decrease_container_depth()
@@ -166,6 +247,18 @@ indirect public enum Effect: Hashable {
             let x = try SharedTypes.RenderOperation.deserialize(deserializer: deserializer)
             try deserializer.decrease_container_depth()
             return .render(x)
+        case 1:
+            let x = try SharedTypes.DatabaseOperation.deserialize(deserializer: deserializer)
+            try deserializer.decrease_container_depth()
+            return .database(x)
+        case 2:
+            let x = try SharedTypes.StorageOperation.deserialize(deserializer: deserializer)
+            try deserializer.decrease_container_depth()
+            return .storage(x)
+        case 3:
+            let x = try SharedTypes.TimerOperation.deserialize(deserializer: deserializer)
+            try deserializer.decrease_container_depth()
+            return .timer(x)
         default: throw DeserializationError.invalidInput(issue: "Unknown variant index for Effect: \(index)")
         }
     }
@@ -215,8 +308,10 @@ indirect public enum Event: Hashable {
     case clearPlateCalculation
     case showPlateCalculator
     case dismissPlateCalculator
+    case initialize
     case databaseResponse(result: SharedTypes.DatabaseResult)
     case storageResponse(result: SharedTypes.StorageResult)
+    case timerResponse(output: SharedTypes.TimerOutput)
     case error(message: String)
 
     public func serialize<S: Serializer>(serializer: S) throws {
@@ -311,14 +406,19 @@ indirect public enum Event: Hashable {
             try serializer.serialize_variant_index(value: 32)
         case .dismissPlateCalculator:
             try serializer.serialize_variant_index(value: 33)
-        case .databaseResponse(let result):
+        case .initialize:
             try serializer.serialize_variant_index(value: 34)
-            try result.serialize(serializer: serializer)
-        case .storageResponse(let result):
+        case .databaseResponse(let result):
             try serializer.serialize_variant_index(value: 35)
             try result.serialize(serializer: serializer)
-        case .error(let message):
+        case .storageResponse(let result):
             try serializer.serialize_variant_index(value: 36)
+            try result.serialize(serializer: serializer)
+        case .timerResponse(let output):
+            try serializer.serialize_variant_index(value: 37)
+            try output.serialize(serializer: serializer)
+        case .error(let message):
+            try serializer.serialize_variant_index(value: 38)
             try serializer.serialize_str(value: message)
         }
         try serializer.decrease_container_depth()
@@ -458,14 +558,21 @@ indirect public enum Event: Hashable {
             try deserializer.decrease_container_depth()
             return .dismissPlateCalculator
         case 34:
+            try deserializer.decrease_container_depth()
+            return .initialize
+        case 35:
             let result = try SharedTypes.DatabaseResult.deserialize(deserializer: deserializer)
             try deserializer.decrease_container_depth()
             return .databaseResponse(result: result)
-        case 35:
+        case 36:
             let result = try SharedTypes.StorageResult.deserialize(deserializer: deserializer)
             try deserializer.decrease_container_depth()
             return .storageResponse(result: result)
-        case 36:
+        case 37:
+            let output = try SharedTypes.TimerOutput.deserialize(deserializer: deserializer)
+            try deserializer.decrease_container_depth()
+            return .timerResponse(output: output)
+        case 38:
             let message = try deserializer.deserialize_str()
             try deserializer.decrease_container_depth()
             return .error(message: message)
@@ -1093,21 +1200,78 @@ public struct SetViewModel: Hashable {
     }
 }
 
+indirect public enum StorageOperation: Hashable {
+    case saveCurrentWorkout(String)
+    case loadCurrentWorkout
+    case deleteCurrentWorkout
+
+    public func serialize<S: Serializer>(serializer: S) throws {
+        try serializer.increase_container_depth()
+        switch self {
+        case .saveCurrentWorkout(let x):
+            try serializer.serialize_variant_index(value: 0)
+            try serializer.serialize_str(value: x)
+        case .loadCurrentWorkout:
+            try serializer.serialize_variant_index(value: 1)
+        case .deleteCurrentWorkout:
+            try serializer.serialize_variant_index(value: 2)
+        }
+        try serializer.decrease_container_depth()
+    }
+
+    public func bincodeSerialize() throws -> [UInt8] {
+        let serializer = BincodeSerializer.init();
+        try self.serialize(serializer: serializer)
+        return serializer.get_bytes()
+    }
+
+    public static func deserialize<D: Deserializer>(deserializer: D) throws -> StorageOperation {
+        let index = try deserializer.deserialize_variant_index()
+        try deserializer.increase_container_depth()
+        switch index {
+        case 0:
+            let x = try deserializer.deserialize_str()
+            try deserializer.decrease_container_depth()
+            return .saveCurrentWorkout(x)
+        case 1:
+            try deserializer.decrease_container_depth()
+            return .loadCurrentWorkout
+        case 2:
+            try deserializer.decrease_container_depth()
+            return .deleteCurrentWorkout
+        default: throw DeserializationError.invalidInput(issue: "Unknown variant index for StorageOperation: \(index)")
+        }
+    }
+
+    public static func bincodeDeserialize(input: [UInt8]) throws -> StorageOperation {
+        let deserializer = BincodeDeserializer.init(input: input);
+        let obj = try deserialize(deserializer: deserializer)
+        if deserializer.get_buffer_offset() < input.count {
+            throw DeserializationError.invalidInput(issue: "Some input bytes were not read")
+        }
+        return obj
+    }
+}
+
 indirect public enum StorageResult: Hashable {
     case currentWorkoutSaved
-    case currentWorkoutLoaded(workout: SharedTypes.Workout?)
+    case currentWorkoutLoaded(workout_json: String?)
     case currentWorkoutDeleted
+    case error(message: String)
 
     public func serialize<S: Serializer>(serializer: S) throws {
         try serializer.increase_container_depth()
         switch self {
         case .currentWorkoutSaved:
             try serializer.serialize_variant_index(value: 0)
-        case .currentWorkoutLoaded(let workout):
+        case .currentWorkoutLoaded(let workout_json):
             try serializer.serialize_variant_index(value: 1)
-            try serialize_option_Workout(value: workout, serializer: serializer)
+            try serialize_option_str(value: workout_json, serializer: serializer)
         case .currentWorkoutDeleted:
             try serializer.serialize_variant_index(value: 2)
+        case .error(let message):
+            try serializer.serialize_variant_index(value: 3)
+            try serializer.serialize_str(value: message)
         }
         try serializer.decrease_container_depth()
     }
@@ -1126,12 +1290,16 @@ indirect public enum StorageResult: Hashable {
             try deserializer.decrease_container_depth()
             return .currentWorkoutSaved
         case 1:
-            let workout = try deserialize_option_Workout(deserializer: deserializer)
+            let workout_json = try deserialize_option_str(deserializer: deserializer)
             try deserializer.decrease_container_depth()
-            return .currentWorkoutLoaded(workout: workout)
+            return .currentWorkoutLoaded(workout_json: workout_json)
         case 2:
             try deserializer.decrease_container_depth()
             return .currentWorkoutDeleted
+        case 3:
+            let message = try deserializer.deserialize_str()
+            try deserializer.decrease_container_depth()
+            return .error(message: message)
         default: throw DeserializationError.invalidInput(issue: "Unknown variant index for StorageResult: \(index)")
         }
     }
@@ -1182,6 +1350,102 @@ indirect public enum Tab: Hashable {
     }
 
     public static func bincodeDeserialize(input: [UInt8]) throws -> Tab {
+        let deserializer = BincodeDeserializer.init(input: input);
+        let obj = try deserialize(deserializer: deserializer)
+        if deserializer.get_buffer_offset() < input.count {
+            throw DeserializationError.invalidInput(issue: "Some input bytes were not read")
+        }
+        return obj
+    }
+}
+
+indirect public enum TimerOperation: Hashable {
+    case start
+    case stop
+
+    public func serialize<S: Serializer>(serializer: S) throws {
+        try serializer.increase_container_depth()
+        switch self {
+        case .start:
+            try serializer.serialize_variant_index(value: 0)
+        case .stop:
+            try serializer.serialize_variant_index(value: 1)
+        }
+        try serializer.decrease_container_depth()
+    }
+
+    public func bincodeSerialize() throws -> [UInt8] {
+        let serializer = BincodeSerializer.init();
+        try self.serialize(serializer: serializer)
+        return serializer.get_bytes()
+    }
+
+    public static func deserialize<D: Deserializer>(deserializer: D) throws -> TimerOperation {
+        let index = try deserializer.deserialize_variant_index()
+        try deserializer.increase_container_depth()
+        switch index {
+        case 0:
+            try deserializer.decrease_container_depth()
+            return .start
+        case 1:
+            try deserializer.decrease_container_depth()
+            return .stop
+        default: throw DeserializationError.invalidInput(issue: "Unknown variant index for TimerOperation: \(index)")
+        }
+    }
+
+    public static func bincodeDeserialize(input: [UInt8]) throws -> TimerOperation {
+        let deserializer = BincodeDeserializer.init(input: input);
+        let obj = try deserialize(deserializer: deserializer)
+        if deserializer.get_buffer_offset() < input.count {
+            throw DeserializationError.invalidInput(issue: "Some input bytes were not read")
+        }
+        return obj
+    }
+}
+
+indirect public enum TimerOutput: Hashable {
+    case tick
+    case started
+    case stopped
+
+    public func serialize<S: Serializer>(serializer: S) throws {
+        try serializer.increase_container_depth()
+        switch self {
+        case .tick:
+            try serializer.serialize_variant_index(value: 0)
+        case .started:
+            try serializer.serialize_variant_index(value: 1)
+        case .stopped:
+            try serializer.serialize_variant_index(value: 2)
+        }
+        try serializer.decrease_container_depth()
+    }
+
+    public func bincodeSerialize() throws -> [UInt8] {
+        let serializer = BincodeSerializer.init();
+        try self.serialize(serializer: serializer)
+        return serializer.get_bytes()
+    }
+
+    public static func deserialize<D: Deserializer>(deserializer: D) throws -> TimerOutput {
+        let index = try deserializer.deserialize_variant_index()
+        try deserializer.increase_container_depth()
+        switch index {
+        case 0:
+            try deserializer.decrease_container_depth()
+            return .tick
+        case 1:
+            try deserializer.decrease_container_depth()
+            return .started
+        case 2:
+            try deserializer.decrease_container_depth()
+            return .stopped
+        default: throw DeserializationError.invalidInput(issue: "Unknown variant index for TimerOutput: \(index)")
+        }
+    }
+
+    public static func bincodeDeserialize(input: [UInt8]) throws -> TimerOutput {
         let deserializer = BincodeDeserializer.init(input: input);
         let obj = try deserialize(deserializer: deserializer)
         if deserializer.get_buffer_offset() < input.count {
