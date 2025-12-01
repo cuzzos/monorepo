@@ -1,4 +1,5 @@
 import Foundation
+import Observation
 import SharedTypes
 
 // Note: The FFI functions (view, processEvent, handleResponse) are generated as
@@ -12,9 +13,10 @@ import SharedTypes
 /// 3. Routes effects to the appropriate capability handlers
 /// 4. Sends responses back to the core via `handleResponse`
 /// 5. Publishes the updated ViewModel for SwiftUI views to observe
+@Observable
 @MainActor
-class Core: ObservableObject {
-    @Published var view: SharedTypes.ViewModel
+final class Core {
+    var view: SharedTypes.ViewModel
     
     // Capability handlers
     private var databaseCapability: DatabaseCapability?
@@ -47,6 +49,8 @@ class Core: ObservableObject {
     /// 4. Routes each effect to the appropriate capability handler
     /// 5. Updates the view
     func update(_ event: SharedTypes.Event) async {
+        print("🟢 [Core] Event: \(event)")
+        
         // Serialize event to Bincode bytes
         let eventBytes = try! event.bincodeSerialize()
         let eventData = Data(eventBytes)

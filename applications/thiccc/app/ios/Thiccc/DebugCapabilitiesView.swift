@@ -9,7 +9,7 @@ import SharedTypes
 /// **Usage**: Add this view to your app during development to test capabilities.
 /// **Note**: Remove or disable in production builds.
 struct DebugCapabilitiesView: View {
-    @ObservedObject var core: Core
+    @Bindable var core: Core
     @State private var testResult: String = "Tap a button to test"
     @State private var timerSeconds: Int = 0
     
@@ -143,6 +143,7 @@ struct DebugCapabilitiesView: View {
 }
 
 #Preview {
-    DebugCapabilitiesView(core: Core())
+    @Previewable @State var core = Core()
+    DebugCapabilitiesView(core: core)
 }
 
