@@ -6,7 +6,7 @@
 
 **Phase Duration**: Estimated 2-3 hours  
 **Complexity**: Medium  
-**Dependencies**: Phase 4 (Business Logic) ✅  
+**Dependencies**: Phase 4 (Business Logic)  ✅  
 **Blocks**: Phase 6 (Workout View), Phase 7 (History Views), Phase 8 (Additional Features)
 
 ## iOS 18+ / Swift 6 Requirements
