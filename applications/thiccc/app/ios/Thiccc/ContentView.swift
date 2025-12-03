@@ -3,24 +3,20 @@ import SwiftUI
 
 /// Main content view with tab navigation.
 ///
-/// Tab selection is synced with the Rust core state via `core.view.selected_tab`.
-/// Changing tabs sends `Event.changeTab` to the Rust core.
-/// Debug tab is local-only (not synced with core).
+/// Tab selection uses the Rust core as the single source of truth.
+/// The debug tab is only shown in DEBUG builds.
 struct ContentView: View {
     @Bindable var core: Core
     @State private var workoutPath = NavigationPath()
     @State private var historyPath = NavigationPath()
-    @State private var selectedTab: Tab = .workout
-
-    /// Local tab enum that includes debug (not in SharedTypes)
-    enum Tab: Hashable {
-        case workout
-        case history
-        case debug
-    }
 
     var body: some View {
-        TabView(selection: $selectedTab) {
+        TabView(selection: Binding(
+            get: { core.view.selected_tab },
+            set: { newTab in
+                Task { await core.update(.changeTab(tab: newTab)) }
+            }
+        )) {
             // Workout Tab
             NavigationStack(path: $workoutPath) {
                 WorkoutPlaceholderView(core: core)
@@ -45,7 +41,8 @@ struct ContentView: View {
             }
             .tag(Tab.history)
 
-            // Debug Tab - For testing capabilities (temporary)
+            // Debug Tab - Only shown in DEBUG builds
+            #if DEBUG
             NavigationStack {
                 DebugCapabilitiesView(core: core)
             }
@@ -53,28 +50,7 @@ struct ContentView: View {
                 Label("Debug", systemImage: "ladybug")
             }
             .tag(Tab.debug)
-        }
-        .onChange(of: selectedTab) { _, newTab in
-            // Sync workout/history tabs with core (debug is local-only)
-            switch newTab {
-            case .workout:
-                Task { await core.update(.changeTab(tab: .workout)) }
-            case .history:
-                Task { await core.update(.changeTab(tab: .history)) }
-            case .debug:
-                break // Debug tab is local-only, don't sync with core
-            }
-        }
-        .onChange(of: core.view.selected_tab) { _, newCoreTab in
-            // Sync from core to local (only if not on debug tab)
-            if selectedTab != .debug {
-                switch newCoreTab {
-                case .workout:
-                    selectedTab = .workout
-                case .history:
-                    selectedTab = .history
-                }
-            }
+            #endif
         }
     }
 }

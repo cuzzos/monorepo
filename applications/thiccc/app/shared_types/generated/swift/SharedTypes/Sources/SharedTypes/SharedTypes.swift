@@ -1317,6 +1317,7 @@ indirect public enum StorageResult: Hashable {
 indirect public enum Tab: Hashable {
     case workout
     case history
+    case debug
 
     public func serialize<S: Serializer>(serializer: S) throws {
         try serializer.increase_container_depth()
@@ -1325,6 +1326,8 @@ indirect public enum Tab: Hashable {
             try serializer.serialize_variant_index(value: 0)
         case .history:
             try serializer.serialize_variant_index(value: 1)
+        case .debug:
+            try serializer.serialize_variant_index(value: 2)
         }
         try serializer.decrease_container_depth()
     }
@@ -1345,6 +1348,9 @@ indirect public enum Tab: Hashable {
         case 1:
             try deserializer.decrease_container_depth()
             return .history
+        case 2:
+            try deserializer.decrease_container_depth()
+            return .debug
         default: throw DeserializationError.invalidInput(issue: "Unknown variant index for Tab: \(index)")
         }
     }

@@ -33,3 +33,4 @@ struct WorkoutDetailView: View {
     }
 }
 
+
