@@ -1,0 +1,349 @@
+---
+description: Swift 6 and iOS 18+ API requirements for iOS shell - enforces modern Swift patterns
+globs:
+  - "**/*.swift"
+alwaysApply: false
+---
+
+# Swift 6 & iOS 18+ API Standards
+
+This rule enforces the latest Swift and iOS patterns. All Swift code MUST follow these requirements.
+
+## Version Requirements
+
+- **Minimum iOS**: iOS 18.0 (no backward compatibility)
+- **Swift Version**: Swift 6.0+
+- **Xcode**: Latest version with iOS 18 SDK
+
+---
+
+## Observation Framework (CRITICAL)
+
+### ✅ REQUIRED - Use These (iOS 17+/Swift 5.9+ Observation Framework)
+
+```swift
+// Use @Observable macro for observable classes
+@Observable
+@MainActor
+final class Core {
+    var view: SharedTypes.ViewModel
+    // Properties are automatically observable - no @Published needed
+}
+
+// Use @Bindable in views to create bindings from @Observable objects
+struct ContentView: View {
+    @Bindable var core: Core
+    
+    var body: some View {
+        // Access properties directly - no $ prefix needed for reading
+        Text(core.view.title)
+        
+        // Use $ prefix with @Bindable to create bindings
+        TextField("Name", text: $core.name)
+    }
+}
+
+// Use @State for view-local state only
+struct MyView: View {
+    @State private var isExpanded = false
+}
+
+// Use @Environment for dependency injection
+@Environment(\.dismiss) private var dismiss
+@Environment(Core.self) private var core
+```
+
+### ❌ NEVER USE - Deprecated Combine-based Patterns
+
+```swift
+// DEPRECATED - DO NOT USE
+@ObservableObject      // ❌ Use @Observable instead
+@Published             // ❌ Not needed with @Observable
+@StateObject           // ❌ Use @State for @Observable objects
+@ObservedObject        // ❌ Use @Bindable or pass directly
+ObservableObject       // ❌ Protocol replaced by @Observable macro
+```
+
+### Migration Pattern
+
+```swift
+// OLD (Combine-based) - DO NOT USE
+class Core: ObservableObject {
+    @Published var view: ViewModel
+}
+
+struct ContentView: View {
+    @ObservedObject var core: Core
+}
+
+// NEW (Observation framework) - USE THIS
+@Observable
+@MainActor
+final class Core {
+    var view: ViewModel  // Automatically observable
+}
+
+struct ContentView: View {
+    @Bindable var core: Core  // Creates bindings when needed
+    // OR just pass directly if no bindings needed:
+    // var core: Core
+}
+```
+
+---
+
+## Swift Concurrency (Swift 6 Strict Mode)
+
+### Required Patterns
+
+```swift
+// Use async/await - NEVER completion handlers
+func fetchData() async throws -> Data {
+    let (data, _) = try await URLSession.shared.data(from: url)
+    return data
+}
+
+// Use @MainActor for UI code
+@MainActor
+final class Core {
+    func update(_ event: Event) async {
+        // UI updates happen on main actor automatically
+    }
+}
+
+// Use Actor for thread-safe isolation
+actor DataStore {
+    private var cache: [String: Data] = [:]
+    
+    func get(_ key: String) -> Data? {
+        cache[key]
+    }
+}
+
+// Use Task for async work from sync contexts
+Button("Load") {
+    Task {
+        await core.update(.loadData)
+    }
+}
+
+// Use TaskGroup for concurrent operations
+await withTaskGroup(of: Result.self) { group in
+    for item in items {
+        group.addTask { await process(item) }
+    }
+}
+```
+
+### Sendable Conformance (Swift 6)
+
+```swift
+// Mark types that cross actor boundaries as Sendable
+struct WorkoutData: Sendable {
+    let id: String
+    let name: String
+}
+
+// Use @unchecked Sendable only when you guarantee thread safety
+final class ThreadSafeCache: @unchecked Sendable {
+    private let lock = NSLock()
+    private var storage: [String: Any] = [:]
+}
+```
+
+---
+
+## SwiftUI Navigation (iOS 16+)
+
+### Required Patterns
+
+```swift
+// Use NavigationStack (NOT NavigationView)
+NavigationStack {
+    ContentView()
+        .navigationDestination(for: WorkoutID.self) { id in
+            WorkoutDetailView(id: id)
+        }
+}
+
+// Use NavigationPath for type-erased navigation
+@State private var path = NavigationPath()
+
+NavigationStack(path: $path) {
+    List(items) { item in
+        NavigationLink(value: item.id) {
+            ItemRow(item: item)
+        }
+    }
+}
+
+// Use navigationDestination for programmatic navigation
+.navigationDestination(for: String.self) { workoutId in
+    WorkoutDetailView(workoutId: workoutId)
+}
+
+// Programmatic navigation
+path.append(workoutId)  // Push
+path.removeLast()       // Pop
+```
+
+### ❌ NEVER USE
+
+```swift
+// DEPRECATED
+NavigationView { }           // ❌ Use NavigationStack
+NavigationLink(destination:) // ❌ Use NavigationLink(value:)
+```
+
+---
+
+## iOS 18+ Specific APIs
+
+### Preview Macro
+
+```swift
+// Use @Previewable for state in previews (iOS 18+)
+#Preview {
+    @Previewable @State var count = 0
+    CounterView(count: $count)
+}
+
+// Use preview traits
+#Preview(traits: .sizeThatFitsLayout) {
+    MyView()
+}
+```
+
+### Container APIs (iOS 18+)
+
+```swift
+// Use ForEach(subviewOf:) for custom containers
+struct CustomContainer<Content: View>: View {
+    @ViewBuilder var content: Content
+    
+    var body: some View {
+        VStack {
+            ForEach(subviewOf: content) { subview in
+                subview
+                    .padding()
+            }
+        }
+    }
+}
+```
+
+### Environment Entry Macro (iOS 18+)
+
+```swift
+// Use @Entry for environment values
+extension EnvironmentValues {
+    @Entry var customValue: String = "default"
+}
+```
+
+### Scroll Position (iOS 18+)
+
+```swift
+@State private var scrollPosition = ScrollPosition()
+
+ScrollView {
+    ForEach(items) { item in
+        ItemView(item: item)
+    }
+}
+.scrollPosition($scrollPosition)
+```
+
+---
+
+## SwiftUI Best Practices
+
+### View Composition
+
+```swift
+// Keep views small and focused
+struct WorkoutView: View {
+    @Bindable var core: Core
+    
+    var body: some View {
+        VStack {
+            WorkoutHeader(workout: core.view.workout)
+            ExerciseList(exercises: core.view.exercises)
+            WorkoutControls(core: core)
+        }
+    }
+}
+
+// Extract complex logic to computed properties
+private var formattedDuration: String {
+    Duration.seconds(workout.duration).formatted(.time(pattern: .hourMinuteSecond))
+}
+```
+
+### Bindings from @Observable
+
+```swift
+// Creating bindings with @Bindable
+struct TabContainer: View {
+    @Bindable var core: Core
+    
+    var body: some View {
+        // Manual binding for complex cases
+        TabView(selection: Binding(
+            get: { core.view.selectedTab },
+            set: { newTab in
+                Task { await core.update(.changeTab(tab: newTab)) }
+            }
+        )) {
+            // tabs...
+        }
+    }
+}
+```
+
+### Sheet Presentation
+
+```swift
+// Use sheet with binding
+.sheet(isPresented: Binding(
+    get: { core.view.showingModal },
+    set: { if !$0 { Task { await core.update(.dismissModal) } } }
+)) {
+    ModalContent()
+}
+
+// Or use sheet(item:) for optional item presentation
+.sheet(item: $selectedItem) { item in
+    DetailView(item: item)
+}
+```
+
+---
+
+## Documentation Verification
+
+Before implementing ANY Swift feature:
+
+1. Verify API availability: https://developer.apple.com/documentation/
+2. Check iOS 18 release notes for new APIs
+3. Review Swift 6 migration guide: https://www.swift.org/migration/documentation/swift-6-concurrency-migration-guide/
+4. Use `web_search` tool with: "iOS 18 SwiftUI [feature]" or "Swift 6 [pattern]"
+
+---
+
+## Quick Reference
+
+| Old Pattern | New Pattern (iOS 18+) |
+|-------------|----------------------|
+| `@ObservableObject` | `@Observable` |
+| `@Published` | (automatic with @Observable) |
+| `@StateObject` | `@State` (for @Observable) |
+| `@ObservedObject` | `@Bindable` or direct reference |
+| `NavigationView` | `NavigationStack` |
+| `NavigationLink(destination:)` | `NavigationLink(value:)` |
+| Completion handlers | `async/await` |
+| `DispatchQueue.main` | `@MainActor` |
+
+---
+
+**REMEMBER**: When in doubt, search Apple Developer Documentation. Never use deprecated APIs.

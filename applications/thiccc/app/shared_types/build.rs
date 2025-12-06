@@ -55,7 +55,7 @@ fn main() -> anyhow::Result<()> {
     // Register simple types first, then types that contain them
     
     // 1. Register simple enum types first
-    gen.register_type_with_samples::<Tab>(vec![Tab::default()])?;
+    gen.register_type_with_samples::<Tab>(vec![Tab::Workout, Tab::History, Tab::Debug])?;
     gen.register_type_with_samples::<TimerOutput>(vec![
         TimerOutput::Tick,
         TimerOutput::Started,

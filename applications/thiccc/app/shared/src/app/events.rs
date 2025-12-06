@@ -175,6 +175,10 @@ pub enum Event {
 /// generally preferred, we implement Default here because it's used in
 /// ViewModel which needs Default for initialization. The default is
 /// Tab::Workout, which is the natural starting tab for the app.
+///
+/// Note: The Debug tab is always present in the enum for type consistency,
+/// but the shell (iOS/Swift) should only show it in DEBUG builds using
+/// `#if DEBUG` conditional compilation.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, Default)]
 pub enum Tab {
     /// Workout tracking tab (active workout)
@@ -182,6 +186,8 @@ pub enum Tab {
     Workout,
     /// History tab (past workouts)
     History,
+    /// Debug tab (development/testing only - shell should hide in release)
+    Debug,
 }
 
 /// Result of a database operation.
