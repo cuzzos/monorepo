@@ -25,12 +25,3 @@ struct HistoryDetailView: View {
         .navigationTitle("Workout Detail")
     }
 }
-
-#Preview {
-    @Previewable @State var core = Core()
-    NavigationStack {
-        HistoryDetailView(core: core, workoutId: "preview-123")
-    }
-}
-
-

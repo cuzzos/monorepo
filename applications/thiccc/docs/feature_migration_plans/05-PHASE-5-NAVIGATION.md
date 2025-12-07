@@ -261,11 +261,6 @@ struct HistoryPlaceholderView: View {
         .navigationTitle("History")
     }
 }
-
-#Preview {
-    @Previewable @State var core = Core()
-    ContentView(core: core)
-}
 ```
 
 **Key Changes**:
@@ -276,7 +271,6 @@ struct HistoryPlaceholderView: View {
 5. Add `NavigationStack` wrapper to each tab
 6. Remove Debug tab (or keep temporarily for testing)
 7. Update placeholder views to use `@Bindable`
-8. Use iOS 18+ preview with `@Previewable`
 
 **Success Criteria**:
 - [x] Tab structure exists
@@ -342,7 +336,6 @@ core.view.selected_tab.
 4. Use binding to `core.view.selected_tab` for TabView selection
 5. Send `Event.changeTab(tab:)` when user switches tabs
 6. Add NavigationStack wrapper to each tab
-7. Use @Previewable for previews (iOS 18+)
 
 **Required Patterns:**
 ```swift
@@ -490,13 +483,6 @@ struct HistoryDetailView: View {
         .navigationTitle("Workout Detail")
     }
 }
-
-#Preview {
-    @Previewable @State var core = Core()
-    NavigationStack {
-        HistoryDetailView(core: core, workoutId: "preview-123")
-    }
-}
 ```
 
 **File**: `app/iOS/Thiccc/WorkoutDetailView.swift` (new)
@@ -519,20 +505,12 @@ struct WorkoutDetailView: View {
         .navigationTitle("Workout")
     }
 }
-
-#Preview {
-    @Previewable @State var core = Core()
-    NavigationStack {
-        WorkoutDetailView(core: core, workoutId: "preview-123")
-    }
-}
 ```
 
 **Success Criteria**:
 - [ ] NavigationStack added to each tab
 - [ ] navigationDestination modifier configured
 - [ ] Detail view placeholders created with `@Bindable`
-- [ ] Previews use `@Previewable` (iOS 18+)
 - [ ] Can navigate to detail views (when implemented)
 - [ ] Back button works
 
@@ -552,7 +530,6 @@ I need you to add navigation destinations to the Thiccc iOS app using iOS 18+ pa
 4. Create placeholder detail views with @Bindable:
    - HistoryDetailView.swift
    - WorkoutDetailView.swift
-5. Add iOS 18+ previews with @Previewable
 
 **Note:** We're using String for workout IDs to match the Rust core (which uses 
 String IDs for TypeGen compatibility). Later we can sync navigation state with 
@@ -565,23 +542,13 @@ struct HistoryDetailView: View {
     @Bindable var core: Core
     let workoutId: String
 }
-
-// Use @Previewable for previews (iOS 18+)
-#Preview {
-    @Previewable @State var core = Core()
-    NavigationStack {
-        HistoryDetailView(core: core, workoutId: "preview-123")
-    }
-}
 ```
 
 **Success Criteria:**
 - [ ] NavigationStack with paths on each tab
 - [ ] navigationDestination configured
 - [ ] Detail view placeholders use @Bindable
-- [ ] Previews use @Previewable
 - [ ] Code compiles
-```
 
 ---
 
@@ -714,7 +681,6 @@ Before moving to Phase 6, verify:
 
 ### General
 - [ ] All views use `@Bindable` (not deprecated patterns)
-- [ ] Previews use `@Previewable` (iOS 18+)
 - [ ] Code compiles without errors
 - [ ] App runs in simulator
 - [ ] No SwiftUI warnings
@@ -776,14 +742,11 @@ set: { newTab in
 ### Issue: Back button not working
 **Solution**: Verify NavigationStack wraps the correct content and path is @State.
 
-### Issue: Preview crashes
-**Solution**: Use `@Previewable` macro for state in previews (iOS 18+):
-```swift
-#Preview {
-    @Previewable @State var core = Core()
-    ContentView(core: core)
-}
-```
+**Success Criteria:**
+- [ ] Sheets for add exercise and import
+- [ ] Properly bound to core state
+- [ ] Use @Bindable in modal views
+- [ ] Code compiles
 
 ## Remaining Work Summary
 
