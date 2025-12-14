@@ -47,8 +47,30 @@ else
 fi
 echo ""
 
-# Step 4: Code Formatting
-echo "4️⃣  Checking code formatting..."
+# Step 4: Code Coverage (100% required)
+echo "4️⃣  Verifying 100% code coverage..."
+if ! command -v cargo-llvm-cov >/dev/null 2>&1; then
+    echo "⚠️  cargo-llvm-cov not found. Installing..."
+    cargo install cargo-llvm-cov
+fi
+
+if cargo llvm-cov --all-features --workspace --fail-under-lines 100 --ignore-filename-regex "lib.rs" 2>&1; then
+    echo "✅ 100% code coverage achieved"
+else
+    echo "❌ FAILED: Coverage below 100%"
+    echo ""
+    echo "💡 To see what's missing:"
+    echo "   cd app/shared"
+    echo "   cargo llvm-cov --all-features --workspace --html"
+    echo "   open target/llvm-cov/html/index.html"
+    echo ""
+    echo "Or use: make coverage-report"
+    exit 1
+fi
+echo ""
+
+# Step 5: Code Formatting
+echo "5️⃣  Checking code formatting..."
 if cargo fmt --check 2>&1; then
     echo "✅ Code is formatted"
 else
@@ -58,8 +80,8 @@ else
 fi
 echo ""
 
-# Step 5: CRITICAL - Swift Type Generation
-echo "5️⃣  CRITICAL: Verifying Swift type generation..."
+# Step 6: CRITICAL - Swift Type Generation
+echo "6️⃣  CRITICAL: Verifying Swift type generation..."
 cd ../shared_types
 if cargo build 2>&1; then
     echo "✅ Swift types generated successfully"
@@ -78,7 +100,7 @@ fi
 echo ""
 
 # Check for breaking changes
-echo "6️⃣  Checking for potential breaking changes..."
+echo "7️⃣  Checking for potential breaking changes..."
 cd ../shared
 
 EVENTS_CHANGED=false
