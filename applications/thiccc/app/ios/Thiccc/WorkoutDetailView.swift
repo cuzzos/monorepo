@@ -25,12 +25,3 @@ struct WorkoutDetailView: View {
         .navigationTitle("Workout")
     }
 }
-
-#Preview {
-    @Previewable @State var core = Core()
-    NavigationStack {
-        WorkoutDetailView(core: core, workoutId: "preview-123")
-    }
-}
-
-

@@ -185,8 +185,3 @@ struct ImportPlaceholderView: View {
         }
     }
 }
-
-#Preview {
-    @Previewable @State var core = Core()
-    ContentView(core: core)
-}

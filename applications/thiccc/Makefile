@@ -3,7 +3,7 @@
 # Configurable simulator (can override: make run-sim SIMULATOR='iPhone 17')
 SIMULATOR ?= iPhone 16 Pro
 
-.PHONY: build clean open xcode-build run-sim list-sims test check help close-sims logs logs-all run-sim-all
+.PHONY: build clean open xcode-build run-sim list-sims test check help close-sims logs logs-all run-sim-all coverage coverage-report coverage-check test-rust
 
 # Default target: show help
 .DEFAULT_GOAL := help
@@ -21,6 +21,12 @@ help:
 	@echo "  make open        - Open Xcode project"
 	@echo "  make clean       - Clean build artifacts"
 	@echo ""
+	@echo "Testing & Coverage:"
+	@echo "  make test-rust       - Run Rust unit tests only"
+	@echo "  make coverage        - Run tests with coverage report (HTML)"
+	@echo "  make coverage-report - Open coverage HTML report in browser"
+	@echo "  make coverage-check  - Verify 100% line coverage (CI-ready)"
+	@echo ""
 	@echo "Utilities:"
 	@echo "  make check       - Check if everything is set up correctly"
 	@echo "  make list-sims   - List available iOS simulators"
@@ -35,6 +41,7 @@ help:
 	@echo "Examples:"
 	@echo "  make run-sim SIMULATOR='iPhone 16'"
 	@echo "  make test SIMULATOR='iPhone Air'"
+	@echo "  make coverage-check  # Verify 100% Rust coverage"
 	@echo ""
 	@echo "Current settings:"
 	@echo "  Simulator: $(SIMULATOR)"
@@ -118,7 +125,13 @@ list-sims:
 	@echo "Available iOS Simulators:"
 	@xcrun simctl list devices available iOS | grep "iPhone\|iPad" || echo "Run 'open /Applications/Xcode.app' to install simulators"
 
-# Run tests
+# Run Rust unit tests only (fast)
+test-rust:
+	@echo "🧪 Running Rust unit tests..."
+	@cd app/shared && cargo test --all-features
+	@echo "✅ Rust tests passed!"
+
+# Run iOS tests in simulator (slower)
 test: build
 	@echo "🧪 Running tests on $(SIMULATOR)..."
 	@xcodebuild -project app/ios/Thiccc.xcodeproj \
@@ -126,6 +139,38 @@ test: build
 		-sdk iphonesimulator \
 		-destination 'platform=iOS Simulator,name=$(SIMULATOR)' \
 		test
+
+# Run tests with coverage and generate HTML report
+coverage:
+	@echo "🧪 Running tests with coverage..."
+	@if ! command -v cargo-llvm-cov >/dev/null 2>&1; then \
+		echo "❌ cargo-llvm-cov not found. Installing..."; \
+		cargo install cargo-llvm-cov; \
+	fi
+	@cd app/shared && cargo llvm-cov --all-features --workspace --html
+	@echo "✅ Coverage report generated!"
+	@echo "📊 View report: make coverage-report"
+	@echo "    or open: app/shared/target/llvm-cov/html/index.html"
+
+# Open coverage HTML report in browser
+coverage-report:
+	@echo "📊 Opening coverage report..."
+	@if [ ! -f app/shared/target/llvm-cov/html/index.html ]; then \
+		echo "❌ Coverage report not found. Run 'make coverage' first."; \
+		exit 1; \
+	fi
+	@open app/shared/target/llvm-cov/html/index.html
+
+# Check if coverage meets 100% threshold (fails if below)
+coverage-check:
+	@echo "🧪 Running tests with coverage..."
+	@if ! command -v cargo-llvm-cov >/dev/null 2>&1; then \
+		echo "❌ cargo-llvm-cov not found. Installing..."; \
+		cargo install cargo-llvm-cov; \
+	fi
+	@echo "🔍 Checking coverage threshold (100% line coverage required)..."
+	@cd app/shared && cargo llvm-cov --all-features --workspace --fail-under-lines 100 --ignore-filename-regex "lib.rs"
+	@echo "✅ Coverage meets 100% threshold!"
 
 # Check if everything is set up correctly
 check:

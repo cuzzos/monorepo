@@ -142,8 +142,3 @@ struct DebugCapabilitiesView: View {
     }
 }
 
-#Preview {
-    @Previewable @State var core = Core()
-    DebugCapabilitiesView(core: core)
-}
-
