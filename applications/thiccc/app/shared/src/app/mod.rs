@@ -374,11 +374,22 @@ impl App for Thiccc {
                 exercise_type,
                 muscle_group,
             } => {
+                eprintln!("🟢 AddExercise event - name: {}, type: {}, muscle: {}", name, exercise_type, muscle_group);
                 let workout = model.get_or_create_workout();
+                eprintln!("🟢 Workout ID: {}", workout.id.as_str());
+                eprintln!("🟢 Current exercises count before add: {}", workout.exercises.len());
+                
                 // Create GlobalExercise from the provided fields
-                let global_exercise = GlobalExercise::new(name, exercise_type, muscle_group);
+                let global_exercise = GlobalExercise::new(name.clone(), exercise_type, muscle_group);
                 let new_exercise = Exercise::from_global(&global_exercise, workout.id.clone());
+                eprintln!("🟢 New exercise created with ID: {}", new_exercise.id.as_str());
+                
                 workout.exercises.push(new_exercise);
+                eprintln!("🟢 Exercise added! Current exercises count: {}", workout.exercises.len());
+                for (i, ex) in workout.exercises.iter().enumerate() {
+                    eprintln!("🟢   Exercise {}: {} (id: {})", i, ex.name, ex.id.as_str());
+                }
+                
                 model.showing_add_exercise = false;
                 model.error_message = None; // Clear any stale errors on successful add
             }
@@ -429,14 +440,41 @@ impl App for Thiccc {
             // =================================================================
             Event::AddSet { exercise_id } => {
                 // Validate and convert String to Id type at the boundary
-                match Id::from_string(exercise_id) {
+                eprintln!("🔵 AddSet event - exercise_id: {}", exercise_id);
+                eprintln!("🔵 Current workout exists: {}", model.current_workout.is_some());
+                if let Some(workout) = &model.current_workout {
+                    eprintln!("🔵 Number of exercises: {}", workout.exercises.len());
+                    for (i, ex) in workout.exercises.iter().enumerate() {
+                        eprintln!("🔵 Exercise {}: {} (id: {})", i, ex.name, ex.id.as_str());
+                    }
+                }
+                
+                match Id::from_string(exercise_id.clone()) {
                     Ok(id) => {
+                        eprintln!("🔵 ID parsed successfully: {}", id.as_str());
                         if let Some(exercise) = model.find_exercise_mut(&id) {
+                            eprintln!("🔵 Exercise found! Adding set...");
                             exercise.add_set();
+                            eprintln!("🔵 Set added. Total sets now: {}", exercise.sets.len());
                             model.error_message = None; // Clear any stale errors on successful add
+                        } else {
+                            eprintln!("❌ Exercise NOT found!");
+                            // Exercise not found - this shouldn't happen in normal operation
+                            model.error_message = Some(format!(
+                                "Exercise not found with ID: {}. Available exercises: {}",
+                                exercise_id,
+                                model.current_workout
+                                    .as_ref()
+                                    .map(|w| w.exercises.iter()
+                                        .map(|e| format!("{}: {}", e.name, e.id.as_str()))
+                                        .collect::<Vec<_>>()
+                                        .join(", "))
+                                    .unwrap_or_else(|| "No workout".to_string())
+                            ));
                         }
                     }
                     Err(e) => {
+                        eprintln!("❌ Invalid ID format: {}", e);
                         model.error_message = Some(format!("Invalid exercise ID: {}", e));
                     }
                 }
