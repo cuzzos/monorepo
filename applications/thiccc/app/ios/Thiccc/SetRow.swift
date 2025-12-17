@@ -91,6 +91,7 @@ struct SetRow: View {
                 Image(systemName: set.is_completed ? "checkmark.circle.fill" : "circle")
                     .foregroundColor(set.is_completed ? .green : .gray)
             }
+            .buttonStyle(.plain)
         }
         .padding(.vertical, 4)
     }
