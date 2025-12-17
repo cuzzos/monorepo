@@ -44,13 +44,14 @@ struct SetRow: View {
                 .keyboardType(.decimalPad)
                 .focused($focusedField, equals: .weight)
                 .frame(width: 50)
-                .onChange(of: focusedField) { _, newFocus in
-                    if newFocus == .weight && !weightText.isEmpty {
-                        weightSelection = .init(range: weightText.startIndex..<weightText.endIndex)
-                    } else if newFocus != .weight {
-                        // Update on blur
-                        updateActual()
-                    }
+                .onChange(of: focusedField) { oldFocus, newFocus in
+                    handleFieldFocusChange(
+                        field: .weight,
+                        oldFocus: oldFocus,
+                        newFocus: newFocus,
+                        text: weightText,
+                        selection: $weightSelection
+                    )
                 }
             
             // Reps
@@ -59,12 +60,13 @@ struct SetRow: View {
                 .focused($focusedField, equals: .reps)
                 .frame(width: 50)
                 .onChange(of: focusedField) { oldFocus, newFocus in
-                    if newFocus == .reps && !repsText.isEmpty {
-                        repsSelection = .init(range: repsText.startIndex..<repsText.endIndex)
-                    } else if oldFocus == .reps && newFocus != .reps {
-                        // Update on blur
-                        updateActual()
-                    }
+                    handleFieldFocusChange(
+                        field: .reps,
+                        oldFocus: oldFocus,
+                        newFocus: newFocus,
+                        text: repsText,
+                        selection: $repsSelection
+                    )
                 }
             
             // RPE
@@ -73,12 +75,13 @@ struct SetRow: View {
                 .focused($focusedField, equals: .rpe)
                 .frame(width: 50)
                 .onChange(of: focusedField) { oldFocus, newFocus in
-                    if newFocus == .rpe && !rpeText.isEmpty {
-                        rpeSelection = .init(range: rpeText.startIndex..<rpeText.endIndex)
-                    } else if oldFocus == .rpe && newFocus != .rpe {
-                        // Update on blur
-                        updateActual()
-                    }
+                    handleFieldFocusChange(
+                        field: .rpe,
+                        oldFocus: oldFocus,
+                        newFocus: newFocus,
+                        text: rpeText,
+                        selection: $rpeSelection
+                    )
                 }
             
             // Completion Checkmark
@@ -90,6 +93,32 @@ struct SetRow: View {
             }
         }
         .padding(.vertical, 4)
+    }
+    
+    /// Handles focus changes for text fields: selects all text on focus, updates on blur.
+    ///
+    /// - Parameters:
+    ///   - field: The field that this handler is managing
+    ///   - oldFocus: The previously focused field (if any)
+    ///   - newFocus: The newly focused field (if any)
+    ///   - text: The current text value
+    ///   - selection: Binding to the text selection state
+    private func handleFieldFocusChange(
+        field: Field,
+        oldFocus: Field?,
+        newFocus: Field?,
+        text: String,
+        selection: Binding<TextSelection?>
+    ) {
+        // Select all text when this field gains focus
+        if newFocus == field && !text.isEmpty {
+            selection.wrappedValue = .init(range: text.startIndex..<text.endIndex)
+        }
+        
+        // Update actual values when this field loses focus
+        if oldFocus == field && newFocus != field {
+            updateActual()
+        }
     }
     
     private func updateActual() {
