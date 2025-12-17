@@ -16,6 +16,19 @@ This is the most-used view in the app. Users will spend 90% of their time here. 
 - Responsive UI
 - Proper keyboard handling
 - Intuitive interactions
+- Modern SwiftUI patterns (iOS 18+)
+
+## Architecture Context
+
+This phase builds upon the Crux architecture implemented in previous phases:
+- **Core Business Logic**: Located in `/app/shared/src/app/` (modular structure)
+  - `events.rs`: All Event types with comprehensive documentation
+  - `model.rs`: Application state (Model)
+  - `view_models.rs`: UI-friendly ViewModels with documented Default trait decisions
+  - `effects.rs`: Side effects and capabilities
+  - `mod.rs`: Main update/view logic with helper methods
+- **Shell Layer**: SwiftUI views that render ViewModels and send Events to core
+- **Data Flow**: User action → Event → Core update → ViewModel → UI render
 
 ## Task Breakdown
 
@@ -42,7 +55,7 @@ Build the main workout view with stats header, exercise list, and action buttons
 import SwiftUI
 
 struct WorkoutView: View {
-    @ObservedObject var core: Core
+    @Bindable var core: Core
     
     var body: some View {
         ZStack {
@@ -52,13 +65,13 @@ struct WorkoutView: View {
                 emptyStateView
             }
         }
-        .sheet(isPresented: Binding(
+        .sheet(isPresented: .init(
             get: { core.view.workoutView.showingAddExercise },
             set: { if !$0 { core.update(.dismissAddExerciseView) } }
         )) {
             AddExerciseView(core: core)
         }
-        .sheet(isPresented: Binding(
+        .sheet(isPresented: .init(
             get: { core.view.workoutView.showingImport },
             set: { if !$0 { core.update(.dismissImportView) } }
         )) {
@@ -208,7 +221,7 @@ struct StatView: View {
 
 ```swift
 private var workoutNameField: some View {
-    TextField("Workout Name", text: Binding(
+    TextField("Workout Name", text: .init(
         get: { core.view.workoutView.workoutName },
         set: { core.update(.updateWorkoutName(name: $0)) }
     ))
@@ -310,7 +323,9 @@ Implement the main workout tracking view in `/applications/thiccc/app/ios/Thiccc
 2. Use ViewModel from core (core.view.workoutView)
 3. All interactions send events to core
 4. Proper keyboard handling
-5. iOS 18+ APIs
+5. iOS 18+ APIs (minimum deployment target)
+6. Use `@Bindable` for Core reference (NOT `@ObservedObject`)
+7. Use `.init()` syntax instead of `Binding()` for custom bindings
 
 **Success Criteria:**
 - [ ] Empty state displays
@@ -318,6 +333,12 @@ Implement the main workout tracking view in `/applications/thiccc/app/ios/Thiccc
 - [ ] All buttons work
 - [ ] Stats update in real-time
 - [ ] Name field editable
+
+**Modern SwiftUI Patterns (iOS 18+):**
+- Use `@Bindable` for observable Core object
+- Use `.init()` for custom binding syntax
+- Use `@Observable` macro for state management
+- NO `@ObservedObject`, `@Binding`, or `@Published`
 ```
 
 ---
@@ -333,6 +354,7 @@ Create the exercise card component with header and set rows.
 
 #### Reference Files
 - `legacy/Goonlytics/Goonlytics/Sources/Workout/WorkoutView.swift` (lines 149-214)
+- `/app/shared/src/app/view_models.rs`: ExerciseViewModel with sets
 
 #### Implementation
 
@@ -343,7 +365,7 @@ import SwiftUI
 
 struct ExerciseSection: View {
     let exercise: ExerciseViewModel
-    @ObservedObject var core: Core
+    @Bindable var core: Core
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -462,6 +484,8 @@ Create the individual set row with text fields for weight, reps, RPE.
 
 #### Reference Files
 - `legacy/Goonlytics/Goonlytics/Sources/Workout/SetRow.swift`
+- `/app/shared/src/app/view_models.rs`: SetViewModel with string fields for binding
+- `/app/shared/src/app/events.rs`: UpdateSetActual and ToggleSetCompleted events
 
 #### Implementation
 
@@ -472,12 +496,12 @@ import SwiftUI
 
 struct SetRow: View {
     let set: SetViewModel
-    @ObservedObject var core: Core
+    @Bindable var core: Core
     
     @FocusState private var focusedField: Field?
-    @State private var weightText: String
-    @State private var repsText: String
-    @State private var rpeText: String
+    @State private var weightText: String = ""
+    @State private var repsText: String = ""
+    @State private var rpeText: String = ""
     
     enum Field {
         case weight, reps, rpe
@@ -486,9 +510,10 @@ struct SetRow: View {
     init(set: SetViewModel, core: Core) {
         self.set = set
         self.core = core
-        _weightText = State(initialValue: set.weight)
-        _repsText = State(initialValue: set.reps)
-        _rpeText = State(initialValue: set.rpe)
+        // Initialize state values from the set
+        self._weightText = State(initialValue: set.weight)
+        self._repsText = State(initialValue: set.reps)
+        self._rpeText = State(initialValue: set.rpe)
     }
     
     var body: some View {
@@ -589,9 +614,11 @@ Implement `/applications/thiccc/app/ios/Thiccc/SetRow.swift` with:
 1. Weight: decimal keyboard (.decimalPad)
 2. Reps: number keyboard (.numberPad)
 3. RPE: decimal keyboard (.decimalPad)
-4. Use @FocusState for keyboard management
-5. Send UpdateSetActual event on commit/blur
-6. Select all text on focus (UX improvement)
+4. Use `@FocusState` for keyboard management
+5. Send `UpdateSetActual` event on commit/blur
+6. Use `@Bindable` for Core (NOT `@ObservedObject`)
+7. Initialize `@State` properties properly in init
+8. Select all text on focus (UX improvement)
 
 **Success Criteria:**
 - [ ] All fields display correctly
@@ -655,16 +682,22 @@ Complete user flow:
 ## Common Issues & Solutions
 
 ### Issue: Text fields losing focus
-**Solution**: Use @FocusState properly, ensure state management is correct
+**Solution**: Use `@FocusState` properly, ensure state management is correct with `@Bindable` Core
 
 ### Issue: Keyboard covering input
-**Solution**: Use .scrollDismissesKeyboard() modifier
+**Solution**: Use `.scrollDismissesKeyboard()` modifier on ScrollView or List
 
 ### Issue: Lag when typing
-**Solution**: Debounce updates to core, don't send event on every keystroke
+**Solution**: Update core on commit/blur, not on every keystroke. Use `onCommit` closure for TextField
 
 ### Issue: Stats not updating
-**Solution**: Verify ViewModel is being recalculated in core's view function
+**Solution**: Verify ViewModel is being recalculated in core's view function (see `build_workout_view` in `mod.rs`)
+
+### Issue: Compilation errors with @ObservedObject
+**Solution**: Use `@Bindable` instead (iOS 18+ requirement). This is the modern SwiftUI pattern.
+
+### Issue: Custom bindings not working
+**Solution**: Use `.init(get:set:)` syntax instead of `Binding(get:set:)` for clarity
 
 ## Next Steps
 
@@ -674,5 +707,32 @@ After completing Phase 6:
 
 ---
 
+## Key iOS 18+ SwiftUI Patterns
+
+This phase requires modern SwiftUI patterns as of iOS 18:
+
+### Property Wrappers
+- ✅ `@Bindable`: Use for Core reference in views
+- ✅ `@Observable`: Use for observable objects (Core should be @Observable)
+- ✅ `@State`: Use for view-local state
+- ✅ `@FocusState`: Use for keyboard focus management
+- ❌ `@ObservedObject`: **FORBIDDEN** - deprecated pattern
+- ❌ `@Binding`: **FORBIDDEN** - use custom bindings with `.init()` instead
+- ❌ `@Published`: **FORBIDDEN** - use `@Observable` macro
+
+### Binding Syntax
+- ✅ `.init(get: { }, set: { })`: Modern custom binding syntax
+- ❌ `Binding(get: { }, set: { })`: Old syntax
+
+### Best Practices
+1. All business logic stays in Rust core
+2. SwiftUI views are thin rendering layer
+3. All user actions become Events sent to core
+4. ViewModel types defined in `view_models.rs` with documented Default trait decisions
+5. IDs passed as Strings (UUID as string for Swift interop)
+6. Core converts String IDs to Id type with validation
+
+---
+
 **Phase Status**: 📋 Ready for Implementation  
-**Last Updated**: November 26, 2025
+**Last Updated**: December 16, 2025
