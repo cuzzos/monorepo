@@ -46,8 +46,6 @@ class DatabaseCapability {
             withIntermediateDirectories: true
         )
         
-        print("🗄️ [DatabaseCapability] Initialized with GRDB")
-        print("📁 [DatabaseCapability] Backup directory: \(backupDirectory.path)")
     }
     
     // MARK: - Operation Handling
@@ -78,26 +76,20 @@ class DatabaseCapability {
     /// 2. On failure, retry once (0.5s delay)
     /// 3. On retry failure, save to backup file
     private func handleSaveWorkout(workoutJson: String, requestId: UInt32) async {
-        print("💾 [DatabaseCapability] Save workout requested")
-        print("📄 [DatabaseCapability] JSON length: \(workoutJson.count) bytes")
-        
-        // Log to in-app console
-        ConsoleLogger.shared.log("Save workout requested (\(workoutJson.count) bytes)", emoji: "💾")
+        ConsoleLogger.shared.log("Saving workout (\(workoutJson.count) bytes)", emoji: "💾")
         
         var attempt = 0
         let maxAttempts = 2  // Original + 1 retry
         
         while attempt < maxAttempts {
             attempt += 1
-            print("🔄 [DatabaseCapability] Save attempt \(attempt) of \(maxAttempts)")
             
             do {
                 // ATTEMPT: Save to database
                 try await saveWorkoutToDatabase(workoutJson)
                 
                 // ✅ SUCCESS
-                print("✅ [DatabaseCapability] Workout saved successfully (attempt \(attempt))")
-                ConsoleLogger.shared.log("Workout saved to DB ✓", emoji: "✅")
+                ConsoleLogger.shared.log("Workout saved ✓", emoji: "✅")
                 
                 // Delete any backup files (no longer needed)
                 await tryDeleteBackupFiles()
@@ -108,19 +100,15 @@ class DatabaseCapability {
                 return
                 
             } catch {
-                print("❌ [DatabaseCapability] Save failed (attempt \(attempt)): \(error.localizedDescription)")
                 ConsoleLogger.shared.log("Save failed (attempt \(attempt)): \(error.localizedDescription)", emoji: "❌")
                 
                 if attempt < maxAttempts {
                     // Wait before retry
-                    print("⏳ [DatabaseCapability] Waiting 0.5s before retry...")
                     try? await Task.sleep(nanoseconds: 500_000_000)  // 0.5 seconds
                     continue
                 }
                 
                 // ❌ BOTH ATTEMPTS FAILED - Use backup strategy
-                print("⚠️  [DatabaseCapability] All attempts failed, creating backup...")
-                
                 do {
                     // Save to backup file
                     try await saveWorkoutToBackup(workoutJson)
@@ -136,7 +124,7 @@ class DatabaseCapability {
                     
                 } catch {
                     // Even backup failed - this is bad
-                    print("❌ [DatabaseCapability] Backup also failed: \(error)")
+                    print("❌ [DatabaseCapability] Backup failed: \(error)")
                     let result = SharedTypes.DatabaseResult.error(
                         message: "Failed to save workout. Please try finishing again."
                     )
@@ -200,7 +188,7 @@ class DatabaseCapability {
                 ]
             )
             
-            // Parse and insert exercises
+            // Insert exercises and sets
             if let exercises = workout["exercises"] as? [[String: Any]] {
                 for exercise in exercises {
                     let exerciseId = exercise["id"] as? String ?? ""
@@ -255,8 +243,6 @@ class DatabaseCapability {
                             bodyPartJson
                         ]
                     )
-                    
-                    // Parse and insert sets
                     if let sets = exercise["sets"] as? [[String: Any]] {
                         for (index, set) in sets.enumerated() {
                             let setId = set["id"] as? String ?? ""
@@ -302,8 +288,6 @@ class DatabaseCapability {
                 }
             }
         }
-        
-        print("✅ [DatabaseCapability] Inserted workout: \(workoutId)")
     }
     
     // MARK: - Backup Strategy
@@ -313,16 +297,11 @@ class DatabaseCapability {
         let timestamp = ISO8601DateFormatter().string(from: Date())
         let filename = "workout-backup-\(timestamp).json"
         let fileURL = backupDirectory.appendingPathComponent(filename)
-        
         try workoutJson.write(to: fileURL, atomically: true, encoding: .utf8)
-        
-        print("💾 [DatabaseCapability] Backup saved: \(filename)")
     }
     
     /// Schedule background task to retry backup files.
     private func scheduleBackgroundRetry() async {
-        print("⏰ [DatabaseCapability] Scheduling background retry in 5 seconds...")
-        
         Task {
             try? await Task.sleep(nanoseconds: 5_000_000_000)
             await retryBackupFiles()
@@ -331,29 +310,19 @@ class DatabaseCapability {
     
     /// Retry saving backup files to database.
     private func retryBackupFiles() async {
-        print("🔄 [DatabaseCapability] Retrying backup files...")
-        
         do {
             let fileURLs = try FileManager.default.contentsOfDirectory(
                 at: backupDirectory,
                 includingPropertiesForKeys: nil
             ).filter { $0.pathExtension == "json" }
             
-            guard !fileURLs.isEmpty else {
-                print("ℹ️  [DatabaseCapability] No backup files to retry")
-                return
-            }
-            
-            print("📂 [DatabaseCapability] Found \(fileURLs.count) backup file(s)")
+            guard !fileURLs.isEmpty else { return }
             
             for fileURL in fileURLs {
                 do {
                     let workoutJson = try String(contentsOf: fileURL, encoding: .utf8)
                     try await saveWorkoutToDatabase(workoutJson)
-                    
-                    // Success! Delete backup file
                     try FileManager.default.removeItem(at: fileURL)
-                    print("✅ [DatabaseCapability] Backup file processed: \(fileURL.lastPathComponent)")
                 } catch {
                     print("❌ [DatabaseCapability] Failed to process backup: \(error)")
                 }
@@ -373,10 +342,9 @@ class DatabaseCapability {
             
             for fileURL in fileURLs {
                 try FileManager.default.removeItem(at: fileURL)
-                print("🗑️  [DatabaseCapability] Deleted backup: \(fileURL.lastPathComponent)")
             }
         } catch {
-            print("⚠️  [DatabaseCapability] Could not delete backups: \(error)")
+            // Silently ignore - not critical
         }
     }
     
@@ -386,8 +354,6 @@ class DatabaseCapability {
     ///
     /// Returns workouts as JSON strings in reverse chronological order.
     private func handleLoadAllWorkouts(requestId: UInt32) async {
-        print("📖 [DatabaseCapability] Load all workouts requested")
-        
         do {
             let workoutJsons = try await database.read { db -> [String] in
                 let rows = try Row.fetchAll(db, sql: """
@@ -416,8 +382,6 @@ class DatabaseCapability {
                 }
             }
             
-            print("✅ [DatabaseCapability] Loaded \(workoutJsons.count) workouts")
-            
             let result = SharedTypes.DatabaseResult.historyLoaded(workouts_json: workoutJsons)
         await core?.sendDatabaseResponse(requestId: requestId, result: result)
         
@@ -432,8 +396,6 @@ class DatabaseCapability {
     
     /// Load a specific workout by its ID.
     private func handleLoadWorkoutById(id: String, requestId: UInt32) async {
-        print("📖 [DatabaseCapability] Load workout by ID: \(id)")
-        
         do {
             let workoutJson = try await database.read { db -> String? in
                 guard let workoutRow = try Row.fetchOne(db, sql: """
@@ -461,12 +423,6 @@ class DatabaseCapability {
                 return String(data: jsonData, encoding: .utf8)
             }
             
-            if workoutJson != nil {
-                print("✅ [DatabaseCapability] Loaded workout: \(id)")
-            } else {
-                print("ℹ️  [DatabaseCapability] Workout not found: \(id)")
-            }
-            
             let result = SharedTypes.DatabaseResult.workoutLoaded(workout_json: workoutJson)
         await core?.sendDatabaseResponse(requestId: requestId, result: result)
         
@@ -483,14 +439,10 @@ class DatabaseCapability {
     ///
     /// CASCADE DELETE ensures exercises and sets are also deleted.
     private func handleDeleteWorkout(id: String, requestId: UInt32) async {
-        print("🗑️  [DatabaseCapability] Delete workout: \(id)")
-        
         do {
             try await database.write { db in
                 try db.execute(sql: "DELETE FROM workouts WHERE id = ?", arguments: [id])
             }
-            
-            print("✅ [DatabaseCapability] Workout deleted: \(id)")
         
         let result = SharedTypes.DatabaseResult.workoutDeleted
         await core?.sendDatabaseResponse(requestId: requestId, result: result)

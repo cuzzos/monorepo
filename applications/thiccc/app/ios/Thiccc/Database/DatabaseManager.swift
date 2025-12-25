@@ -43,10 +43,7 @@ final class DatabaseManager {
     // MARK: - Initialization
     
     /// Private initializer (singleton pattern).
-    private init() {
-        print("📦 [DatabaseManager] Instance created")
-        print("🟦 [DatabaseManager] Database is currently: \(database != nil ? "NOT NIL" : "NIL")")
-    }
+    private init() {}
     
     // MARK: - Setup
     
@@ -62,26 +59,16 @@ final class DatabaseManager {
     ///
     /// - Throws: DatabaseError if initialization fails
     func setup() throws {
-        print("🟦 [DatabaseManager] setup() called")
-        print("🟦 [DatabaseManager] Current database value: \(database != nil ? "NOT NIL" : "NIL")")
-        
         // Skip if already initialized
         guard database == nil else {
-            print("ℹ️  [DatabaseManager] Already initialized, skipping setup")
-            print("🟦 [DatabaseManager] Database is: \(database != nil ? "NOT NIL" : "NIL")")
             return
         }
-        
-        print("🚀 [DatabaseManager] Setting up database...")
         
         do {
             // Create database using schema definition
             database = try createAppDatabase()
-            print("✅ [DatabaseManager] Setup complete")
-            print("🟦 [DatabaseManager] Database is now: \(database != nil ? "NOT NIL" : "NIL")")
         } catch {
             print("❌ [DatabaseManager] Setup failed: \(error)")
-            print("🟦 [DatabaseManager] Database remains: \(database != nil ? "NOT NIL" : "NIL")")
             throw error
         }
     }

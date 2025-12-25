@@ -24,40 +24,24 @@ final class Core {
     private var timerCapability: TimerCapability?
     
     init() {
-        print("🚀 [Core] Initializing...")
-        
         // Get initial view from Rust core via FFI
         let viewData = Thiccc.view()
         let viewBytes = Array(viewData)
         self.view = try! SharedTypes.ViewModel.bincodeDeserialize(input: viewBytes)
-        print("✅ [Core] Initial view loaded from Rust core")
         
         // Initialize capabilities
         // Database capability requires DatabaseManager to be set up first (done in ThicccApp.init)
         if let database = DatabaseManager.shared.database {
-            print("✅ [Core] Database is available, creating DatabaseCapability...")
             self.databaseCapability = DatabaseCapability(core: self, database: database)
-            print("✅ [Core] DatabaseCapability initialized")
-            
-            // Log success to in-app console (must be on MainActor)
-            Task { @MainActor in
-                ConsoleLogger.shared.log("DatabaseCapability initialized ✅", emoji: "🗄️")
-            }
+            ConsoleLogger.shared.log("DatabaseCapability initialized ✅", emoji: "🗄️")
         } else {
-            print("❌ [Core] Database is NIL when Core initializes - DatabaseCapability DISABLED")
+            print("❌ [Core] CRITICAL: Database unavailable - DatabaseCapability disabled")
             self.databaseCapability = nil
-            
-            // Log critical error to in-app console (must be on MainActor)
-            Task { @MainActor in
-                ConsoleLogger.shared.log("CRITICAL: Database is NIL - DatabaseCapability NOT initialized!", emoji: "❌")
-            }
+            ConsoleLogger.shared.log("CRITICAL: Database unavailable!", emoji: "❌")
         }
         
         self.storageCapability = StorageCapability(core: self)
-        print("✅ [Core] StorageCapability initialized")
-        
         self.timerCapability = TimerCapability(core: self)
-        print("✅ [Core] TimerCapability initialized")
         
         // Send Initialize event to load any saved workout
         Task {
@@ -74,7 +58,6 @@ final class Core {
     /// 4. Routes each effect to the appropriate capability handler
     /// 5. Updates the view
     func update(_ event: SharedTypes.Event) async {
-        print("🟢 [Core] Event: \(event)")
         ConsoleLogger.shared.log("Event: \(String(describing: event))", emoji: "🟢")
         
         // Serialize event to Bincode bytes
@@ -107,7 +90,7 @@ final class Core {
                 await handleRequest(request)
             }
         } catch {
-            print("🔴 [Core] Failed to deserialize effects: \(error)")
+            print("❌ [Core] Failed to deserialize effects: \(error)")
         }
     }
     
@@ -121,26 +104,21 @@ final class Core {
             refreshView()
             
         case .database(let operation):
-            print("🔵 [Core] Database operation: \(operation)")
             ConsoleLogger.shared.log("DB operation: \(String(describing: operation))", emoji: "🗄️")
             if let databaseCapability = databaseCapability {
                 await databaseCapability.handle(operation, requestId: requestId)
             } else {
-                print("❌ [Core] DatabaseCapability not initialized - operation skipped!")
                 ConsoleLogger.shared.log("ERROR: DatabaseCapability not initialized!", emoji: "❌")
-                // Send error response back to Rust core
                 let errorResult = SharedTypes.DatabaseResult.error(message: "Database not available")
                 await sendDatabaseResponse(requestId: requestId, result: errorResult)
             }
             
         case .storage(let operation):
-            print("🔵 [Core] Storage operation: \(operation)")
             if let storageCapability = storageCapability {
                 await storageCapability.handle(operation, requestId: requestId)
             }
             
         case .timer(let operation):
-            print("🔵 [Core] Timer operation: \(operation)")
             if let timerCapability = timerCapability {
                 await timerCapability.handle(operation, requestId: requestId)
             }
