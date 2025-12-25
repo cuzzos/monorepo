@@ -669,11 +669,22 @@ impl App for Thiccc {
                     DatabaseResult::WorkoutDeleted => {
                         // Success - workout removed from database
                     }
-                    DatabaseResult::HistoryLoaded { workouts } => {
+                    DatabaseResult::HistoryLoaded { workouts_json } => {
+                        // Deserialize JSON strings to Workout objects
+                        let workouts: Vec<Workout> = workouts_json
+                            .iter()
+                            .filter_map(|json| serde_json::from_str(json).ok())
+                            .collect();
                         model.workout_history = workouts;
                     }
-                    DatabaseResult::WorkoutLoaded { workout } => {
-                        model.current_workout = workout;
+                    DatabaseResult::WorkoutLoaded { workout_json } => {
+                        // Deserialize JSON string to Workout object
+                        model.current_workout = workout_json
+                            .and_then(|json| serde_json::from_str(&json).ok());
+                    }
+                    DatabaseResult::Error { message } => {
+                        // Database error occurred
+                        model.error_message = Some(message);
                     }
                 }
             }

@@ -12,13 +12,25 @@ fn test_database_result_serialization() {
         serde_json::from_str(&json).expect("Failed to deserialize");
     assert_eq!(result, deserialized);
 
+    // Test HistoryLoaded with JSON strings
+    let workout = Workout::new();
+    let workout_json = serde_json::to_string(&workout).expect("Failed to serialize workout");
     let result2 = DatabaseResult::HistoryLoaded {
-        workouts: vec![Workout::new()],
+        workouts_json: vec![workout_json],
     };
     let json2 = serde_json::to_string(&result2).expect("Failed to serialize");
     let deserialized2: DatabaseResult =
         serde_json::from_str(&json2).expect("Failed to deserialize");
     assert_eq!(result2, deserialized2);
+
+    // Test Error variant
+    let result3 = DatabaseResult::Error {
+        message: "Test error".to_string(),
+    };
+    let json3 = serde_json::to_string(&result3).expect("Failed to serialize");
+    let deserialized3: DatabaseResult =
+        serde_json::from_str(&json3).expect("Failed to deserialize");
+    assert_eq!(result3, deserialized3);
 }
 
 #[test]

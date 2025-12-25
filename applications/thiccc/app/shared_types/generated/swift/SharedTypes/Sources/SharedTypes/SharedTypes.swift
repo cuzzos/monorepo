@@ -1,89 +1,6 @@
 import Serde
 
 
-public struct BodyPart: Hashable {
-    @Indirect public var main: SharedTypes.BodyPartMain
-    @Indirect public var detailed: [String]?
-    @Indirect public var scientific: [String]?
-
-    public init(main: SharedTypes.BodyPartMain, detailed: [String]?, scientific: [String]?) {
-        self.main = main
-        self.detailed = detailed
-        self.scientific = scientific
-    }
-
-    public func serialize<S: Serializer>(serializer: S) throws {
-        try serializer.increase_container_depth()
-        try self.main.serialize(serializer: serializer)
-        try serialize_option_vector_str(value: self.detailed, serializer: serializer)
-        try serialize_option_vector_str(value: self.scientific, serializer: serializer)
-        try serializer.decrease_container_depth()
-    }
-
-    public func bincodeSerialize() throws -> [UInt8] {
-        let serializer = BincodeSerializer.init();
-        try self.serialize(serializer: serializer)
-        return serializer.get_bytes()
-    }
-
-    public static func deserialize<D: Deserializer>(deserializer: D) throws -> BodyPart {
-        try deserializer.increase_container_depth()
-        let main = try SharedTypes.BodyPartMain.deserialize(deserializer: deserializer)
-        let detailed = try deserialize_option_vector_str(deserializer: deserializer)
-        let scientific = try deserialize_option_vector_str(deserializer: deserializer)
-        try deserializer.decrease_container_depth()
-        return BodyPart.init(main: main, detailed: detailed, scientific: scientific)
-    }
-
-    public static func bincodeDeserialize(input: [UInt8]) throws -> BodyPart {
-        let deserializer = BincodeDeserializer.init(input: input);
-        let obj = try deserialize(deserializer: deserializer)
-        if deserializer.get_buffer_offset() < input.count {
-            throw DeserializationError.invalidInput(issue: "Some input bytes were not read")
-        }
-        return obj
-    }
-}
-
-indirect public enum BodyPartMain: Hashable {
-    case chest
-
-    public func serialize<S: Serializer>(serializer: S) throws {
-        try serializer.increase_container_depth()
-        switch self {
-        case .chest:
-            try serializer.serialize_variant_index(value: 0)
-        }
-        try serializer.decrease_container_depth()
-    }
-
-    public func bincodeSerialize() throws -> [UInt8] {
-        let serializer = BincodeSerializer.init();
-        try self.serialize(serializer: serializer)
-        return serializer.get_bytes()
-    }
-
-    public static func deserialize<D: Deserializer>(deserializer: D) throws -> BodyPartMain {
-        let index = try deserializer.deserialize_variant_index()
-        try deserializer.increase_container_depth()
-        switch index {
-        case 0:
-            try deserializer.decrease_container_depth()
-            return .chest
-        default: throw DeserializationError.invalidInput(issue: "Unknown variant index for BodyPartMain: \(index)")
-        }
-    }
-
-    public static func bincodeDeserialize(input: [UInt8]) throws -> BodyPartMain {
-        let deserializer = BincodeDeserializer.init(input: input);
-        let obj = try deserialize(deserializer: deserializer)
-        if deserializer.get_buffer_offset() < input.count {
-            throw DeserializationError.invalidInput(issue: "Some input bytes were not read")
-        }
-        return obj
-    }
-}
-
 indirect public enum DatabaseOperation: Hashable {
     case saveWorkout(String)
     case loadAllWorkouts
@@ -150,8 +67,9 @@ indirect public enum DatabaseOperation: Hashable {
 indirect public enum DatabaseResult: Hashable {
     case workoutSaved
     case workoutDeleted
-    case historyLoaded(workouts: [SharedTypes.Workout])
-    case workoutLoaded(workout: SharedTypes.Workout?)
+    case historyLoaded(workouts_json: [String])
+    case workoutLoaded(workout_json: String?)
+    case error(message: String)
 
     public func serialize<S: Serializer>(serializer: S) throws {
         try serializer.increase_container_depth()
@@ -160,12 +78,15 @@ indirect public enum DatabaseResult: Hashable {
             try serializer.serialize_variant_index(value: 0)
         case .workoutDeleted:
             try serializer.serialize_variant_index(value: 1)
-        case .historyLoaded(let workouts):
+        case .historyLoaded(let workouts_json):
             try serializer.serialize_variant_index(value: 2)
-            try serialize_vector_Workout(value: workouts, serializer: serializer)
-        case .workoutLoaded(let workout):
+            try serialize_vector_str(value: workouts_json, serializer: serializer)
+        case .workoutLoaded(let workout_json):
             try serializer.serialize_variant_index(value: 3)
-            try serialize_option_Workout(value: workout, serializer: serializer)
+            try serialize_option_str(value: workout_json, serializer: serializer)
+        case .error(let message):
+            try serializer.serialize_variant_index(value: 4)
+            try serializer.serialize_str(value: message)
         }
         try serializer.decrease_container_depth()
     }
@@ -187,13 +108,17 @@ indirect public enum DatabaseResult: Hashable {
             try deserializer.decrease_container_depth()
             return .workoutDeleted
         case 2:
-            let workouts = try deserialize_vector_Workout(deserializer: deserializer)
+            let workouts_json = try deserialize_vector_str(deserializer: deserializer)
             try deserializer.decrease_container_depth()
-            return .historyLoaded(workouts: workouts)
+            return .historyLoaded(workouts_json: workouts_json)
         case 3:
-            let workout = try deserialize_option_Workout(deserializer: deserializer)
+            let workout_json = try deserialize_option_str(deserializer: deserializer)
             try deserializer.decrease_container_depth()
-            return .workoutLoaded(workout: workout)
+            return .workoutLoaded(workout_json: workout_json)
+        case 4:
+            let message = try deserializer.deserialize_str()
+            try deserializer.decrease_container_depth()
+            return .error(message: message)
         default: throw DeserializationError.invalidInput(issue: "Unknown variant index for DatabaseResult: \(index)")
         }
     }
@@ -590,197 +515,6 @@ indirect public enum Event: Hashable {
     }
 }
 
-public struct Exercise: Hashable {
-    @Indirect public var id: String
-    @Indirect public var superset_id: Int32?
-    @Indirect public var workout_id: String
-    @Indirect public var name: String
-    @Indirect public var pinned_notes: [String]
-    @Indirect public var notes: [String]
-    @Indirect public var duration: Int32?
-    @Indirect public var type: SharedTypes.ExerciseType
-    @Indirect public var weight_unit: SharedTypes.WeightUnit?
-    @Indirect public var default_warm_up_time: Int32?
-    @Indirect public var default_rest_time: Int32?
-    @Indirect public var sets: [SharedTypes.ExerciseSet]
-    @Indirect public var body_part: SharedTypes.BodyPart?
-
-    public init(id: String, superset_id: Int32?, workout_id: String, name: String, pinned_notes: [String], notes: [String], duration: Int32?, type: SharedTypes.ExerciseType, weight_unit: SharedTypes.WeightUnit?, default_warm_up_time: Int32?, default_rest_time: Int32?, sets: [SharedTypes.ExerciseSet], body_part: SharedTypes.BodyPart?) {
-        self.id = id
-        self.superset_id = superset_id
-        self.workout_id = workout_id
-        self.name = name
-        self.pinned_notes = pinned_notes
-        self.notes = notes
-        self.duration = duration
-        self.type = type
-        self.weight_unit = weight_unit
-        self.default_warm_up_time = default_warm_up_time
-        self.default_rest_time = default_rest_time
-        self.sets = sets
-        self.body_part = body_part
-    }
-
-    public func serialize<S: Serializer>(serializer: S) throws {
-        try serializer.increase_container_depth()
-        try serializer.serialize_str(value: self.id)
-        try serialize_option_i32(value: self.superset_id, serializer: serializer)
-        try serializer.serialize_str(value: self.workout_id)
-        try serializer.serialize_str(value: self.name)
-        try serialize_vector_str(value: self.pinned_notes, serializer: serializer)
-        try serialize_vector_str(value: self.notes, serializer: serializer)
-        try serialize_option_i32(value: self.duration, serializer: serializer)
-        try self.type.serialize(serializer: serializer)
-        try serialize_option_WeightUnit(value: self.weight_unit, serializer: serializer)
-        try serialize_option_i32(value: self.default_warm_up_time, serializer: serializer)
-        try serialize_option_i32(value: self.default_rest_time, serializer: serializer)
-        try serialize_vector_ExerciseSet(value: self.sets, serializer: serializer)
-        try serialize_option_BodyPart(value: self.body_part, serializer: serializer)
-        try serializer.decrease_container_depth()
-    }
-
-    public func bincodeSerialize() throws -> [UInt8] {
-        let serializer = BincodeSerializer.init();
-        try self.serialize(serializer: serializer)
-        return serializer.get_bytes()
-    }
-
-    public static func deserialize<D: Deserializer>(deserializer: D) throws -> Exercise {
-        try deserializer.increase_container_depth()
-        let id = try deserializer.deserialize_str()
-        let superset_id = try deserialize_option_i32(deserializer: deserializer)
-        let workout_id = try deserializer.deserialize_str()
-        let name = try deserializer.deserialize_str()
-        let pinned_notes = try deserialize_vector_str(deserializer: deserializer)
-        let notes = try deserialize_vector_str(deserializer: deserializer)
-        let duration = try deserialize_option_i32(deserializer: deserializer)
-        let type = try SharedTypes.ExerciseType.deserialize(deserializer: deserializer)
-        let weight_unit = try deserialize_option_WeightUnit(deserializer: deserializer)
-        let default_warm_up_time = try deserialize_option_i32(deserializer: deserializer)
-        let default_rest_time = try deserialize_option_i32(deserializer: deserializer)
-        let sets = try deserialize_vector_ExerciseSet(deserializer: deserializer)
-        let body_part = try deserialize_option_BodyPart(deserializer: deserializer)
-        try deserializer.decrease_container_depth()
-        return Exercise.init(id: id, superset_id: superset_id, workout_id: workout_id, name: name, pinned_notes: pinned_notes, notes: notes, duration: duration, type: type, weight_unit: weight_unit, default_warm_up_time: default_warm_up_time, default_rest_time: default_rest_time, sets: sets, body_part: body_part)
-    }
-
-    public static func bincodeDeserialize(input: [UInt8]) throws -> Exercise {
-        let deserializer = BincodeDeserializer.init(input: input);
-        let obj = try deserialize(deserializer: deserializer)
-        if deserializer.get_buffer_offset() < input.count {
-            throw DeserializationError.invalidInput(issue: "Some input bytes were not read")
-        }
-        return obj
-    }
-}
-
-public struct ExerciseSet: Hashable {
-    @Indirect public var id: String
-    @Indirect public var type: SharedTypes.SetType
-    @Indirect public var weight_unit: SharedTypes.WeightUnit?
-    @Indirect public var suggest: SharedTypes.SetSuggest
-    @Indirect public var actual: SharedTypes.SetActual
-    @Indirect public var is_completed: Bool
-    @Indirect public var exercise_id: String
-    @Indirect public var workout_id: String
-    @Indirect public var set_index: Int32
-
-    public init(id: String, type: SharedTypes.SetType, weight_unit: SharedTypes.WeightUnit?, suggest: SharedTypes.SetSuggest, actual: SharedTypes.SetActual, is_completed: Bool, exercise_id: String, workout_id: String, set_index: Int32) {
-        self.id = id
-        self.type = type
-        self.weight_unit = weight_unit
-        self.suggest = suggest
-        self.actual = actual
-        self.is_completed = is_completed
-        self.exercise_id = exercise_id
-        self.workout_id = workout_id
-        self.set_index = set_index
-    }
-
-    public func serialize<S: Serializer>(serializer: S) throws {
-        try serializer.increase_container_depth()
-        try serializer.serialize_str(value: self.id)
-        try self.type.serialize(serializer: serializer)
-        try serialize_option_WeightUnit(value: self.weight_unit, serializer: serializer)
-        try self.suggest.serialize(serializer: serializer)
-        try self.actual.serialize(serializer: serializer)
-        try serializer.serialize_bool(value: self.is_completed)
-        try serializer.serialize_str(value: self.exercise_id)
-        try serializer.serialize_str(value: self.workout_id)
-        try serializer.serialize_i32(value: self.set_index)
-        try serializer.decrease_container_depth()
-    }
-
-    public func bincodeSerialize() throws -> [UInt8] {
-        let serializer = BincodeSerializer.init();
-        try self.serialize(serializer: serializer)
-        return serializer.get_bytes()
-    }
-
-    public static func deserialize<D: Deserializer>(deserializer: D) throws -> ExerciseSet {
-        try deserializer.increase_container_depth()
-        let id = try deserializer.deserialize_str()
-        let type = try SharedTypes.SetType.deserialize(deserializer: deserializer)
-        let weight_unit = try deserialize_option_WeightUnit(deserializer: deserializer)
-        let suggest = try SharedTypes.SetSuggest.deserialize(deserializer: deserializer)
-        let actual = try SharedTypes.SetActual.deserialize(deserializer: deserializer)
-        let is_completed = try deserializer.deserialize_bool()
-        let exercise_id = try deserializer.deserialize_str()
-        let workout_id = try deserializer.deserialize_str()
-        let set_index = try deserializer.deserialize_i32()
-        try deserializer.decrease_container_depth()
-        return ExerciseSet.init(id: id, type: type, weight_unit: weight_unit, suggest: suggest, actual: actual, is_completed: is_completed, exercise_id: exercise_id, workout_id: workout_id, set_index: set_index)
-    }
-
-    public static func bincodeDeserialize(input: [UInt8]) throws -> ExerciseSet {
-        let deserializer = BincodeDeserializer.init(input: input);
-        let obj = try deserialize(deserializer: deserializer)
-        if deserializer.get_buffer_offset() < input.count {
-            throw DeserializationError.invalidInput(issue: "Some input bytes were not read")
-        }
-        return obj
-    }
-}
-
-indirect public enum ExerciseType: Hashable {
-    case barbell
-
-    public func serialize<S: Serializer>(serializer: S) throws {
-        try serializer.increase_container_depth()
-        switch self {
-        case .barbell:
-            try serializer.serialize_variant_index(value: 2)
-        }
-        try serializer.decrease_container_depth()
-    }
-
-    public func bincodeSerialize() throws -> [UInt8] {
-        let serializer = BincodeSerializer.init();
-        try self.serialize(serializer: serializer)
-        return serializer.get_bytes()
-    }
-
-    public static func deserialize<D: Deserializer>(deserializer: D) throws -> ExerciseType {
-        let index = try deserializer.deserialize_variant_index()
-        try deserializer.increase_container_depth()
-        switch index {
-        case 2:
-            try deserializer.decrease_container_depth()
-            return .barbell
-        default: throw DeserializationError.invalidInput(issue: "Unknown variant index for ExerciseType: \(index)")
-        }
-    }
-
-    public static func bincodeDeserialize(input: [UInt8]) throws -> ExerciseType {
-        let deserializer = BincodeDeserializer.init(input: input);
-        let obj = try deserialize(deserializer: deserializer)
-        if deserializer.get_buffer_offset() < input.count {
-            throw DeserializationError.invalidInput(issue: "Some input bytes were not read")
-        }
-        return obj
-    }
-}
-
 public struct ExerciseViewModel: Hashable {
     @Indirect public var id: String
     @Indirect public var name: String
@@ -1036,101 +770,6 @@ public struct SetActual: Hashable {
     }
 
     public static func bincodeDeserialize(input: [UInt8]) throws -> SetActual {
-        let deserializer = BincodeDeserializer.init(input: input);
-        let obj = try deserialize(deserializer: deserializer)
-        if deserializer.get_buffer_offset() < input.count {
-            throw DeserializationError.invalidInput(issue: "Some input bytes were not read")
-        }
-        return obj
-    }
-}
-
-public struct SetSuggest: Hashable {
-    @Indirect public var weight: Double?
-    @Indirect public var reps: Int32?
-    @Indirect public var rep_range: Int32?
-    @Indirect public var duration: Int32?
-    @Indirect public var rpe: Double?
-    @Indirect public var rest_time: Int32?
-
-    public init(weight: Double?, reps: Int32?, rep_range: Int32?, duration: Int32?, rpe: Double?, rest_time: Int32?) {
-        self.weight = weight
-        self.reps = reps
-        self.rep_range = rep_range
-        self.duration = duration
-        self.rpe = rpe
-        self.rest_time = rest_time
-    }
-
-    public func serialize<S: Serializer>(serializer: S) throws {
-        try serializer.increase_container_depth()
-        try serialize_option_f64(value: self.weight, serializer: serializer)
-        try serialize_option_i32(value: self.reps, serializer: serializer)
-        try serialize_option_i32(value: self.rep_range, serializer: serializer)
-        try serialize_option_i32(value: self.duration, serializer: serializer)
-        try serialize_option_f64(value: self.rpe, serializer: serializer)
-        try serialize_option_i32(value: self.rest_time, serializer: serializer)
-        try serializer.decrease_container_depth()
-    }
-
-    public func bincodeSerialize() throws -> [UInt8] {
-        let serializer = BincodeSerializer.init();
-        try self.serialize(serializer: serializer)
-        return serializer.get_bytes()
-    }
-
-    public static func deserialize<D: Deserializer>(deserializer: D) throws -> SetSuggest {
-        try deserializer.increase_container_depth()
-        let weight = try deserialize_option_f64(deserializer: deserializer)
-        let reps = try deserialize_option_i32(deserializer: deserializer)
-        let rep_range = try deserialize_option_i32(deserializer: deserializer)
-        let duration = try deserialize_option_i32(deserializer: deserializer)
-        let rpe = try deserialize_option_f64(deserializer: deserializer)
-        let rest_time = try deserialize_option_i32(deserializer: deserializer)
-        try deserializer.decrease_container_depth()
-        return SetSuggest.init(weight: weight, reps: reps, rep_range: rep_range, duration: duration, rpe: rpe, rest_time: rest_time)
-    }
-
-    public static func bincodeDeserialize(input: [UInt8]) throws -> SetSuggest {
-        let deserializer = BincodeDeserializer.init(input: input);
-        let obj = try deserialize(deserializer: deserializer)
-        if deserializer.get_buffer_offset() < input.count {
-            throw DeserializationError.invalidInput(issue: "Some input bytes were not read")
-        }
-        return obj
-    }
-}
-
-indirect public enum SetType: Hashable {
-    case working
-
-    public func serialize<S: Serializer>(serializer: S) throws {
-        try serializer.increase_container_depth()
-        switch self {
-        case .working:
-            try serializer.serialize_variant_index(value: 1)
-        }
-        try serializer.decrease_container_depth()
-    }
-
-    public func bincodeSerialize() throws -> [UInt8] {
-        let serializer = BincodeSerializer.init();
-        try self.serialize(serializer: serializer)
-        return serializer.get_bytes()
-    }
-
-    public static func deserialize<D: Deserializer>(deserializer: D) throws -> SetType {
-        let index = try deserializer.deserialize_variant_index()
-        try deserializer.increase_container_depth()
-        switch index {
-        case 1:
-            try deserializer.decrease_container_depth()
-            return .working
-        default: throw DeserializationError.invalidInput(issue: "Unknown variant index for SetType: \(index)")
-        }
-    }
-
-    public static func bincodeDeserialize(input: [UInt8]) throws -> SetType {
         let deserializer = BincodeDeserializer.init(input: input);
         let obj = try deserialize(deserializer: deserializer)
         if deserializer.get_buffer_offset() < input.count {
@@ -1513,111 +1152,6 @@ public struct ViewModel: Hashable {
     }
 }
 
-indirect public enum WeightUnit: Hashable {
-    case kg
-    case lb
-
-    public func serialize<S: Serializer>(serializer: S) throws {
-        try serializer.increase_container_depth()
-        switch self {
-        case .kg:
-            try serializer.serialize_variant_index(value: 0)
-        case .lb:
-            try serializer.serialize_variant_index(value: 1)
-        }
-        try serializer.decrease_container_depth()
-    }
-
-    public func bincodeSerialize() throws -> [UInt8] {
-        let serializer = BincodeSerializer.init();
-        try self.serialize(serializer: serializer)
-        return serializer.get_bytes()
-    }
-
-    public static func deserialize<D: Deserializer>(deserializer: D) throws -> WeightUnit {
-        let index = try deserializer.deserialize_variant_index()
-        try deserializer.increase_container_depth()
-        switch index {
-        case 0:
-            try deserializer.decrease_container_depth()
-            return .kg
-        case 1:
-            try deserializer.decrease_container_depth()
-            return .lb
-        default: throw DeserializationError.invalidInput(issue: "Unknown variant index for WeightUnit: \(index)")
-        }
-    }
-
-    public static func bincodeDeserialize(input: [UInt8]) throws -> WeightUnit {
-        let deserializer = BincodeDeserializer.init(input: input);
-        let obj = try deserialize(deserializer: deserializer)
-        if deserializer.get_buffer_offset() < input.count {
-            throw DeserializationError.invalidInput(issue: "Some input bytes were not read")
-        }
-        return obj
-    }
-}
-
-public struct Workout: Hashable {
-    @Indirect public var id: String
-    @Indirect public var name: String
-    @Indirect public var note: String?
-    @Indirect public var duration: Int32?
-    @Indirect public var start_timestamp: String
-    @Indirect public var end_timestamp: String?
-    @Indirect public var exercises: [SharedTypes.Exercise]
-
-    public init(id: String, name: String, note: String?, duration: Int32?, start_timestamp: String, end_timestamp: String?, exercises: [SharedTypes.Exercise]) {
-        self.id = id
-        self.name = name
-        self.note = note
-        self.duration = duration
-        self.start_timestamp = start_timestamp
-        self.end_timestamp = end_timestamp
-        self.exercises = exercises
-    }
-
-    public func serialize<S: Serializer>(serializer: S) throws {
-        try serializer.increase_container_depth()
-        try serializer.serialize_str(value: self.id)
-        try serializer.serialize_str(value: self.name)
-        try serialize_option_str(value: self.note, serializer: serializer)
-        try serialize_option_i32(value: self.duration, serializer: serializer)
-        try serializer.serialize_str(value: self.start_timestamp)
-        try serialize_option_str(value: self.end_timestamp, serializer: serializer)
-        try serialize_vector_Exercise(value: self.exercises, serializer: serializer)
-        try serializer.decrease_container_depth()
-    }
-
-    public func bincodeSerialize() throws -> [UInt8] {
-        let serializer = BincodeSerializer.init();
-        try self.serialize(serializer: serializer)
-        return serializer.get_bytes()
-    }
-
-    public static func deserialize<D: Deserializer>(deserializer: D) throws -> Workout {
-        try deserializer.increase_container_depth()
-        let id = try deserializer.deserialize_str()
-        let name = try deserializer.deserialize_str()
-        let note = try deserialize_option_str(deserializer: deserializer)
-        let duration = try deserialize_option_i32(deserializer: deserializer)
-        let start_timestamp = try deserializer.deserialize_str()
-        let end_timestamp = try deserialize_option_str(deserializer: deserializer)
-        let exercises = try deserialize_vector_Exercise(deserializer: deserializer)
-        try deserializer.decrease_container_depth()
-        return Workout.init(id: id, name: name, note: note, duration: duration, start_timestamp: start_timestamp, end_timestamp: end_timestamp, exercises: exercises)
-    }
-
-    public static func bincodeDeserialize(input: [UInt8]) throws -> Workout {
-        let deserializer = BincodeDeserializer.init(input: input);
-        let obj = try deserialize(deserializer: deserializer)
-        if deserializer.get_buffer_offset() < input.count {
-            throw DeserializationError.invalidInput(issue: "Some input bytes were not read")
-        }
-        return obj
-    }
-}
-
 public struct WorkoutViewModel: Hashable {
     @Indirect public var has_active_workout: Bool
     @Indirect public var workout_name: String
@@ -1694,60 +1228,6 @@ public struct WorkoutViewModel: Hashable {
     }
 }
 
-func serialize_option_BodyPart<S: Serializer>(value: SharedTypes.BodyPart?, serializer: S) throws {
-    if let value = value {
-        try serializer.serialize_option_tag(value: true)
-        try value.serialize(serializer: serializer)
-    } else {
-        try serializer.serialize_option_tag(value: false)
-    }
-}
-
-func deserialize_option_BodyPart<D: Deserializer>(deserializer: D) throws -> SharedTypes.BodyPart? {
-    let tag = try deserializer.deserialize_option_tag()
-    if tag {
-        return try SharedTypes.BodyPart.deserialize(deserializer: deserializer)
-    } else {
-        return nil
-    }
-}
-
-func serialize_option_WeightUnit<S: Serializer>(value: SharedTypes.WeightUnit?, serializer: S) throws {
-    if let value = value {
-        try serializer.serialize_option_tag(value: true)
-        try value.serialize(serializer: serializer)
-    } else {
-        try serializer.serialize_option_tag(value: false)
-    }
-}
-
-func deserialize_option_WeightUnit<D: Deserializer>(deserializer: D) throws -> SharedTypes.WeightUnit? {
-    let tag = try deserializer.deserialize_option_tag()
-    if tag {
-        return try SharedTypes.WeightUnit.deserialize(deserializer: deserializer)
-    } else {
-        return nil
-    }
-}
-
-func serialize_option_Workout<S: Serializer>(value: SharedTypes.Workout?, serializer: S) throws {
-    if let value = value {
-        try serializer.serialize_option_tag(value: true)
-        try value.serialize(serializer: serializer)
-    } else {
-        try serializer.serialize_option_tag(value: false)
-    }
-}
-
-func deserialize_option_Workout<D: Deserializer>(deserializer: D) throws -> SharedTypes.Workout? {
-    let tag = try deserializer.deserialize_option_tag()
-    if tag {
-        return try SharedTypes.Workout.deserialize(deserializer: deserializer)
-    } else {
-        return nil
-    }
-}
-
 func serialize_option_f64<S: Serializer>(value: Double?, serializer: S) throws {
     if let value = value {
         try serializer.serialize_option_tag(value: true)
@@ -1802,56 +1282,6 @@ func deserialize_option_str<D: Deserializer>(deserializer: D) throws -> String? 
     }
 }
 
-func serialize_option_vector_str<S: Serializer>(value: [String]?, serializer: S) throws {
-    if let value = value {
-        try serializer.serialize_option_tag(value: true)
-        try serialize_vector_str(value: value, serializer: serializer)
-    } else {
-        try serializer.serialize_option_tag(value: false)
-    }
-}
-
-func deserialize_option_vector_str<D: Deserializer>(deserializer: D) throws -> [String]? {
-    let tag = try deserializer.deserialize_option_tag()
-    if tag {
-        return try deserialize_vector_str(deserializer: deserializer)
-    } else {
-        return nil
-    }
-}
-
-func serialize_vector_Exercise<S: Serializer>(value: [SharedTypes.Exercise], serializer: S) throws {
-    try serializer.serialize_len(value: value.count)
-    for item in value {
-        try item.serialize(serializer: serializer)
-    }
-}
-
-func deserialize_vector_Exercise<D: Deserializer>(deserializer: D) throws -> [SharedTypes.Exercise] {
-    let length = try deserializer.deserialize_len()
-    var obj : [SharedTypes.Exercise] = []
-    for _ in 0..<length {
-        obj.append(try SharedTypes.Exercise.deserialize(deserializer: deserializer))
-    }
-    return obj
-}
-
-func serialize_vector_ExerciseSet<S: Serializer>(value: [SharedTypes.ExerciseSet], serializer: S) throws {
-    try serializer.serialize_len(value: value.count)
-    for item in value {
-        try item.serialize(serializer: serializer)
-    }
-}
-
-func deserialize_vector_ExerciseSet<D: Deserializer>(deserializer: D) throws -> [SharedTypes.ExerciseSet] {
-    let length = try deserializer.deserialize_len()
-    var obj : [SharedTypes.ExerciseSet] = []
-    for _ in 0..<length {
-        obj.append(try SharedTypes.ExerciseSet.deserialize(deserializer: deserializer))
-    }
-    return obj
-}
-
 func serialize_vector_ExerciseViewModel<S: Serializer>(value: [SharedTypes.ExerciseViewModel], serializer: S) throws {
     try serializer.serialize_len(value: value.count)
     for item in value {
@@ -1896,22 +1326,6 @@ func deserialize_vector_SetViewModel<D: Deserializer>(deserializer: D) throws ->
     var obj : [SharedTypes.SetViewModel] = []
     for _ in 0..<length {
         obj.append(try SharedTypes.SetViewModel.deserialize(deserializer: deserializer))
-    }
-    return obj
-}
-
-func serialize_vector_Workout<S: Serializer>(value: [SharedTypes.Workout], serializer: S) throws {
-    try serializer.serialize_len(value: value.count)
-    for item in value {
-        try item.serialize(serializer: serializer)
-    }
-}
-
-func deserialize_vector_Workout<D: Deserializer>(deserializer: D) throws -> [SharedTypes.Workout] {
-    let length = try deserializer.deserialize_len()
-    var obj : [SharedTypes.Workout] = []
-    for _ in 0..<length {
-        obj.append(try SharedTypes.Workout.deserialize(deserializer: deserializer))
     }
     return obj
 }
