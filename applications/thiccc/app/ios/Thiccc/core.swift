@@ -30,7 +30,16 @@ final class Core {
         self.view = try! SharedTypes.ViewModel.bincodeDeserialize(input: viewBytes)
         
         // Initialize capabilities
-        self.databaseCapability = DatabaseCapability(core: self)
+        // Database capability requires DatabaseManager to be set up first (done in ThicccApp.init)
+        if let database = DatabaseManager.shared.database {
+            self.databaseCapability = DatabaseCapability(core: self, database: database)
+            ConsoleLogger.shared.log("DatabaseCapability initialized ✅", emoji: "🗄️")
+        } else {
+            print("❌ [Core] CRITICAL: Database unavailable - DatabaseCapability disabled")
+            self.databaseCapability = nil
+            ConsoleLogger.shared.log("CRITICAL: Database unavailable!", emoji: "❌")
+        }
+        
         self.storageCapability = StorageCapability(core: self)
         self.timerCapability = TimerCapability(core: self)
         
@@ -49,7 +58,7 @@ final class Core {
     /// 4. Routes each effect to the appropriate capability handler
     /// 5. Updates the view
     func update(_ event: SharedTypes.Event) async {
-        print("🟢 [Core] Event: \(event)")
+        ConsoleLogger.shared.log("Event: \(String(describing: event))", emoji: "🟢")
         
         // Serialize event to Bincode bytes
         let eventBytes = try! event.bincodeSerialize()
@@ -81,7 +90,7 @@ final class Core {
                 await handleRequest(request)
             }
         } catch {
-            print("🔴 [Core] Failed to deserialize effects: \(error)")
+            print("❌ [Core] Failed to deserialize effects: \(error)")
         }
     }
     
@@ -95,19 +104,21 @@ final class Core {
             refreshView()
             
         case .database(let operation):
-            print("🔵 [Core] Database operation: \(operation)")
+            ConsoleLogger.shared.log("DB operation: \(String(describing: operation))", emoji: "🗄️")
             if let databaseCapability = databaseCapability {
                 await databaseCapability.handle(operation, requestId: requestId)
+            } else {
+                ConsoleLogger.shared.log("ERROR: DatabaseCapability not initialized!", emoji: "❌")
+                let errorResult = SharedTypes.DatabaseResult.error(message: "Database not available")
+                await sendDatabaseResponse(requestId: requestId, result: errorResult)
             }
             
         case .storage(let operation):
-            print("🔵 [Core] Storage operation: \(operation)")
             if let storageCapability = storageCapability {
                 await storageCapability.handle(operation, requestId: requestId)
             }
             
         case .timer(let operation):
-            print("🔵 [Core] Timer operation: \(operation)")
             if let timerCapability = timerCapability {
                 await timerCapability.handle(operation, requestId: requestId)
             }

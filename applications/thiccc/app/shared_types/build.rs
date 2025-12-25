@@ -66,12 +66,14 @@ fn main() -> anyhow::Result<()> {
         TimerOperation::Stop,
     ])?;
 
-    // 2. Register database and storage result types (they contain Workout)
+    // 2. Register database and storage result types (they use JSON strings)
     gen.register_type_with_samples::<DatabaseResult>(vec![
         DatabaseResult::WorkoutSaved,
-        DatabaseResult::HistoryLoaded { workouts: vec![sample_workout()] },
-        DatabaseResult::WorkoutLoaded { workout: Some(sample_workout()) },
-        DatabaseResult::WorkoutLoaded { workout: None },
+        DatabaseResult::WorkoutDeleted,
+        DatabaseResult::HistoryLoaded { workouts_json: vec!["{}".to_string()] },
+        DatabaseResult::WorkoutLoaded { workout_json: Some("{}".to_string()) },
+        DatabaseResult::WorkoutLoaded { workout_json: None },
+        DatabaseResult::Error { message: "Sample error".to_string() },
     ])?;
     gen.register_type_with_samples::<StorageResult>(vec![
         StorageResult::CurrentWorkoutSaved,

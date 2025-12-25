@@ -1,5 +1,6 @@
 import SwiftUI
 import SharedTypes
+import GRDB
 
 /// Debug view for testing capabilities.
 ///
@@ -119,13 +120,12 @@ struct DebugCapabilitiesView: View {
                     }
                 }
                 
-                // MARK: - Database Actions
-                Section("Database Actions") {
-                    Button("Load History") {
-                        Task {
-                            await core.update(.loadHistory)
-                            testResult = "History loaded"
-                        }
+                // MARK: - Database
+                Section("Database") {
+                    NavigationLink {
+                        DatabaseInspectorView()
+                    } label: {
+                        Label("Database Inspector", systemImage: "externaldrive.fill")
                     }
                 }
                 
@@ -135,10 +135,71 @@ struct DebugCapabilitiesView: View {
                         .font(.system(.body, design: .monospaced))
                         .foregroundStyle(.secondary)
                 }
+                
+                // MARK: - Console Logs (Last 10)
+                Section("Recent Console Logs") {
+                    ForEach(ConsoleLogger.shared.logs.suffix(10).reversed(), id: \.timestamp) { log in
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack {
+                                Text(log.emoji)
+                                Text(log.message)
+                                    .font(.system(.caption, design: .monospaced))
+                                Spacer()
+                            }
+                            Text(log.timestamp, style: .time)
+                                .font(.system(.caption2))
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.vertical, 2)
+                    }
+                    
+                    if ConsoleLogger.shared.logs.isEmpty {
+                        Text("No logs yet")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    
+                    Button("Clear Logs") {
+                        ConsoleLogger.shared.clear()
+                        testResult = "Logs cleared"
+                    }
+                }
             }
             .navigationTitle("Debug Capabilities")
             .navigationBarTitleDisplayMode(.inline)
         }
+    }
+}
+
+// MARK: - Console Logger
+
+@Observable
+@MainActor
+final class ConsoleLogger {
+    static let shared = ConsoleLogger()
+    
+    struct LogEntry {
+        let timestamp: Date
+        let message: String
+        let emoji: String
+    }
+    
+    var logs: [LogEntry] = []
+    
+    private init() {}
+    
+    func log(_ message: String, emoji: String = "📝") {
+        let entry = LogEntry(timestamp: Date(), message: message, emoji: emoji)
+        logs.append(entry)
+        
+        // Keep only last 50 logs
+        if logs.count > 50 {
+            logs.removeFirst(logs.count - 50)
+        }
+    }
+    
+    func clear() {
+        logs.removeAll()
     }
 }
 

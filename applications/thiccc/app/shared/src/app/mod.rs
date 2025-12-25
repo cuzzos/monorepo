@@ -272,9 +272,13 @@ impl App for Thiccc {
             // App Lifecycle
             // =================================================================
             Event::Initialize => {
-                // Load any saved in-progress workout from storage
-                return Command::request_from_shell(StorageOperation::LoadCurrentWorkout)
-                    .then_send(|result| Event::StorageResponse { result });
+                // Load any saved in-progress workout from storage AND load workout history from database
+                return Command::all([
+                    Command::request_from_shell(StorageOperation::LoadCurrentWorkout)
+                        .then_send(|result| Event::StorageResponse { result }),
+                    Command::request_from_shell(DatabaseOperation::LoadAllWorkouts)
+                        .then_send(|result| Event::DatabaseResponse { result }),
+                ]);
             }
 
             // =================================================================
@@ -669,11 +673,22 @@ impl App for Thiccc {
                     DatabaseResult::WorkoutDeleted => {
                         // Success - workout removed from database
                     }
-                    DatabaseResult::HistoryLoaded { workouts } => {
+                    DatabaseResult::HistoryLoaded { workouts_json } => {
+                        // Deserialize JSON strings to Workout objects
+                        let workouts: Vec<Workout> = workouts_json
+                            .iter()
+                            .filter_map(|json| serde_json::from_str(json).ok())
+                            .collect();
                         model.workout_history = workouts;
                     }
-                    DatabaseResult::WorkoutLoaded { workout } => {
-                        model.current_workout = workout;
+                    DatabaseResult::WorkoutLoaded { workout_json } => {
+                        // Deserialize JSON string to Workout object
+                        model.current_workout = workout_json
+                            .and_then(|json| serde_json::from_str(&json).ok());
+                    }
+                    DatabaseResult::Error { message } => {
+                        // Database error occurred
+                        model.error_message = Some(message);
                     }
                 }
             }

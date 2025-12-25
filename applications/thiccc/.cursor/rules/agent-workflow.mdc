@@ -1,0 +1,329 @@
+# Agent Workflow - Essential Commands for AI Development
+
+## Overview
+
+This guide is specifically for AI agents (Claude, Cursor AI, etc.) working on the Thiccc iOS app. Follow these workflows to efficiently develop, test, and validate changes.
+
+## Core Philosophy
+
+**ALWAYS use Makefile commands.** They handle complexity and provide clear feedback.
+
+## Primary Agent Workflows
+
+### 🚀 Fast Development Loop (Most Common)
+
+When modifying Rust code, use this rapid iteration cycle:
+
+```bash
+# 1. Edit Rust code
+vim app/shared/src/models.rs
+
+# 2. Quick validation (< 5 seconds)
+make test-rust
+
+# 3. If tests pass, check coverage
+make coverage-check
+
+# 4. Generate Swift types
+cd app/shared_types && cargo build
+
+# Done! Changes are validated.
+```
+
+**Key commands:**
+
+| Command | What It Does | When to Use | Speed |
+|---------|--------------|-------------|-------|
+| `make test-rust` | Run all Rust unit tests | After ANY Rust changes | ⚡ Fast (2-3s) |
+| `make coverage-check` | Verify 100% test coverage | Before considering task complete | 🐢 Slower (5-10s) |
+| `make build` | Full Rust + iOS build | Before handoff to user | 🐌 Slowest (30s+) |
+
+### 🎯 Complete Validation (Before Marking Task Complete)
+
+Before considering a task done, run the complete validation:
+
+```bash
+# Option 1: Use the verification script
+./scripts/verify-rust-core.sh
+
+# This runs:
+# ✅ Rust compilation check
+# ✅ Clippy lints
+# ✅ All tests
+# ✅ 100% coverage verification
+# ✅ Swift type generation
+
+# If this passes, your work is validated.
+```
+
+**MANDATORY:** Always run this before marking any Rust-related task as complete.
+
+### 📝 Common Development Patterns
+
+#### Adding a New Rust Model
+
+```bash
+# 1. Add model to models.rs
+vim app/shared/src/models.rs
+
+# 2. Quick test
+make test-rust
+
+# 3. Add tests for new model
+vim app/shared/src/models.rs  # Add #[cfg(test)] module
+
+# 4. Verify coverage
+make coverage-check
+
+# 5. Generate Swift types
+cd app/shared_types && cargo build
+
+# 6. Full validation
+./scripts/verify-rust-core.sh
+```
+
+#### Adding a New Event
+
+```bash
+# 1. Add event to Event enum in app.rs
+vim app/shared/src/app.rs
+
+# 2. Add handler in update() function
+vim app/shared/src/app.rs
+
+# 3. Quick test
+make test-rust
+
+# 4. Add tests for new event handler
+vim app/shared/src/app.rs
+
+# 5. Verify coverage
+make coverage-check
+
+# 6. Full validation
+./scripts/verify-rust-core.sh
+```
+
+#### Modifying Swift UI
+
+```bash
+# 1. Edit Swift file
+vim app/ios/Thiccc/ContentView.swift
+
+# 2. Build and test in simulator
+make run-sim
+
+# 3. Watch logs for errors
+# (logs automatically stream after run-sim)
+
+# 4. If errors, check xcodebuild.log
+cat xcodebuild.log | grep -i error
+```
+
+## Essential Makefile Commands Reference
+
+### Testing Commands (Use These Most)
+
+```bash
+make test-rust          # Run Rust tests (FASTEST - use constantly)
+make test               # Run iOS simulator tests (SLOWER - use when testing UI)
+make coverage-check     # Verify 100% Rust coverage (use before completing tasks)
+```
+
+### Building Commands
+
+```bash
+make build              # Full build: Rust libs + Xcode project generation
+make xcode-build        # Build iOS app without opening Xcode GUI
+make run-sim            # Build, install, and run in simulator with logs
+```
+
+### Validation Commands
+
+```bash
+make check              # Check if Rust/Xcode tools are installed correctly
+./scripts/verify-rust-core.sh  # COMPLETE validation (tests, coverage, types)
+```
+
+### Debugging Commands
+
+```bash
+make logs               # Stream app logs from running simulator
+make coverage-report    # Open HTML coverage report to see what's not tested
+make list-sims          # List available iOS simulators
+```
+
+## Coverage Requirements (CRITICAL)
+
+**ALL Rust code must have 100% line coverage.**
+
+When `make coverage-check` fails:
+
+```bash
+# 1. See what's missing
+make coverage
+
+# 2. Open HTML report
+make coverage-report
+
+# 3. Look for red (uncovered) lines in the report
+
+# 4. Add tests for uncovered lines
+
+# 5. Verify again
+make coverage-check
+```
+
+**DO NOT** mark tasks complete until `make coverage-check` passes.
+
+## Common Errors and Solutions
+
+### Error: "coverage below 100%"
+
+```bash
+# Solution:
+make coverage-report  # Find uncovered lines
+# Add tests for those lines
+make coverage-check   # Verify
+```
+
+### Error: "Clippy warnings"
+
+```bash
+# Solution:
+cd app/shared
+cargo clippy --fix --allow-dirty
+make test-rust  # Verify fixes didn't break tests
+```
+
+### Error: "Swift types generation failed"
+
+```bash
+# This usually means:
+# - Added Rust type without Default implementation
+# - Used unsupported type in Event/ViewModel
+
+# Solution:
+cd app/shared_types
+cargo build 2>&1 | grep -A 10 error
+# Fix the error shown
+```
+
+### Error: "iOS build failed"
+
+```bash
+# Solution:
+# 1. Check detailed logs
+cat xcodebuild.log
+
+# 2. Common issues:
+#    - Missing Swift types (run: cd app/shared_types && cargo build)
+#    - Rust library not built (run: make build)
+#    - Simulator not available (run: make list-sims)
+```
+
+## File Organization (Where to Make Changes)
+
+| Task | File(s) to Modify | Then Run |
+|------|-------------------|----------|
+| Add domain model (Workout, Exercise, etc.) | `app/shared/src/models.rs` | `make test-rust` |
+| Add event (user action) | `app/shared/src/app.rs` (Event enum) | `make test-rust` |
+| Add event handler | `app/shared/src/app.rs` (update fn) | `make test-rust` |
+| Add UI state | `app/shared/src/app.rs` (Model struct) | `make test-rust` |
+| Modify SwiftUI views | `app/ios/Thiccc/*.swift` | `make run-sim` |
+| Add Swift view | `app/ios/Thiccc/` (new .swift file) | `make build` then `make run-sim` |
+
+## Working Directory Context
+
+**CRITICAL:** Always be aware of your current directory.
+
+```bash
+# Most make commands run from project root:
+cd /Users/eganm/personal/cuzzo_monorepo/applications/thiccc
+make test-rust  # ✅ Works
+
+# Some cargo commands need to be in specific directories:
+cd app/shared
+cargo test      # ✅ Works
+
+cargo test      # ❌ Fails (wrong directory)
+```
+
+**Best practice:** Always `cd` to project root first:
+```bash
+cd /Users/eganm/personal/cuzzo_monorepo/applications/thiccc
+make test-rust  # Now guaranteed to work
+```
+
+## Agent-Specific Tips
+
+### When Asked to "Test Your Changes"
+
+```bash
+# Quick option (if only Rust changed):
+make test-rust && make coverage-check
+
+# Complete option (safest):
+./scripts/verify-rust-core.sh
+```
+
+### When Asked to "Build the App"
+
+```bash
+# If user might want to see it:
+make run-sim
+
+# If just verifying it builds:
+make xcode-build
+```
+
+### When Unsure Which Command to Use
+
+```bash
+# See all available commands:
+make help
+```
+
+### For Performance
+
+- **Use `make test-rust` constantly** - it's fast enough for rapid iteration
+- **Save `make run-sim` for when you need to see UI** - it's slow (30s+)
+- **Use `./scripts/verify-rust-core.sh` only before handoff** - comprehensive but slower
+
+## Pre-Handoff Checklist
+
+Before telling the user "I'm done":
+
+```bash
+# Run the verification script:
+cd /Users/eganm/personal/cuzzo_monorepo/applications/thiccc
+./scripts/verify-rust-core.sh
+
+# If this passes, you can confidently say:
+# "✅ All changes validated. Tests pass, coverage is 100%, Swift types generated."
+```
+
+## Quick Reference: Decision Tree
+
+```
+Did you modify Rust code?
+├─ YES
+│  ├─ Run: make test-rust
+│  ├─ Run: make coverage-check
+│  └─ Run: ./scripts/verify-rust-core.sh
+│
+└─ NO (only Swift changes)
+   └─ Run: make run-sim
+```
+
+## Resources
+
+- Full command reference: `make help`
+- Detailed architecture: `docs/SHARED-CRATE-MAP.md`
+- Coverage debugging: `make coverage-report`
+- Build verification: `./scripts/verify-rust-core.sh`
+
+---
+
+**Last Updated:** December 25, 2025
+**Purpose:** Optimize AI agent development workflows for Thiccc iOS app

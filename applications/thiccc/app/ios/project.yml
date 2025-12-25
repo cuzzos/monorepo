@@ -5,6 +5,9 @@ projectReferences:
 packages:
   SharedTypes:
     path: ../shared_types/generated/swift/SharedTypes
+  GRDB:
+    url: https://github.com/groue/GRDB.swift.git
+    from: 7.9.0
 options:
   bundleIdPrefix: com.cuzzos.Thiccc
 attributes:
@@ -15,12 +18,15 @@ targets:
     platform: iOS
     deploymentTarget: "18.0"
     sources:
-      - Thiccc
+      - path: Thiccc
+        excludes:
+          - Tests
       - path: ../shared/src/shared.udl
         buildPhase: sources
     dependencies:
       - target: Shared/shared-staticlib
       - package: SharedTypes
+      - package: GRDB
     info:
       path: Thiccc/Info.plist
       properties:

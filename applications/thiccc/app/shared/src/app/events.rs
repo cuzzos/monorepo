@@ -197,6 +197,10 @@ pub enum Tab {
 /// Reasoning: While database results should normally be constructed explicitly,
 /// Default is needed for TypeGen to successfully trace this type for Swift binding
 /// generation. The default (WorkoutSaved) is never actually used at runtime.
+///
+/// **Note**: Uses JSON strings instead of Workout objects to avoid TypeGen issues
+/// with complex nested types (similar to StorageResult). The Rust core handles
+/// serialization/deserialization of workout data.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Default)]
 pub enum DatabaseResult {
     /// Workout was successfully saved to the database
@@ -204,10 +208,12 @@ pub enum DatabaseResult {
     WorkoutSaved,
     /// Workout was successfully deleted from the database
     WorkoutDeleted,
-    /// Workout history was loaded from the database
-    HistoryLoaded { workouts: Vec<Workout> },
-    /// A specific workout was loaded from the database
-    WorkoutLoaded { workout: Option<Workout> },
+    /// Workout history was loaded from the database (JSON strings, newest first)
+    HistoryLoaded { workouts_json: Vec<String> },
+    /// A specific workout was loaded from the database (JSON string, None if not found)
+    WorkoutLoaded { workout_json: Option<String> },
+    /// An error occurred during database operation
+    Error { message: String },
 }
 
 /// Result of a file storage operation.

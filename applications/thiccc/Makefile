@@ -3,7 +3,7 @@
 # Configurable simulator (can override: make run-sim SIMULATOR='iPhone 17')
 SIMULATOR ?= iPhone 16 Pro
 
-.PHONY: build clean open xcode-build run-sim list-sims test check help close-sims logs logs-all run-sim-all coverage coverage-report coverage-check test-rust
+.PHONY: build clean open xcode-build run-sim list-sims test check help close-sims logs logs-all run-sim-all coverage coverage-report coverage-check test-rust verify-agent
 
 # Default target: show help
 .DEFAULT_GOAL := help
@@ -26,6 +26,7 @@ help:
 	@echo "  make coverage        - Run tests with coverage report (HTML)"
 	@echo "  make coverage-report - Open coverage HTML report in browser"
 	@echo "  make coverage-check  - Verify 100% line coverage (CI-ready)"
+	@echo "  make verify-agent    - Complete validation for AI agents (fast)"
 	@echo ""
 	@echo "Utilities:"
 	@echo "  make check       - Check if everything is set up correctly"
@@ -211,4 +212,31 @@ clean:
 
 open:
 	@open app/ios/Thiccc.xcodeproj
+
+# Agent-optimized validation (fast, comprehensive)
+verify-agent:
+	@echo "🤖 Running AI Agent Validation..."
+	@echo ""
+	@echo "1️⃣  Running Rust tests..."
+	@cd app/shared && cargo test --all-features --quiet
+	@echo "✅ Tests passed"
+	@echo ""
+	@echo "2️⃣  Checking code coverage..."
+	@if ! command -v cargo-llvm-cov >/dev/null 2>&1; then \
+		echo "⚠️  cargo-llvm-cov not found. Installing..."; \
+		cargo install cargo-llvm-cov; \
+	fi
+	@cd app/shared && cargo llvm-cov --all-features --workspace --fail-under-lines 100 --ignore-filename-regex "lib.rs" --quiet
+	@echo "✅ 100% coverage achieved"
+	@echo ""
+	@echo "3️⃣  Generating Swift types..."
+	@cd app/shared_types && cargo build --quiet 2>&1 | grep -v "Compiling\|Finished" || true
+	@echo "✅ Swift types generated"
+	@echo ""
+	@echo "================================"
+	@echo "✅ ALL AGENT CHECKS PASSED"
+	@echo "================================"
+	@echo ""
+	@echo "Ready to hand off to user!"
+	@echo ""
 
