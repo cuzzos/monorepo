@@ -1,4 +1,4 @@
-import XCTest
+import Testing
 import GRDB
 @testable import Thiccc
 import SharedTypes
@@ -14,18 +14,17 @@ import SharedTypes
 /// 6. Error handling (retry + backup)
 ///
 /// All tests use in-memory databases for isolation.
+@Suite("Database Capability Tests")
 @MainActor
-final class DatabaseCapabilityTests: XCTestCase {
+struct DatabaseCapabilityTests {
     
-    var database: DatabaseWriter!
-    var core: MockCore!
-    var capability: DatabaseCapability!
+    let database: DatabaseWriter
+    let core: MockCore
+    let capability: DatabaseCapability
     
-    // MARK: - Setup & Teardown
+    // MARK: - Setup
     
-    override func setUp() async throws {
-        try await super.setUp()
-        
+    init() async throws {
         // Create in-memory test database
         database = try DatabaseManager.shared.createTestDatabase()
         
@@ -34,14 +33,6 @@ final class DatabaseCapabilityTests: XCTestCase {
         
         // Create capability
         capability = DatabaseCapability(core: core, database: database)
-    }
-    
-    override func tearDown() async throws {
-        capability = nil
-        core = nil
-        database = nil
-        
-        try await super.tearDown()
     }
     
     // MARK: - Save Workout Tests
@@ -53,7 +44,8 @@ final class DatabaseCapabilityTests: XCTestCase {
     /// - Exercises are inserted into `exercises` table
     /// - Sets are inserted into `exerciseSets` table
     /// - Returns success response
-    func testSaveWorkout() async throws {
+    @Test("Save workout to database")
+    func saveWorkout() async throws {
         // GIVEN: A workout JSON
         let workoutJson = createTestWorkoutJson()
         
@@ -67,24 +59,24 @@ final class DatabaseCapabilityTests: XCTestCase {
         let count = try await database.read { db in
             try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM workouts") ?? 0
         }
-        XCTAssertEqual(count, 1, "Should have 1 workout in database")
+        #expect(count == 1, "Should have 1 workout in database")
         
         // THEN: Exercises are in database
         let exerciseCount = try await database.read { db in
             try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM exercises") ?? 0
         }
-        XCTAssertEqual(exerciseCount, 2, "Should have 2 exercises in database")
+        #expect(exerciseCount == 2, "Should have 2 exercises in database")
         
         // THEN: Sets are in database
         let setCount = try await database.read { db in
             try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM exerciseSets") ?? 0
         }
-        XCTAssertGreaterThan(setCount, 0, "Should have sets in database")
+        #expect(setCount > 0, "Should have sets in database")
         
         // THEN: Core received success response
-        XCTAssertEqual(core.responsesReceived.count, 1, "Should have 1 response")
+        #expect(core.responsesReceived.count == 1, "Should have 1 response")
         guard case .workoutSaved = core.responsesReceived[0].result else {
-            XCTFail("Expected .workoutSaved response")
+            Issue.record("Expected .workoutSaved response")
             return
         }
     }
@@ -92,7 +84,8 @@ final class DatabaseCapabilityTests: XCTestCase {
     /// Test: Save replaces existing workout with same ID.
     ///
     /// Verifies INSERT OR REPLACE behavior.
-    func testSaveWorkout_UpdateExisting() async throws {
+    @Test("Save replaces existing workout with same ID")
+    func saveWorkoutUpdateExisting() async throws {
         // GIVEN: A workout already in database
         let workoutJson1 = createTestWorkoutJson(name: "Original Name")
         await capability.handle(.saveWorkout(workoutJson1), requestId: 1)
@@ -105,29 +98,30 @@ final class DatabaseCapabilityTests: XCTestCase {
         let count = try await database.read { db in
             try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM workouts") ?? 0
         }
-        XCTAssertEqual(count, 1, "Should still have 1 workout (updated)")
+        #expect(count == 1, "Should still have 1 workout (updated)")
         
         // THEN: Name is updated
         let name = try await database.read { db in
             try String.fetchOne(db, sql: "SELECT name FROM workouts WHERE id = 'test-workout-1'")
         }
-        XCTAssertEqual(name, "Updated Name")
+        #expect(name == "Updated Name")
     }
     
     // MARK: - Load All Workouts Tests
     
     /// Test: Load all workouts returns empty list when no workouts.
-    func testLoadAllWorkouts_Empty() async throws {
+    @Test("Load all workouts returns empty list when database is empty")
+    func loadAllWorkoutsEmpty() async throws {
         // WHEN: Load all workouts (empty database)
         await capability.handle(.loadAllWorkouts, requestId: 1)
         
         // THEN: Returns empty list
-        XCTAssertEqual(core.responsesReceived.count, 1)
+        #expect(core.responsesReceived.count == 1)
         guard case .historyLoaded(let workouts) = core.responsesReceived[0].result else {
-            XCTFail("Expected .historyLoaded response")
+            Issue.record("Expected .historyLoaded response")
             return
         }
-        XCTAssertEqual(workouts.count, 0, "Should return empty list")
+        #expect(workouts.count == 0, "Should return empty list")
     }
     
     /// Test: Load all workouts returns all saved workouts.
@@ -136,7 +130,8 @@ final class DatabaseCapabilityTests: XCTestCase {
     /// - All workouts are returned
     /// - Workouts include summary data (exercise count, set count)
     /// - Ordered by date (newest first)
-    func testLoadAllWorkouts_ReturnsAll() async throws {
+    @Test("Load all workouts returns all saved workouts")
+    func loadAllWorkoutsReturnsAll() async throws {
         // GIVEN: 3 workouts in database
         for i in 1...3 {
             let json = createTestWorkoutJson(id: "workout-\(i)", name: "Workout \(i)")
@@ -149,35 +144,36 @@ final class DatabaseCapabilityTests: XCTestCase {
         // THEN: Returns 3 workouts
         let response = core.responsesReceived.last!
         guard case .historyLoaded(let workouts) = response.result else {
-            XCTFail("Expected .historyLoaded response")
+            Issue.record("Expected .historyLoaded response")
             return
         }
-        XCTAssertEqual(workouts.count, 3, "Should return 3 workouts")
+        #expect(workouts.count == 3, "Should return 3 workouts")
         
         // THEN: Each workout has valid JSON
         for workoutJson in workouts {
-            XCTAssertFalse(workoutJson.isEmpty, "Workout JSON should not be empty")
+            #expect(!workoutJson.isEmpty, "Workout JSON should not be empty")
             // Verify it's valid JSON
             let data = workoutJson.data(using: .utf8)!
             let parsed = try JSONSerialization.jsonObject(with: data)
-            XCTAssertNotNil(parsed)
+            #expect(parsed != nil)
         }
     }
     
     // MARK: - Load Workout By ID Tests
     
     /// Test: Load workout by ID returns nil when not found.
-    func testLoadWorkoutById_NotFound() async throws {
+    @Test("Load workout by ID returns nil when not found")
+    func loadWorkoutByIdNotFound() async throws {
         // WHEN: Load non-existent workout
         await capability.handle(.loadWorkoutById("nonexistent-id"), requestId: 1)
         
         // THEN: Returns nil
-        XCTAssertEqual(core.responsesReceived.count, 1)
+        #expect(core.responsesReceived.count == 1)
         guard case .workoutLoaded(let workout) = core.responsesReceived[0].result else {
-            XCTFail("Expected .workoutLoaded response")
+            Issue.record("Expected .workoutLoaded response")
             return
         }
-        XCTAssertNil(workout, "Should return nil for non-existent workout")
+        #expect(workout == nil, "Should return nil for non-existent workout")
     }
     
     /// Test: Load workout by ID returns full workout details.
@@ -187,7 +183,8 @@ final class DatabaseCapabilityTests: XCTestCase {
     /// - Includes all exercises
     /// - Includes all sets
     /// - Data matches what was saved
-    func testLoadWorkoutById_ReturnsFullDetails() async throws {
+    @Test("Load workout by ID returns full workout details")
+    func loadWorkoutByIdReturnsFullDetails() async throws {
         // GIVEN: A workout in database
         let workoutJson = createTestWorkoutJson()
         await capability.handle(.saveWorkout(workoutJson), requestId: 1)
@@ -198,16 +195,16 @@ final class DatabaseCapabilityTests: XCTestCase {
         // THEN: Returns full workout
         let response = core.responsesReceived.last!
         guard case .workoutLoaded(let loadedJson) = response.result else {
-            XCTFail("Expected .workoutLoaded response")
+            Issue.record("Expected .workoutLoaded response")
             return
         }
-        XCTAssertNotNil(loadedJson, "Should return workout")
+        #expect(loadedJson != nil, "Should return workout")
         
         // THEN: Workout has exercises
         let data = loadedJson!.data(using: .utf8)!
         let parsed = try JSONSerialization.jsonObject(with: data) as! [String: Any]
         let exercises = parsed["exercises"] as! [[String: Any]]
-        XCTAssertEqual(exercises.count, 2, "Should have 2 exercises")
+        #expect(exercises.count == 2, "Should have 2 exercises")
     }
     
     // MARK: - Delete Workout Tests
@@ -218,7 +215,8 @@ final class DatabaseCapabilityTests: XCTestCase {
     /// - Workout is deleted
     /// - Exercises are deleted (CASCADE)
     /// - Sets are deleted (CASCADE)
-    func testDeleteWorkout() async throws {
+    @Test("Delete removes workout and cascades to exercises and sets")
+    func deleteWorkout() async throws {
         // GIVEN: A workout in database
         let workoutJson = createTestWorkoutJson()
         await capability.handle(.saveWorkout(workoutJson), requestId: 1)
@@ -227,7 +225,7 @@ final class DatabaseCapabilityTests: XCTestCase {
         let countBefore = try await database.read { db in
             try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM workouts") ?? 0
         }
-        XCTAssertEqual(countBefore, 1)
+        #expect(countBefore == 1)
         
         // WHEN: Delete workout
         await capability.handle(.deleteWorkout("test-workout-1"), requestId: 2)
@@ -236,19 +234,19 @@ final class DatabaseCapabilityTests: XCTestCase {
         let countAfter = try await database.read { db in
             try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM workouts") ?? 0
         }
-        XCTAssertEqual(countAfter, 0, "Workout should be deleted")
+        #expect(countAfter == 0, "Workout should be deleted")
         
         // THEN: Exercises are gone (CASCADE)
         let exerciseCount = try await database.read { db in
             try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM exercises") ?? 0
         }
-        XCTAssertEqual(exerciseCount, 0, "Exercises should be deleted (CASCADE)")
+        #expect(exerciseCount == 0, "Exercises should be deleted (CASCADE)")
         
         // THEN: Sets are gone (CASCADE)
         let setCount = try await database.read { db in
             try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM exerciseSets") ?? 0
         }
-        XCTAssertEqual(setCount, 0, "Sets should be deleted (CASCADE)")
+        #expect(setCount == 0, "Sets should be deleted (CASCADE)")
     }
     
     // MARK: - Persistence Tests
@@ -260,7 +258,8 @@ final class DatabaseCapabilityTests: XCTestCase {
     /// 2. Destroy capability + database connection
     /// 3. Create new database connection to same file
     /// 4. Load workout
-    func testPersistence() async throws {
+    @Test("Workout survives app restart with persistent database")
+    func persistence() async throws {
         // Create a persistent database file (not in-memory)
         let tempDir = FileManager.default.temporaryDirectory
         let dbPath = tempDir.appendingPathComponent("test-persistence.sqlite").path
@@ -329,13 +328,13 @@ final class DatabaseCapabilityTests: XCTestCase {
             
             // THEN: Workout still exists
             guard case .workoutLoaded(let workout) = core2.responsesReceived[0].result else {
-                XCTFail("Expected .workoutLoaded response")
+                Issue.record("Expected .workoutLoaded response")
                 return
             }
-            XCTAssertNotNil(workout, "Workout should persist across 'app restarts'")
+            #expect(workout != nil, "Workout should persist across 'app restarts'")
             
         } catch {
-            XCTFail("Persistence test failed: \(error)")
+            Issue.record("Persistence test failed: \(error)")
         }
         
         // Clean up
@@ -440,5 +439,4 @@ class MockCore {
         responsesReceived.append(Response(requestId: requestId, result: result))
     }
 }
-
 
