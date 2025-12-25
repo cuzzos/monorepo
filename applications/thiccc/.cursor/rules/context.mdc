@@ -222,6 +222,26 @@ All code must follow industry-standard best practices backed by:
 
 ## Mandatory Workflow
 
+### Quick Reference: Essential Commands
+
+**READ THIS FIRST:** For detailed command usage and workflows, see `agent-workflow.mdc` in this folder.
+
+**Most Common Commands:**
+```bash
+make test-rust          # Run Rust tests (USE THIS CONSTANTLY - 2-3 seconds)
+make coverage-check     # Verify 100% coverage (BEFORE completing tasks)
+make run-sim            # Build and test in iOS simulator (when UI changes)
+./scripts/verify-rust-core.sh  # Complete validation (BEFORE handoff)
+```
+
+**When to use each:**
+- Made Rust changes? → `make test-rust` → `make coverage-check`
+- Made Swift changes? → `make run-sim`
+- Completing a task? → `./scripts/verify-rust-core.sh`
+- Not sure? → `make help`
+
+### Development Workflow Steps
+
 When implementing any feature or fixing any bug:
 
 1. **Understand** the requirement completely
@@ -229,8 +249,10 @@ When implementing any feature or fixing any bug:
 3. **Research** current best practices using official documentation
 4. **Verify** compatibility with current toolchain versions
 5. **Implement** following established patterns
-6. **Test** thoroughly with appropriate test cases
-7. **Document** any non-obvious decisions or patterns
+6. **Test** using appropriate Makefile commands (see `agent-workflow.mdc`)
+7. **Verify 100% coverage** with `make coverage-check`
+8. **Run full validation** with `./scripts/verify-rust-core.sh`
+9. **Document** any non-obvious decisions or patterns
 
 ## Prohibited Practices
 
