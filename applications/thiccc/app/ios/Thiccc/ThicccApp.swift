@@ -2,28 +2,24 @@ import SwiftUI
 
 @main
 struct ThicccApp: App {
-    // CRITICAL: Initialize database BEFORE @State Core is created
-    // Otherwise Core.init() runs before database exists and DatabaseCapability won't initialize
     init() {
-        // Initialize database on app launch
+        // Initialize database SYNCHRONOUSLY before anything else
+        print("🟦 [ThicccApp] init() starting...")
         do {
             try DatabaseManager.shared.setup()
             print("✅ [ThicccApp] Database initialized successfully")
+            print("🟦 [ThicccApp] Database is: \(DatabaseManager.shared.database != nil ? "NOT NIL" : "NIL")")
         } catch {
             print("❌ [ThicccApp] Database initialization failed: \(error)")
-            // App can still launch, but database operations will fail
-            // StorageCapability provides basic persistence as fallback
+            fatalError("Database initialization failed: \(error)")
         }
     }
-    
-    // Now Core can access DatabaseManager.shared.database during initialization
-    @State private var core = Core()
     
     var body: some Scene {
         WindowGroup {
-            ContentView(core: core)
+            // Create Core INSIDE the view hierarchy, not as @State
+            // This ensures database is set up first
+            ContentView(core: Core())
         }
     }
 }
-
-

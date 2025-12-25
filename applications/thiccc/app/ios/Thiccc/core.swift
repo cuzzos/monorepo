@@ -35,11 +35,22 @@ final class Core {
         // Initialize capabilities
         // Database capability requires DatabaseManager to be set up first (done in ThicccApp.init)
         if let database = DatabaseManager.shared.database {
+            print("✅ [Core] Database is available, creating DatabaseCapability...")
             self.databaseCapability = DatabaseCapability(core: self, database: database)
             print("✅ [Core] DatabaseCapability initialized")
+            
+            // Log success to in-app console (must be on MainActor)
+            Task { @MainActor in
+                ConsoleLogger.shared.log("DatabaseCapability initialized ✅", emoji: "🗄️")
+            }
         } else {
-            print("⚠️  [Core] Database not available, DatabaseCapability disabled")
+            print("❌ [Core] Database is NIL when Core initializes - DatabaseCapability DISABLED")
             self.databaseCapability = nil
+            
+            // Log critical error to in-app console (must be on MainActor)
+            Task { @MainActor in
+                ConsoleLogger.shared.log("CRITICAL: Database is NIL - DatabaseCapability NOT initialized!", emoji: "❌")
+            }
         }
         
         self.storageCapability = StorageCapability(core: self)
@@ -64,7 +75,7 @@ final class Core {
     /// 5. Updates the view
     func update(_ event: SharedTypes.Event) async {
         print("🟢 [Core] Event: \(event)")
-        await ConsoleLogger.shared.log("Event: \(String(describing: event))", emoji: "🟢")
+        ConsoleLogger.shared.log("Event: \(String(describing: event))", emoji: "🟢")
         
         // Serialize event to Bincode bytes
         let eventBytes = try! event.bincodeSerialize()
@@ -111,12 +122,12 @@ final class Core {
             
         case .database(let operation):
             print("🔵 [Core] Database operation: \(operation)")
-            await ConsoleLogger.shared.log("DB operation: \(String(describing: operation))", emoji: "🗄️")
+            ConsoleLogger.shared.log("DB operation: \(String(describing: operation))", emoji: "🗄️")
             if let databaseCapability = databaseCapability {
                 await databaseCapability.handle(operation, requestId: requestId)
             } else {
                 print("❌ [Core] DatabaseCapability not initialized - operation skipped!")
-                await ConsoleLogger.shared.log("ERROR: DatabaseCapability not initialized!", emoji: "❌")
+                ConsoleLogger.shared.log("ERROR: DatabaseCapability not initialized!", emoji: "❌")
                 // Send error response back to Rust core
                 let errorResult = SharedTypes.DatabaseResult.error(message: "Database not available")
                 await sendDatabaseResponse(requestId: requestId, result: errorResult)

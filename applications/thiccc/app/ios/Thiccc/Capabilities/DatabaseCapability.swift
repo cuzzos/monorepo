@@ -82,7 +82,7 @@ class DatabaseCapability {
         print("📄 [DatabaseCapability] JSON length: \(workoutJson.count) bytes")
         
         // Log to in-app console
-        await ConsoleLogger.shared.log("Save workout requested (\(workoutJson.count) bytes)", emoji: "💾")
+        ConsoleLogger.shared.log("Save workout requested (\(workoutJson.count) bytes)", emoji: "💾")
         
         var attempt = 0
         let maxAttempts = 2  // Original + 1 retry
@@ -97,7 +97,7 @@ class DatabaseCapability {
                 
                 // ✅ SUCCESS
                 print("✅ [DatabaseCapability] Workout saved successfully (attempt \(attempt))")
-                await ConsoleLogger.shared.log("Workout saved to DB ✓", emoji: "✅")
+                ConsoleLogger.shared.log("Workout saved to DB ✓", emoji: "✅")
                 
                 // Delete any backup files (no longer needed)
                 await tryDeleteBackupFiles()
@@ -109,7 +109,7 @@ class DatabaseCapability {
                 
             } catch {
                 print("❌ [DatabaseCapability] Save failed (attempt \(attempt)): \(error.localizedDescription)")
-                await ConsoleLogger.shared.log("Save failed (attempt \(attempt)): \(error.localizedDescription)", emoji: "❌")
+                ConsoleLogger.shared.log("Save failed (attempt \(attempt)): \(error.localizedDescription)", emoji: "❌")
                 
                 if attempt < maxAttempts {
                     // Wait before retry
@@ -206,28 +206,84 @@ class DatabaseCapability {
                     let exerciseId = exercise["id"] as? String ?? ""
                     let exerciseName = exercise["name"] as? String ?? "Unknown"
                     let exerciseType = exercise["type"] as? String ?? "unknown"
+                    let supersetId = exercise["superset_id"] as? Int
+                    let duration = exercise["duration"] as? Int
+                    let weightUnit = exercise["weight_unit"] as? String
+                    let defaultWarmUpTime = exercise["default_warm_up_time"] as? Int
+                    let defaultRestTime = exercise["default_rest_time"] as? Int
+                    
+                    // Serialize optional arrays/objects to JSON
+                    let pinnedNotesJson: String? = {
+                        if let notes = exercise["pinned_notes"] as? [String], !notes.isEmpty {
+                            return try? String(data: JSONSerialization.data(withJSONObject: notes), encoding: .utf8)
+                        }
+                        return nil
+                    }()
+                    
+                    let notesJson: String? = {
+                        if let notes = exercise["notes"] as? [String], !notes.isEmpty {
+                            return try? String(data: JSONSerialization.data(withJSONObject: notes), encoding: .utf8)
+                        }
+                        return nil
+                    }()
+                    
+                    let bodyPartJson: String? = {
+                        if let bodyPart = exercise["body_part"] as? [String: Any] {
+                            return try? String(data: JSONSerialization.data(withJSONObject: bodyPart), encoding: .utf8)
+                        }
+                        return nil
+                    }()
                     
                     try db.execute(
                         sql: """
                         INSERT OR REPLACE INTO exercises
-                        (id, workoutId, name, type)
-                        VALUES (?, ?, ?, ?)
+                        (id, workoutId, supersetId, name, pinnedNotes, notes, duration, type, weightUnit, defaultWarmUpTime, defaultRestTime, bodyPart)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         """,
-                        arguments: [exerciseId, workoutId, exerciseName, exerciseType]
+                        arguments: [
+                            exerciseId,
+                            workoutId,
+                            supersetId,
+                            exerciseName,
+                            pinnedNotesJson,
+                            notesJson,
+                            duration,
+                            exerciseType,
+                            weightUnit,
+                            defaultWarmUpTime,
+                            defaultRestTime,
+                            bodyPartJson
+                        ]
                     )
                     
                     // Parse and insert sets
                     if let sets = exercise["sets"] as? [[String: Any]] {
                         for (index, set) in sets.enumerated() {
                             let setId = set["id"] as? String ?? ""
-                            let setType = set["set_type"] as? String ?? "working"
+                            let setType = set["type"] as? String ?? "working"
                             let isCompleted = set["is_completed"] as? Bool ?? false
+                            let weightUnit = set["weight_unit"] as? String
+                            
+                            // Serialize suggest and actual objects to JSON
+                            let suggestJson: String? = {
+                                if let suggest = set["suggest"] as? [String: Any] {
+                                    return try? String(data: JSONSerialization.data(withJSONObject: suggest), encoding: .utf8)
+                                }
+                                return nil
+                            }()
+                            
+                            let actualJson: String? = {
+                                if let actual = set["actual"] as? [String: Any] {
+                                    return try? String(data: JSONSerialization.data(withJSONObject: actual), encoding: .utf8)
+                                }
+                                return nil
+                            }()
                             
                             try db.execute(
                                 sql: """
                                 INSERT OR REPLACE INTO exerciseSets
-                                (id, exerciseId, workoutId, setIndex, type, isCompleted)
-                                VALUES (?, ?, ?, ?, ?, ?)
+                                (id, exerciseId, workoutId, setIndex, type, weightUnit, suggest, actual, isCompleted)
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                                 """,
                                 arguments: [
                                     setId,
@@ -235,6 +291,9 @@ class DatabaseCapability {
                                     workoutId,
                                     index,
                                     setType,
+                                    weightUnit,
+                                    suggestJson,
+                                    actualJson,
                                     isCompleted ? 1 : 0
                                 ]
                             )

@@ -272,9 +272,13 @@ impl App for Thiccc {
             // App Lifecycle
             // =================================================================
             Event::Initialize => {
-                // Load any saved in-progress workout from storage
-                return Command::request_from_shell(StorageOperation::LoadCurrentWorkout)
-                    .then_send(|result| Event::StorageResponse { result });
+                // Load any saved in-progress workout from storage AND load workout history from database
+                return Command::all([
+                    Command::request_from_shell(StorageOperation::LoadCurrentWorkout)
+                        .then_send(|result| Event::StorageResponse { result }),
+                    Command::request_from_shell(DatabaseOperation::LoadAllWorkouts)
+                        .then_send(|result| Event::DatabaseResponse { result }),
+                ]);
             }
 
             // =================================================================

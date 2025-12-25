@@ -1019,3 +1019,17 @@ mod tests {
         assert_eq!(bar.name, "Olympic");
     }
 }
+#[test]
+fn print_workout_json() {
+    let mut workout = crate::models::Workout::new();
+    workout.name = "Test Workout".to_string();
+    
+    let exercise = workout.add_exercise("Bench Press");
+    let set = exercise.add_set();
+    set.complete(crate::models::SetActual::with_weight_and_reps(225.0, 5));
+    
+    workout.finish(300);  // 5 minutes
+    
+    let json = serde_json::to_string_pretty(&workout).unwrap();
+    println!("\n\nWORKOUT JSON:\n{}\n\n", json);
+}
