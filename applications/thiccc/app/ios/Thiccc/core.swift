@@ -24,15 +24,29 @@ final class Core {
     private var timerCapability: TimerCapability?
     
     init() {
+        print("🚀 [Core] Initializing...")
+        
         // Get initial view from Rust core via FFI
         let viewData = Thiccc.view()
         let viewBytes = Array(viewData)
         self.view = try! SharedTypes.ViewModel.bincodeDeserialize(input: viewBytes)
+        print("✅ [Core] Initial view loaded from Rust core")
         
         // Initialize capabilities
-        self.databaseCapability = DatabaseCapability(core: self)
+        // Database capability requires DatabaseManager to be set up first (done in ThicccApp.init)
+        if let database = DatabaseManager.shared.database {
+            self.databaseCapability = DatabaseCapability(core: self, database: database)
+            print("✅ [Core] DatabaseCapability initialized")
+        } else {
+            print("⚠️  [Core] Database not available, DatabaseCapability disabled")
+            self.databaseCapability = nil
+        }
+        
         self.storageCapability = StorageCapability(core: self)
+        print("✅ [Core] StorageCapability initialized")
+        
         self.timerCapability = TimerCapability(core: self)
+        print("✅ [Core] TimerCapability initialized")
         
         // Send Initialize event to load any saved workout
         Task {
@@ -50,6 +64,7 @@ final class Core {
     /// 5. Updates the view
     func update(_ event: SharedTypes.Event) async {
         print("🟢 [Core] Event: \(event)")
+        await ConsoleLogger.shared.log("Event: \(String(describing: event))", emoji: "🟢")
         
         // Serialize event to Bincode bytes
         let eventBytes = try! event.bincodeSerialize()
@@ -96,8 +111,15 @@ final class Core {
             
         case .database(let operation):
             print("🔵 [Core] Database operation: \(operation)")
+            await ConsoleLogger.shared.log("DB operation: \(String(describing: operation))", emoji: "🗄️")
             if let databaseCapability = databaseCapability {
                 await databaseCapability.handle(operation, requestId: requestId)
+            } else {
+                print("❌ [Core] DatabaseCapability not initialized - operation skipped!")
+                await ConsoleLogger.shared.log("ERROR: DatabaseCapability not initialized!", emoji: "❌")
+                // Send error response back to Rust core
+                let errorResult = SharedTypes.DatabaseResult.error(message: "Database not available")
+                await sendDatabaseResponse(requestId: requestId, result: errorResult)
             }
             
         case .storage(let operation):
