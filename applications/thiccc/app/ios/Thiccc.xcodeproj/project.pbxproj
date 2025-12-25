@@ -8,13 +8,16 @@
 
 /* Begin PBXBuildFile section */
 		0D911DFEA1C2A70260D9A916 /* WorkoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3328FC0E7F6055963B2FFF24 /* WorkoutView.swift */; };
+		1C9F723B805D3EFD9C86213F /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = 26F08D5C8DBCB31FD4C50BFC /* GRDB */; };
 		260CC865727115F9CBBE8E90 /* StorageCapability.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00DE93C7DE77AC651BA0F6CA /* StorageCapability.swift */; };
 		277A347B68159C48A1CD35E8 /* AddExerciseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DCE4A287B666EE0533A4B59 /* AddExerciseView.swift */; };
 		3651BF6AD3FE556DCB83F25C /* TimerCapability.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88D1B9BA738DABC487406A7E /* TimerCapability.swift */; };
 		485A9A483A101DEB09CD8630 /* SharedTypes in Frameworks */ = {isa = PBXBuildFile; productRef = 00D8AC0EBAB047A3C0267091 /* SharedTypes */; };
+		537E0A778C4F0868930DC917 /* Schema.swift in Sources */ = {isa = PBXBuildFile; fileRef = 086DBA707B2CF39110C184D6 /* Schema.swift */; };
 		5B668D20D2C4FC90702027A8 /* libshared_static.a.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7F4FB8D8B2304AF3B5B09258 /* libshared_static.a.a */; };
 		6A45C4EFA9BF0A53ED45DA17 /* DebugCapabilitiesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC7747CCA51DDAB11D627F24 /* DebugCapabilitiesView.swift */; };
 		7E345A65230C9416CBD260FF /* DatabaseCapability.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDCE5DAA42536AC375A7A174 /* DatabaseCapability.swift */; };
+		A9EC1F14B452897DC3F8F8DF /* DatabaseInspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFC50AACCBBA8348CD7EB83E /* DatabaseInspectorView.swift */; };
 		AAB2862AE7BAAA5B2D552FC0 /* SetRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A37FC5300765B47996C890C /* SetRow.swift */; };
 		AECF1F5FF64F81CA6FA675C7 /* ThicccApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5D5411DE44DCCDC66E60AA5 /* ThicccApp.swift */; };
 		C0C3B14208C42101CBB15EF1 /* WorkoutDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CFF5F0325BFAA514DE12F46 /* WorkoutDetailView.swift */; };
@@ -22,6 +25,7 @@
 		C961659C412DE84F8DE84DC9 /* ImportWorkoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AB1B52B2F6B62DBA3F08B54 /* ImportWorkoutView.swift */; };
 		CB56FDE4C70BEA11A48E9A25 /* ExerciseSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EE7C5C2DAB1B646CE3D9628 /* ExerciseSection.swift */; };
 		EA4BAEC12B10689A998AE057 /* core.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64D60112E666258B75C7190D /* core.swift */; };
+		ECBB5445B08A6B6A046CC2AE /* DatabaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21E488A8744683951F1A0052 /* DatabaseManager.swift */; };
 		F183B78E9A7C8832F1E912B6 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D38BC9E58C6A5AA0AC71FF5 /* ContentView.swift */; };
 		F1F36C507E0977FF5BD85432 /* shared.udl in Sources */ = {isa = PBXBuildFile; fileRef = 87AF1C1465A7D07538014067 /* shared.udl */; };
 /* End PBXBuildFile section */
@@ -65,8 +69,10 @@
 /* Begin PBXFileReference section */
 		00DE93C7DE77AC651BA0F6CA /* StorageCapability.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageCapability.swift; sourceTree = "<group>"; };
 		06F03F79ADB5F75373E80434 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		086DBA707B2CF39110C184D6 /* Schema.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Schema.swift; sourceTree = "<group>"; };
 		0EE7C5C2DAB1B646CE3D9628 /* ExerciseSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseSection.swift; sourceTree = "<group>"; };
 		1A37FC5300765B47996C890C /* SetRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetRow.swift; sourceTree = "<group>"; };
+		21E488A8744683951F1A0052 /* DatabaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabaseManager.swift; sourceTree = "<group>"; };
 		2CFF5F0325BFAA514DE12F46 /* WorkoutDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutDetailView.swift; sourceTree = "<group>"; };
 		32EC6679CDA35CB17C8176C1 /* SharedTypes */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SharedTypes; path = ../shared_types/generated/swift/SharedTypes; sourceTree = SOURCE_ROOT; };
 		3328FC0E7F6055963B2FFF24 /* WorkoutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutView.swift; sourceTree = "<group>"; };
@@ -82,6 +88,7 @@
 		CC4BC7B543EF3FE9A8CC2956 /* HistoryDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryDetailView.swift; sourceTree = "<group>"; };
 		CC7747CCA51DDAB11D627F24 /* DebugCapabilitiesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugCapabilitiesView.swift; sourceTree = "<group>"; };
 		CDCE5DAA42536AC375A7A174 /* DatabaseCapability.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabaseCapability.swift; sourceTree = "<group>"; };
+		EFC50AACCBBA8348CD7EB83E /* DatabaseInspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabaseInspectorView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -91,12 +98,22 @@
 			files = (
 				5B668D20D2C4FC90702027A8 /* libshared_static.a.a in Frameworks */,
 				485A9A483A101DEB09CD8630 /* SharedTypes in Frameworks */,
+				1C9F723B805D3EFD9C86213F /* GRDB in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		105081216996589610095BED /* Database */ = {
+			isa = PBXGroup;
+			children = (
+				21E488A8744683951F1A0052 /* DatabaseManager.swift */,
+				086DBA707B2CF39110C184D6 /* Schema.swift */,
+			);
+			path = Database;
+			sourceTree = "<group>";
+		};
 		1500C0C6A448839E4EB1D68C /* Projects */ = {
 			isa = PBXGroup;
 			children = (
@@ -140,6 +157,7 @@
 				8DCE4A287B666EE0533A4B59 /* AddExerciseView.swift */,
 				5D38BC9E58C6A5AA0AC71FF5 /* ContentView.swift */,
 				64D60112E666258B75C7190D /* core.swift */,
+				EFC50AACCBBA8348CD7EB83E /* DatabaseInspectorView.swift */,
 				CC7747CCA51DDAB11D627F24 /* DebugCapabilitiesView.swift */,
 				0EE7C5C2DAB1B646CE3D9628 /* ExerciseSection.swift */,
 				CC4BC7B543EF3FE9A8CC2956 /* HistoryDetailView.swift */,
@@ -150,6 +168,7 @@
 				2CFF5F0325BFAA514DE12F46 /* WorkoutDetailView.swift */,
 				3328FC0E7F6055963B2FFF24 /* WorkoutView.swift */,
 				1B213BFAB08401F64DA0A1FE /* Capabilities */,
+				105081216996589610095BED /* Database */,
 			);
 			path = Thiccc;
 			sourceTree = "<group>";
@@ -199,6 +218,7 @@
 			name = Thiccc;
 			packageProductDependencies = (
 				00D8AC0EBAB047A3C0267091 /* SharedTypes */,
+				26F08D5C8DBCB31FD4C50BFC /* GRDB */,
 			);
 			productName = Thiccc;
 			productReference = B6265A5D3C5C51F1E73E6D2F /* Thiccc.app */;
@@ -224,6 +244,7 @@
 			mainGroup = 24C8F21D750CFE7EDEF50502;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
+				DD448F2E2B95DB9B40AA52C6 /* XCRemoteSwiftPackageReference "GRDB.swift" */,
 				2ECE1ED6A5860A61C6E04FB2 /* XCLocalSwiftPackageReference "../shared_types/generated/swift/SharedTypes" */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -280,10 +301,13 @@
 				277A347B68159C48A1CD35E8 /* AddExerciseView.swift in Sources */,
 				F183B78E9A7C8832F1E912B6 /* ContentView.swift in Sources */,
 				7E345A65230C9416CBD260FF /* DatabaseCapability.swift in Sources */,
+				A9EC1F14B452897DC3F8F8DF /* DatabaseInspectorView.swift in Sources */,
+				ECBB5445B08A6B6A046CC2AE /* DatabaseManager.swift in Sources */,
 				6A45C4EFA9BF0A53ED45DA17 /* DebugCapabilitiesView.swift in Sources */,
 				CB56FDE4C70BEA11A48E9A25 /* ExerciseSection.swift in Sources */,
 				C6124BA4180E328C9D37C43C /* HistoryDetailView.swift in Sources */,
 				C961659C412DE84F8DE84DC9 /* ImportWorkoutView.swift in Sources */,
+				537E0A778C4F0868930DC917 /* Schema.swift in Sources */,
 				AAB2862AE7BAAA5B2D552FC0 /* SetRow.swift in Sources */,
 				260CC865727115F9CBBE8E90 /* StorageCapability.swift in Sources */,
 				AECF1F5FF64F81CA6FA675C7 /* ThicccApp.swift in Sources */,
@@ -499,10 +523,26 @@
 		};
 /* End XCLocalSwiftPackageReference section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		DD448F2E2B95DB9B40AA52C6 /* XCRemoteSwiftPackageReference "GRDB.swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/groue/GRDB.swift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 7.9.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
 		00D8AC0EBAB047A3C0267091 /* SharedTypes */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = SharedTypes;
+		};
+		26F08D5C8DBCB31FD4C50BFC /* GRDB */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DD448F2E2B95DB9B40AA52C6 /* XCRemoteSwiftPackageReference "GRDB.swift" */;
+			productName = GRDB;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
