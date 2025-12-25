@@ -212,11 +212,6 @@ struct DatabaseInspectorView: View {
                     Task { await executeCustomQuery() }
                 }
                 
-                Button("Show Sample Data Workouts") {
-                    customQuery = "SELECT * FROM workouts WHERE id LIKE 'sample-%'"
-                    Task { await executeCustomQuery() }
-                }
-                
                 Button("Show Recent Workouts (Last 24h)") {
                     let yesterday = Date().addingTimeInterval(-86400).timeIntervalSince1970
                     customQuery = "SELECT id, name, startTimestamp FROM workouts WHERE startTimestamp > \(yesterday)"
