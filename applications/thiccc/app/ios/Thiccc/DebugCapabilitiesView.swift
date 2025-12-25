@@ -13,8 +13,6 @@ struct DebugCapabilitiesView: View {
     @Bindable var core: Core
     @State private var testResult: String = "Tap a button to test"
     @State private var timerSeconds: Int = 0
-    @State private var dbStats: DatabaseStats?
-    @State private var isLoadingStats = false
     
     var body: some View {
         NavigationStack {
@@ -122,123 +120,12 @@ struct DebugCapabilitiesView: View {
                     }
                 }
                 
-                // MARK: - Database Status
-                Section("Database Status") {
-                    if let stats = dbStats {
-                        // Database initialized
-                        HStack {
-                            Image(systemName: "checkmark.circle.fill")
-                                .foregroundStyle(.green)
-                            Text("Database Initialized")
-                        }
-                        
-                        Divider()
-                        
-                        VStack(alignment: .leading, spacing: 8) {
-                            Label("Path: \(stats.dbPath)", systemImage: "folder")
-                                .font(.system(.caption, design: .monospaced))
-                            
-                            Label("Size: \(stats.dbSize)", systemImage: "doc")
-                            
-                            Divider()
-                            
-                            HStack {
-                                VStack(alignment: .leading) {
-                                    Text("\(stats.workoutCount)")
-                                        .font(.system(.title, design: .rounded, weight: .bold))
-                                    Text("Workouts")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                
-                                Spacer()
-                                
-                                VStack(alignment: .leading) {
-                                    Text("\(stats.exerciseCount)")
-                                        .font(.system(.title, design: .rounded, weight: .bold))
-                                    Text("Exercises")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                
-                                Spacer()
-                                
-                                VStack(alignment: .leading) {
-                                    Text("\(stats.setCount)")
-                                        .font(.system(.title, design: .rounded, weight: .bold))
-                                    Text("Sets")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
-                            
-                            if stats.hasSampleData {
-                                Divider()
-                                HStack {
-                                    Image(systemName: "info.circle")
-                                        .foregroundStyle(.blue)
-                                    Text("Sample data loaded (DEBUG build)")
-                                        .font(.caption)
-                                }
-                            }
-                        }
-                    } else {
-                        HStack {
-                            if isLoadingStats {
-                                ProgressView()
-                            } else {
-                                Image(systemName: "exclamationmark.triangle.fill")
-                                    .foregroundStyle(.yellow)
-                                Text("Database not initialized")
-                            }
-                        }
-                    }
-                    
-                    Button(action: {
-                        Task {
-                            await refreshDatabaseStats()
-                        }
-                    }) {
-                        Label("Refresh Stats", systemImage: "arrow.clockwise")
-                    }
-                }
-                
-                // MARK: - Database Actions
-                Section("Database Actions") {
-                    Button("Load History") {
-                        Task {
-                            await core.update(.loadHistory)
-                            testResult = "History loaded - \(core.view.history_view.workouts.count) workouts"
-                        }
-                    }
-                    
-                    NavigationLink("📊 Database Inspector") {
+                // MARK: - Database
+                Section("Database") {
+                    NavigationLink {
                         DatabaseInspectorView()
-                    }
-                    
-                    Button("Query Database Directly") {
-                        Task {
-                            if let db = DatabaseManager.shared.database {
-                                do {
-                                    let counts = try await db.read { db -> (Int, Int, Int) in
-                                        let workouts = try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM workouts") ?? 0
-                                        let exercises = try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM exercises") ?? 0
-                                        let sets = try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM exerciseSets") ?? 0
-                                        return (workouts, exercises, sets)
-                                    }
-                                    print("🗄️ Direct query results:")
-                                    print("   Workouts: \(counts.0)")
-                                    print("   Exercises: \(counts.1)")
-                                    print("   Sets: \(counts.2)")
-                                    testResult = "Query: \(counts.0)W, \(counts.1)E, \(counts.2)S - see console"
-                                } catch {
-                                    print("❌ Query failed: \(error)")
-                                    testResult = "Query failed: \(error.localizedDescription)"
-                                }
-                            } else {
-                                testResult = "Database not initialized"
-                            }
-                        }
+                    } label: {
+                        Label("Database Inspector", systemImage: "externaldrive.fill")
                     }
                 }
                 
@@ -280,82 +167,8 @@ struct DebugCapabilitiesView: View {
             }
             .navigationTitle("Debug Capabilities")
             .navigationBarTitleDisplayMode(.inline)
-            .onAppear {
-                Task {
-                    await refreshDatabaseStats()
-                }
-            }
         }
     }
-    
-    // MARK: - Helper Methods
-    
-    private func refreshDatabaseStats() async {
-        isLoadingStats = true
-        defer { isLoadingStats = false }
-        
-        guard let db = DatabaseManager.shared.database else {
-            dbStats = nil
-            return
-        }
-        
-        do {
-            let stats = try await db.read { db -> DatabaseStats in
-                let workoutCount = try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM workouts") ?? 0
-                let exerciseCount = try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM exercises") ?? 0
-                let setCount = try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM exerciseSets") ?? 0
-                
-                // Check for sample data (sample workouts have predictable IDs)
-                let sampleCount = try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM workouts WHERE id LIKE 'sample-%'") ?? 0
-                
-                // Get database file path
-                let fileManager = FileManager.default
-                let appSupport = try fileManager.url(
-                    for: .applicationSupportDirectory,
-                    in: .userDomainMask,
-                    appropriateFor: nil,
-                    create: false
-                )
-                let dbPath = appSupport.appendingPathComponent("thiccc.sqlite").path
-                
-                // Get file size
-                var dbSize = "Unknown"
-                if let attrs = try? fileManager.attributesOfItem(atPath: dbPath),
-                   let size = attrs[.size] as? Int64 {
-                    let formatter = ByteCountFormatter()
-                    formatter.countStyle = .file
-                    dbSize = formatter.string(fromByteCount: size)
-                }
-                
-                return DatabaseStats(
-                    workoutCount: workoutCount,
-                    exerciseCount: exerciseCount,
-                    setCount: setCount,
-                    hasSampleData: sampleCount > 0,
-                    dbPath: dbPath,
-                    dbSize: dbSize
-                )
-            }
-            
-            dbStats = stats
-            print("✅ [Debug] Database stats loaded: \(stats.workoutCount)W, \(stats.exerciseCount)E, \(stats.setCount)S")
-            
-        } catch {
-            print("❌ [Debug] Failed to load database stats: \(error)")
-            dbStats = nil
-        }
-    }
-}
-
-// MARK: - Database Stats Model
-
-struct DatabaseStats {
-    let workoutCount: Int
-    let exerciseCount: Int
-    let setCount: Int
-    let hasSampleData: Bool
-    let dbPath: String
-    let dbSize: String
 }
 
 // MARK: - Console Logger
