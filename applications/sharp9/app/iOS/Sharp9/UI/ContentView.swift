@@ -8,69 +8,64 @@ struct ContentView: View {
     
     var body: some View {
         NavigationStack {
-            ZStack {
-                // Background
-                DesignColors.bg
-                    .ignoresSafeArea()
+            VStack(alignment: .center, spacing: 0) {
+                TrackRow(
+                    trackName: core.state.track?.name,
+                    onImportTapped: { showingFilePicker = true }
+                ).padding()
                 
-                VStack(alignment: .leading, spacing: 0) {
-                    TrackRow(
-                        trackName: core.state.track?.name,
-                        onImportTapped: { showingFilePicker = true }
-                    )
-                    
-                    contentView()
-                        .frame(maxHeight: .infinity)
-                    
-                    VStack(spacing: 0) {
-                        ModeBar(
-                            currentMode: core.state.mode,
-                            loopEnabled: core.state.loop.enabled,
-                            onModeSelected: { mode in
-                                core.send(.setMode(mode))
-                            },
-                            onLoopToggle: { enabled in
-                                core.send(.toggleLoopEnabled(enabled))
-                            }
-                        )
-                        .padding(.vertical, 8)
-                        
-                        TransportBar(
-                            state: core.state,
-                            onSpeedDelta: { delta in
-                                core.send(.speedDelta(delta))
-                            },
-                            onPitchDelta: { delta in
-                                core.send(.pitchDelta(delta))
-                            },
-                            onTogglePlay: {
-                                core.send(.togglePlay)
-                            },
-                            onSeekPrev: {
-                                // Seek to A if set, otherwise start
-                                let time = core.state.loop.aSec ?? 0
-                                core.send(.dragScrub(timeSec: time))
-                            },
-                            onSeekNext: {
-                                // Seek to B if set, otherwise end
-                                let duration = core.state.track?.durationSec ?? 0
-                                let time = core.state.loop.bSec ?? duration
-                                core.send(.dragScrub(timeSec: time))
-                            }
-                        )
-                        .padding(.bottom, 16)
-                    }
-                    .overlay {
-                        if core.state.track == nil {
-                            // Semi-transparent overlay when no track is loaded
-                            Color.black.opacity(0.3)
-                                .allowsHitTesting(true) // Blocks interaction
+                contentView()
+                    .frame(maxHeight: .infinity)
+                
+                VStack(spacing: 0) {
+                    ModeBar(
+                        currentMode: core.state.mode,
+                        loopEnabled: core.state.loop.enabled,
+                        onModeSelected: { mode in
+                            core.send(.setMode(mode))
+                        },
+                        onLoopToggle: { enabled in
+                            core.send(.toggleLoopEnabled(enabled))
                         }
+                    )
+                    .padding(.vertical, 8)
+                    
+                    TransportBar(
+                        state: core.state,
+                        onSpeedDelta: { delta in
+                            core.send(.speedDelta(delta))
+                        },
+                        onPitchDelta: { delta in
+                            core.send(.pitchDelta(delta))
+                        },
+                        onTogglePlay: {
+                            core.send(.togglePlay)
+                        },
+                        onSeekPrev: {
+                            // Seek to A if set, otherwise start
+                            let time = core.state.loop.aSec ?? 0
+                            core.send(.dragScrub(timeSec: time))
+                        },
+                        onSeekNext: {
+                            // Seek to B if set, otherwise end
+                            let duration = core.state.track?.durationSec ?? 0
+                            let time = core.state.loop.bSec ?? duration
+                            core.send(.dragScrub(timeSec: time))
+                        }
+                    )
+                    .padding(.bottom, 16)
+                }
+                .overlay {
+                    if core.state.track == nil {
+                        // Semi-transparent overlay when no track is loaded
+                        Color.black.opacity(0.3)
+                            .allowsHitTesting(true) // Blocks interaction
                     }
                 }
-                .padding(.horizontal)
-                .safeAreaPadding(.bottom, 16)
-                
+            }
+            .safeAreaPadding(.bottom, 16)
+            .background(DesignColors.bg.ignoresSafeArea())
+            .overlay {
                 // Toast overlay
                 VStack {
                     Spacer()
