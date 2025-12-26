@@ -44,13 +44,22 @@ enum Reducer {
                 return reduce(state: &state, action: .addMarker(timeSec: timeSec), now: now)
             case .loop:
                 state.transport.currentTimeSec = timeSec
-                return [.engineSeek(timeSec: timeSec)]
+                // Engine is stateless - if playing, restart from new position
+                if state.transport.isPlaying {
+                    return [.enginePlay(fromTimeSec: timeSec)]
+                }
+                return []
             }
             
         case .dragScrub(let timeSec):
             let clampedTime = clampTime(timeSec, state: state)
             state.transport.currentTimeSec = clampedTime
-            return [.engineSeek(timeSec: clampedTime)]
+            // Engine is stateless - if playing, restart from new position
+            // If paused, no effect needed (Model already updated, engine will use it on next play)
+            if state.transport.isPlaying {
+                return [.enginePlay(fromTimeSec: clampedTime)]
+            }
+            return []
             
         case .togglePlay:
             if state.transport.isPlaying {
@@ -58,11 +67,18 @@ enum Reducer {
                 return [.enginePause]
             } else {
                 state.transport.isPlaying = true
-                return [.enginePlay]
+                // Engine is stateless - always pass the current playhead position
+                return [.enginePlay(fromTimeSec: state.transport.currentTimeSec)]
             }
             
         case .tick(let currentTimeSec):
             state.transport.currentTimeSec = currentTimeSec
+            return []
+            
+        case .playbackFinished:
+            // Engine finished playing - update Model state
+            state.transport.isPlaying = false
+            // Keep currentTimeSec at end (or wherever it stopped)
             return []
             
         case .speedDelta(let delta):

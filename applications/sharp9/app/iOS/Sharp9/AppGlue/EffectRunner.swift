@@ -30,14 +30,11 @@ final class EffectRunner {
                 await loadAudio(url: url)
             }
             
-        case .enginePlay:
-            deps.engine.play()
+        case .enginePlay(let fromTimeSec):
+            deps.engine.play(from: fromTimeSec)
             
         case .enginePause:
             deps.engine.pause()
-            
-        case .engineSeek(let timeSec):
-            deps.engine.seek(to: timeSec)
             
         case .engineSetRate(let rate):
             deps.engine.setRate(rate)
@@ -61,6 +58,13 @@ final class EffectRunner {
         deps.engine.onTimeUpdate = { [weak self] time in
             Task { @MainActor in
                 self?.core?.send(.tick(currentTimeSec: time))
+            }
+        }
+        
+        deps.engine.onPlaybackFinished = { [weak self] in
+            Task { @MainActor in
+                // Playback reached end - pause and reset to start (or loop point A)
+                self?.core?.send(.playbackFinished)
             }
         }
     }

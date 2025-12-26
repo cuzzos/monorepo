@@ -678,13 +678,97 @@ struct WODetailView { }         // ❌
 
 ### Testing
 
+## Swift Testing Rules (REQUIRED)
+
+When generating tests using Apple's **Swift Testing** framework (`import Testing`), always follow these rules:
+
+### 1. Test Declaration (MANDATORY FORMAT)
+
+Always use a string-labeled `@Test` macro.
+
+```swift
+@Test("Clear human-readable description", arguments: [...])
+func test<Name>(_ value: Type) {
+    #expect(...)
+}
+```
+
+Rules:
+- The `@Test` macro **must always include** a descriptive string.
+- Use `arguments:` whenever the test is parameterized.
+- Test function names **must start with `test`**.
+- Never generate unnamed `@Test` macros.
+
+### 2. Assertions
+
+- Use `#expect(condition)` for validations.
+- Use `try #require(value)` for required preconditions / unwraps.
+- Do **not** use `XCTAssert*`.
+
+### 3. Parameterized Tests
+
+- Prefer parameterized tests over loops.
+- Use `@Test("Description", arguments: [...])` for repeated logic.
+- Each argument set must be independently valid.
+
+### 4. Async Tests
+
+- Tests may be `async` and/or `throws`.
+- Do not wrap async code in expectations or semaphores.
+
+```swift
+@Test("Fetch returns data")
+func testFetch() async throws {
+    let data = try await fetch()
+    #expect(!data.isEmpty)
+}
+```
+
+### 5. Test Structure
+
+- Do not subclass `XCTestCase`.
+- Tests may live in `struct`s or top-level.
+- Group related tests using structs or nested structs.
+
+### 6. Architecture Alignment
+
+- Prefer testing **pure functions** (Elm-style `update` functions).
+- Do not directly construct or depend on `AVAudioEngine` in tests.
+- Mock side effects via protocols or test doubles.
+
+### 7. Concurrency & Isolation
+
+- Tests may run in parallel.
+- Avoid shared mutable global state.
+- If shared state is required, isolate it per test case.
+
+### 8. What NOT to Generate
+
+- No `XCTestCase`
+- No `XCTAssert`
+- No unnamed `@Test`
+- No side-effectful setup inside tests
+- No reliance on test execution order
+
+### Example (Canonical)
+
+```swift
+@Test("Even check", arguments: [0, 1, 2, 4])
+func testEven(_ x: Int) {
+    #expect(x % 2 == 0)
+}
+```
+
 ```swift
 // ✅ Write unit tests for core logic
-class WorkoutViewModelTests: XCTestCase {
-    func testWorkoutCalculation() async throws {
-        let viewModel = WorkoutViewModel()
-        await viewModel.calculateTotal()
-        XCTAssertEqual(viewModel.total, expectedValue)
+struct ReducerTests {
+    @Test("Toggle play starts playback when paused")
+    func testTogglePlay_startsPlayback() {
+        var state = makeState(transport: Transport(isPlaying: false, currentTimeSec: 30.0))
+        let effects = Reducer.reduce(state: &state, action: .togglePlay, now: fixedNow)
+
+        #expect(state.transport.isPlaying)
+        #expect(effects == [.enginePlay(fromTimeSec: 30.0)])
     }
 }
 

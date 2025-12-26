@@ -91,7 +91,7 @@ list-sims:
 test: build
 	@echo "🧪 Running tests on $(SIMULATOR)..."
 	@xcodebuild -project app/iOS/Sharp9.xcodeproj \
-		-scheme Sharp9 \
+		-scheme Sharp9Tests \
 		-sdk iphonesimulator \
 		-destination 'platform=iOS Simulator,name=$(SIMULATOR)' \
 		test

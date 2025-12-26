@@ -2,7 +2,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 /// Main content view composing all UI components
-struct ContentView: View {
+struct PlayerView: View {
     @Bindable var core: Core
     @State private var showingFilePicker = false
     
@@ -214,7 +214,7 @@ struct ContentView: View {
 }
 
 #Preview {
-    ContentView(core: Core(deps: .live))
+    PlayerView(core: Core(deps: .live))
 }
 
 #Preview("Christmas Time is Here") {
@@ -225,6 +225,6 @@ struct ContentView: View {
         loop: LoopPoints(aSec: 30.0, bSec: 90.0, enabled: true),
         mode: .loop
     )
-    return ContentView(core: core)
+    return PlayerView(core: core)
 }
 

@@ -20,6 +20,8 @@ enum Action: Sendable, Equatable {
     // Transport
     case togglePlay
     case tick(currentTimeSec: Double)
+    /// Engine finished playing (reached end of file/buffer)
+    case playbackFinished
     
     // Speed/Pitch
     case speedDelta(Double)

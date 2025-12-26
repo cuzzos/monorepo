@@ -1,21 +1,25 @@
 import Foundation
 
 /// Protocol for audio playback engine (replaceable with Rust/Crux later)
+/// 
+/// The engine is STATELESS - it does not track playhead position or playing state.
+/// All state lives in the Model (AppState.transport). The engine is a pure executor
+/// of commands.
 protocol AudioEngine: AnyObject, Sendable {
-    /// Callback for time updates during playback
+    /// Callback for time updates during playback (called ~30fps while playing)
     var onTimeUpdate: (@Sendable (Double) -> Void)? { get set }
+    
+    /// Callback when playback reaches end of file/buffer
+    var onPlaybackFinished: (@Sendable () -> Void)? { get set }
     
     /// Load an audio file and return its metadata
     func load(url: URL) async throws -> TrackMeta
     
-    /// Start playback
-    func play()
+    /// Start playback from the specified time (engine is stateless)
+    func play(from timeSec: Double)
     
     /// Pause playback
     func pause()
-    
-    /// Seek to a specific time
-    func seek(to timeSec: Double)
     
     /// Set playback rate (0.25 to 2.0)
     func setRate(_ rate: Double)
@@ -25,9 +29,6 @@ protocol AudioEngine: AnyObject, Sendable {
     
     /// Configure A/B loop points
     func setLoop(aSec: Double?, bSec: Double?, enabled: Bool)
-    
-    /// Get current playback time
-    func currentTimeSec() -> Double
 }
 
 /// Errors that can occur during audio operations

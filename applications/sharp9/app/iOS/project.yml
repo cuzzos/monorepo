@@ -27,3 +27,18 @@ targets:
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
         UILaunchScreen: {}
+  
+  Sharp9Tests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: Sharp9Tests
+    dependencies:
+      - target: Sharp9
+    settings:
+      base:
+        DEVELOPMENT_TEAM: WGS9LUKK32
+        CODE_SIGN_IDENTITY: "Apple Development"
+        CODE_SIGN_STYLE: Automatic
+        GENERATE_INFOPLIST_FILE: YES

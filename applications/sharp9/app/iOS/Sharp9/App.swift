@@ -6,7 +6,7 @@ struct Sharp9App: App {
     
     var body: some Scene {
         WindowGroup {
-            ContentView(core: core)
+            PlayerView(core: core)
                 .preferredColorScheme(.dark)
         }
     }
