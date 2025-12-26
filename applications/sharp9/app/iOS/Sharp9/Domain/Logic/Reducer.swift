@@ -120,12 +120,15 @@ enum Reducer {
             
             // Loop boundary check: if enabled and past loop end, jump to loop start
             // This is business logic that belongs in the domain, not the engine
+            // Uses effective values (manual or defaults) for looping
             if state.loop.enabled,
-               let a = state.loop.aSec,
-               let b = state.loop.bSec,
-               currentTimeSec >= b {
-                state.transport.currentTimeSec = a
-                return [.enginePlay(fromTimeSec: a)]
+               let trackDuration = state.track?.durationSec {
+                let effectiveA = state.loop.effectiveA(trackDuration: trackDuration)
+                let effectiveB = state.loop.effectiveB(trackDuration: trackDuration)
+                if currentTimeSec >= effectiveB {
+                    state.transport.currentTimeSec = effectiveA
+                    return [.enginePlay(fromTimeSec: effectiveA)]
+                }
             }
             
             return []
@@ -187,6 +190,36 @@ enum Reducer {
         case .setB(let timeSec):
             state.loop.bSec = timeSec
             normalizeLoopPoints(&state.loop)
+            return [.engineSetLoop(
+                aSec: state.loop.aSec,
+                bSec: state.loop.bSec,
+                enabled: state.loop.enabled
+            )]
+            
+        case .tappedAButton:
+            let currentTime = state.transport.currentTimeSec
+            state.loop.aSec = currentTime
+            
+            // Smart reset: If B is manually set and currentTime > B, reset B to default
+            if let bSec = state.loop.bSec, currentTime > bSec {
+                state.loop.bSec = nil
+            }
+            
+            return [.engineSetLoop(
+                aSec: state.loop.aSec,
+                bSec: state.loop.bSec,
+                enabled: state.loop.enabled
+            )]
+            
+        case .tappedBButton:
+            let currentTime = state.transport.currentTimeSec
+            state.loop.bSec = currentTime
+            
+            // Smart reset: If A is manually set and currentTime < A, reset A to default
+            if let aSec = state.loop.aSec, currentTime < aSec {
+                state.loop.aSec = nil
+            }
+            
             return [.engineSetLoop(
                 aSec: state.loop.aSec,
                 bSec: state.loop.bSec,

@@ -12,6 +12,12 @@ enum Selectors {
         state.loop.aSec != nil && state.loop.bSec != nil
     }
     
+    /// Whether the loop selection overlay should be visible
+    /// Only show when loop is enabled AND both A and B are set
+    static func shouldShowLoopOverlay(_ state: AppState) -> Bool {
+        state.loop.enabled && state.loop.normalizedRange != nil
+    }
+    
     /// Whether the track is loaded and ready
     static func hasTrack(_ state: AppState) -> Bool {
         state.track != nil
