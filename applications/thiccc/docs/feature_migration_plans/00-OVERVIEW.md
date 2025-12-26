@@ -1,9 +1,9 @@
 # Goonlytics → Thiccc Migration Overview
 
-> **🚨 CURRENT STATUS (December 2025):**  
-> **MVP Progress:** 80% complete (7/9 MVP phases done)  
-> **Next Phase:** Phase 7 - History Views (database now available!)  
-> **Why:** Database persistence complete. Now users can view saved workouts.
+> **🚨 CURRENT STATUS (December 25, 2025):**  
+> **MVP Progress:** 75% complete (6/8 MVP tasks done)  
+> **Next Phases:** Phase 8 (Custom Exercises) + Phase 7 (History Views)  
+> **Why:** Custom exercise CRUD is now recognized as MVP-critical for flexibility
 
 ## Executive Summary
 
@@ -63,11 +63,11 @@ The migration is organized into 12 phases with approximately 40 discrete tasks:
 | 5 | Main Navigation UI | Medium | 3 | Phase 4 | ✅ Complete | MVP - basic navigation | Tab navigation + routing working |
 | 6 | Workout View UI | High | 3 | Phase 5 | ✅ Complete | MVP CRITICAL - workout tracking | Full workout tracking UI complete |
 | 7 | History Views UI | Medium | 2 | Phase 9 | 🚨 **NEXT** | MVP - view saved workouts | Views exist, need DB integration |
-| 8 | Additional Features UI | Medium | 4 | Phase 5 | 🟡 Partial | MVP - exercise library (hardcoded) | Add/Import done; Timer/Calculator missing |
+| 8 | Exercise Library + Custom CRUD | High | 6 | Phase 9 | 🚨 **MVP-CRITICAL** | Custom exercises required | Database-backed library + user creation |
 | 9 | Database Implementation | High | 3 | Phase 3 | ✅ Complete | **MVP COMPLETE** - persistence working | GRDB schema + 3-tier error handling |
 | 10 | Additional Business Logic | Medium | 3 | Phase 4 | 📋 Ready | Post-MVP - stats/calculator | Core logic ready; needs DB for history stats |
 | 11 | Polish & Testing | Medium | 4 | All previous | ⏳ Blocked | Post-MVP - quality assurance | Continuous; formal polish after MVP |
-| 12 | Optional Enhancements | Low | 3+ | Phase 11 | ⏳ Blocked | Future - nice-to-haves | Custom exercises, social features, etc. |
+| 12 | Server Sync & Analytics | Very High | 10+ | Phase 11 | ⏳ Blocked | Post-MVP - cloud features | Server API, sync, analytics, images |
 
 ## Recommended Execution Order
 
@@ -77,13 +77,17 @@ The migration is organized into 12 phases with approximately 40 discrete tasks:
 1. ✅ **Foundation** (Phases 1-4) - Data models, events, capabilities, business logic
 2. ✅ **Navigation** (Phase 5) - Basic app structure and tab navigation  
 3. ✅ **Workout Tracking** (Phase 6) - Create workouts, add exercises, log sets
-4. ✅ **Exercise Library** (Phase 8 - partial) - Hardcoded exercise list for MVP
-5. ✅ **Persistence** (Phase 9) - **COMPLETE: Workouts save to database**
+4. ✅ **Persistence** (Phase 9) - **COMPLETE: Workouts save to database**
    - **Result:** Users can now save their workouts. Data persists across app restarts.
-   - **Unblocks:** Phase 7 (History) - saved workouts can now be displayed
+   - **Unblocks:** Phase 7 (History) and Phase 8 (Custom Exercises)
+5. 🚨 **Exercise Library + Custom CRUD** (Phase 8 - MVP portions) - **CRITICAL FOR MVP**
+   - Database-backed exercise library (60+ built-in exercises)
+   - Custom exercise creation/deletion
+   - **Why MVP-Critical:** Users need flexibility to create exercises not in built-in library
+   - **Post-MVP:** Timers, plate calculator (nice-to-have)
 6. 🚨 **History** (Phase 7) - **NEXT: View past workouts and track progress**
 
-**MVP Complete After:** Phase 7 = Users can track, save, and review workouts
+**MVP Complete After:** Phases 7 + 8 (MVP parts) = Users can track, save, create custom exercises, and review workouts
 
 ---
 
@@ -186,66 +190,127 @@ See: `09-PHASE-9-DATABASE.md` for complete implementation details and testing gu
 
 ---
 
-## 📚 Exercise Library Strategy (Addressing Phase 8 Status)
+## 📚 Exercise Library Strategy (Updated December 25, 2025)
 
-### Current Implementation (Phase 8 - Partial)
-**What's Done:**
-- ✅ `AddExerciseView.swift` - Searchable exercise picker with muscle group filtering
-- ✅ `ImportWorkoutView.swift` - JSON import for workout templates
-- ✅ Hardcoded library: 60+ exercises in Swift (temporary for MVP)
+### Decision: Single-Table Database with Custom Exercise CRUD
 
-**What's Missing from Phase 8:**
-- ❌ Stopwatch/Timer modal views
-- ❌ Plate calculator UI
-- ❌ Rest timer UI
+**What Changed:**
+- ❌ **OLD:** Hardcoded Swift array (60+ exercises)
+- ✅ **NEW:** Database-backed with `exercises` table
+- ✅ **NEW:** Users can create/delete custom exercises
+- ✅ **NEW:** Single table design (no duplication)
 
-### Exercise Library Data Source Decision
+### Architecture
 
-**Question:** Where should exercise library data come from?
+**Database Schema:**
+```sql
+CREATE TABLE exercises (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    muscle_group TEXT NOT NULL,
+    type TEXT NOT NULL,
+    source TEXT NOT NULL DEFAULT 'builtin',  -- 'builtin' | 'user' | 'community'
+    is_custom BOOLEAN NOT NULL DEFAULT 0,
+    usage_count INTEGER NOT NULL DEFAULT 0,  -- For future analytics
+    created_at INTEGER NOT NULL
+);
+```
 
-**Answer: Hardcoded in Swift (Current Approach is Correct for MVP)**
+**Migration Path:**
+1. **Phase 8 (Now - MVP):** Seed database with 60 built-in exercises on first launch
+2. **Phase 8 (Now - MVP):** User can create custom exercises (`source = 'user'`)
+3. **Phase 12 (Post-MVP):** Server provides community exercises (`source = 'community'`)
 
-**Rationale:**
-1. **No external dependency** - App works offline, always
-2. **Fast startup** - No database query needed
-3. **Simple deployment** - No schema changes required
-4. **Sufficient for MVP** - 60+ exercises covers common use cases
-
-**Future Enhancement (Post-MVP):**
-- Phase 10 or Phase 12: Move to database for:
-  - Custom exercise creation
-  - User-defined exercise library
-  - Cloud sync capabilities
-  - Exercise usage statistics
-
-**Why NOT database for MVP:**
-- Database is for **user data** (workouts, history)
-- Exercise library is **static reference data** (like enums)
-- Adding to DB adds complexity without MVP value
-- Users can't create custom exercises yet anyway
-
-**Why NOT API:**
-- No backend infrastructure exists
-- Offline-first is core requirement
-- API dependency adds failure points
-
-### Phase 8 Status Clarification
-
-**Correct Status:** 🟡 **Partial** (not ✅ Complete)
+### Why This Approach?
 
 **For MVP:**
-- Exercise library (AddExerciseView) - ✅ Complete
-- Import workout - ✅ Complete  
-- Timers - ❌ Not MVP critical
-- Plate calculator - ❌ Not MVP critical
+- ✅ **Offline-first:** No server dependency
+- ✅ **Flexible:** Users can create custom exercises (pen & paper equivalent)
+- ✅ **Simple:** Single table, single query
+- ✅ **Fast:** Local database queries are instant
+- ✅ **Future-proof:** Schema ready for sync, images, analytics
 
-**Dependency on Phase 9:**
-- Exercise library: ❌ No dependency (hardcoded works)
-- Import: ❌ No dependency (loads into current workout)
-- Timers: ❌ No dependency (UI-only feature)
-- Plate calculator: ❌ No dependency (pure math)
+**Why Custom Exercises are MVP-Critical:**
+Thiccc aims to replace pen & paper workout journals. Just as users can write any exercise name in a notebook, they must be able to create custom exercises in the app. Real-world scenarios:
+- User's gym has unique machines ("Hammer Strength Chest Press")
+- User does exercise variations ("Close-Grip Bench Press")
+- User creates compound movements ("Squat + Shoulder Press")
+- User tracks unconventional exercises ("Tire Flips", "Sled Push")
 
-**Bottom Line:** Phase 8 can be completed independently of Phase 9, but timers/calculator are **post-MVP nice-to-haves**.
+**Without custom exercises:** Users are limited to 60 built-in options → frustration → churn
+
+**With custom exercises:** Users have unlimited flexibility → adoption → retention
+
+### Phase 8 Status: MVP-Critical
+
+**What's Done (Already Implemented):**
+- ✅ `AddExerciseView.swift` - Searchable exercise picker
+- ✅ `ImportWorkoutView.swift` - JSON import for templates
+- ✅ Hardcoded library ready for database seeding
+
+**What's Needed for MVP (4-5 hours):**
+- 🔲 Database `exercises` table + seeding
+- 🔲 Custom exercise creation form
+- 🔲 Custom exercise deletion (swipe-to-delete)
+- 🔲 Update `AddExerciseView` to read from database
+
+**What's Post-MVP (Nice-to-Have):**
+- ⏳ Stopwatch/Rest timer modals
+- ⏳ Plate calculator UI
+
+### Long-Term Vision (Phase 12)
+
+See detailed architecture in `12-PHASE-12-OPTIONAL.md`
+
+**Server Sync Features:**
+1. **Community Exercise Library**
+   - Users submit custom exercises
+   - Manual moderation (Phase 1) → AI-assisted (Phase 2)
+   - Conflict resolution for duplicate names
+   - Exercise images/videos from CDN
+
+2. **Workout History Backup**
+   - Cloud backup of all workouts
+   - Multi-device sync
+   - Conflict resolution (last-write-wins or merge)
+
+3. **Social Analytics ("Thiccc Wrapped")**
+   - Spotify Wrapped-style year-end summary
+   - Community rankings (top X% of users)
+   - Shareable graphics for social media
+   - Exercise usage statistics
+
+4. **Advanced Features**
+   - Exercise images/GIFs from open-source databases
+   - Video tutorials (YouTube embeds)
+   - Exercise recommendations based on history
+   - Progress tracking per exercise
+
+**Tech Stack (Planned):**
+- Backend: Rust + Axum (shares types with iOS app!)
+- Database: Postgres + Redis
+- Storage: S3/R2 for images
+- Hosting: Fly.io (~$10-20/month to start)
+- Analytics: ClickHouse or TimescaleDB
+
+**Cost Estimates:**
+- MVP backend: $10-20/month
+- 1K users: $50-100/month
+- 10K users: $200-500/month
+- 100K users: $2K-5K/month
+
+**Feature Flags:**
+Enable/disable server features without code changes:
+```swift
+struct FeatureFlags {
+    static let serverSyncEnabled = false  // Default: offline-only
+    static let communityExercisesEnabled = false
+    static let analyticsEnabled = false
+}
+```
+
+**Offline-First Guarantee:**
+Even with server features enabled, app MUST work 100% offline. Sync happens in background when online. No user-facing failures if server is down.
 
 ---
 
