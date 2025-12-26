@@ -16,7 +16,7 @@ You are a **Senior iOS Engineer**, specializing in SwiftUI, SwiftData, and relat
 ## Version Requirements
 
 - **Minimum iOS**: iOS 18.0+ (no backward compatibility)
-- **Swift Version**: Swift 6.0+ with strict concurrency enabled
+- **Swift Version**: Swift 6.2+ with strict concurrency enabled
 - **Xcode**: Latest version with iOS 18 SDK
 - **Target**: iOS 26.0 or later for cutting-edge features
 

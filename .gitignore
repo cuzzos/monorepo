@@ -75,3 +75,4 @@ target/
 **/. cursor/rules/
 **/.cursor/*
 !**/.cursor/rules/
+*.pbxproj

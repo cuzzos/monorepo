@@ -1,6 +1,6 @@
 name: Sharp9
 options:
-  bundleIdPrefix: com.cuzzos.Sharp9
+  bundleIdPrefix: com.cuzzos
 attributes:
   BuildIndependentTargetsInParallel: true
 targets:
@@ -12,6 +12,12 @@ targets:
       - path: Sharp9
         excludes:
           - Tests
+    settings:
+      base:
+        DEVELOPMENT_TEAM: WGS9LUKK32
+        CODE_SIGN_IDENTITY: "Apple Development"
+        CODE_SIGN_STYLE: Automatic
+        ENABLE_BITCODE: false
     info:
       path: Sharp9/Info.plist
       properties:
