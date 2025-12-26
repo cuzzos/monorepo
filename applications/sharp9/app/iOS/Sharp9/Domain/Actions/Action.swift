@@ -15,7 +15,11 @@ enum Action: Sendable, Equatable {
     
     // Waveform interaction
     case tapWaveform(timeSec: Double)
-    case dragScrub(timeSec: Double)
+    case dragScrub(timeSec: Double) // Deprecated: use transportScrubChanged/Ended instead
+    
+    // Transport scrubbing (Elm-style: separate changed/ended)
+    case transportScrubChanged(timeSec: Double)
+    case transportScrubEnded(timeSec: Double)
     
     // Transport
     case togglePlay

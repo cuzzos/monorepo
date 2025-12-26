@@ -9,6 +9,8 @@ enum Effect: Sendable, Equatable {
     /// Start playback from the specified time (engine is stateless, always needs start position)
     case enginePlay(fromTimeSec: Double)
     case enginePause
+    /// Seek to a specific time without changing play/pause state
+    case engineSeek(timeSec: Double)
     case engineSetRate(Double)
     case engineSetPitchSemitones(Double)
     case engineSetLoop(aSec: Double?, bSec: Double?, enabled: Bool)

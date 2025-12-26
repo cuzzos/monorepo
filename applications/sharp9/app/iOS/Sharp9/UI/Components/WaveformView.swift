@@ -6,13 +6,16 @@ struct WaveformView: View {
     let state: AppState
     let onTap: (Double) -> Void
     let onDrag: (Double) -> Void
+    let onDragEnded: (Double) -> Void
     
     // FIXED ZOOM LEVEL: 1 second = 40 pixels (tune this for desired zoom)
     // Recommended: 40 px/s = fine editing, 30 px/s = moderate, 25 px/s = comfortable
     private let pixelsPerSecond: CGFloat = 40
     
     // Track drag start time for delta-based dragging
-    @GestureState private var dragStartTime: Double?
+    // NOTE: Using @State instead of @GestureState because @GestureState resets to nil
+    // BEFORE .onEnded is called, which would prevent onDragEnded from being called.
+    @State private var dragStartTime: Double?
     
     // Design colors
     private let waveformColor = Color(hex: 0xC9CED6)
@@ -111,13 +114,12 @@ struct WaveformView: View {
             .contentShape(Rectangle())
             .gesture(
                 DragGesture(minimumDistance: 0)
-                    .updating($dragStartTime) { _, gestureState, _ in
-                        // Capture start time on first drag event
-                        if gestureState == nil {
-                            gestureState = currentTime
-                        }
-                    }
                     .onChanged { value in
+                        // Capture start time on first drag event
+                        if dragStartTime == nil {
+                            dragStartTime = currentTime
+                        }
+                        
                         guard let startTime = dragStartTime else { return }
                         
                         // Delta-based: translation drives time change
@@ -125,6 +127,18 @@ struct WaveformView: View {
                         let newTime = (startTime + deltaTime).clamped(to: 0...trackDuration)
                         
                         onDrag(newTime)
+                    }
+                    .onEnded { value in
+                        guard let startTime = dragStartTime else { return }
+                        
+                        // Calculate final time and commit
+                        let deltaTime = -value.translation.width / pixelsPerSecond
+                        let finalTime = (startTime + deltaTime).clamped(to: 0...trackDuration)
+                        
+                        // Reset drag state for next gesture
+                        dragStartTime = nil
+                        
+                        onDragEnded(finalTime)
                     }
             )
             .onTapGesture { location in
@@ -242,7 +256,8 @@ private extension Double {
         peaks: .empty,
         state: AppState(track: TrackMeta(name: "Test", durationSec: 180)),
         onTap: { _ in },
-        onDrag: { _ in }
+        onDrag: { _ in },
+        onDragEnded: { _ in }
     )
 }
 

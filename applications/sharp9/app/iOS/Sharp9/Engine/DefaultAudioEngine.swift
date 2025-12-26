@@ -26,6 +26,10 @@ final class DefaultAudioEngine: AudioEngine, @unchecked Sendable {
     private var playbackStartOffset: Double = 0
     private var timeUpdateTask: Task<Void, Never>?
     
+    // Flag to prevent completion handler from firing during intentional restarts
+    // When we stop playback to seek/restart, we don't want to trigger playbackFinished
+    private var isIntentionalRestart: Bool = false
+    
     init() {
         setupAudioEngine()
     }
@@ -103,6 +107,10 @@ final class DefaultAudioEngine: AudioEngine, @unchecked Sendable {
     func play(from timeSec: Double) {
         guard let file = audioFile, let buffer = audioBuffer else { return }
         
+        // Mark that we're intentionally restarting - prevents completion handler
+        // from incorrectly signaling playbackFinished
+        isIntentionalRestart = true
+        
         // Stop any current playback first
         stopPlayback()
         
@@ -121,10 +129,67 @@ final class DefaultAudioEngine: AudioEngine, @unchecked Sendable {
         schedulePlayback(from: clampedTime, buffer: buffer, file: file)
         playerNode.play()
         startTimeUpdateLoop(sampleRate: sampleRate)
+        
+        // Clear the flag after playback has started
+        isIntentionalRestart = false
     }
     
     func pause() {
-        stopPlayback()
+        // Forcefully stop all playback and time tracking
+        // This must work even if seek operations are happening concurrently
+        timeUpdateTask?.cancel()
+        timeUpdateTask = nil
+        playerNode.stop()
+        
+        // Preserve current offset for next play (compute it from player state if possible)
+        if let file = audioFile,
+           let nodeTime = playerNode.lastRenderTime,
+           let playerTime = playerNode.playerTime(forNodeTime: nodeTime) {
+            let sampleRate = file.processingFormat.sampleRate
+            playbackStartOffset = playbackStartOffset + Double(playerTime.sampleTime) / sampleRate
+        }
+    }
+    
+    func seek(to timeSec: Double) {
+        guard let file = audioFile else { return }
+        
+        let sampleRate = file.processingFormat.sampleRate
+        let duration = Double(file.length) / sampleRate
+        let clampedTime = max(0, min(timeSec, duration))
+        
+        // Check if currently playing (must check before any stop operations)
+        let wasPlaying = playerNode.isPlaying
+        
+        if wasPlaying {
+            // Mark intentional restart to prevent completion handler from firing
+            isIntentionalRestart = true
+            
+            // If playing, we must stop and restart from new position
+            // This is unavoidable with AVAudioPlayerNode - it doesn't support live seeking
+            // Cancel any existing time update task first to avoid race conditions
+            timeUpdateTask?.cancel()
+            timeUpdateTask = nil
+            
+            // Stop the player node
+            playerNode.stop()
+            
+            // Update offset
+            playbackStartOffset = clampedTime
+            
+            // Restart if engine is still running
+            if engine.isRunning {
+                guard let buffer = audioBuffer else { return }
+                schedulePlayback(from: clampedTime, buffer: buffer, file: file)
+                playerNode.play()
+                startTimeUpdateLoop(sampleRate: sampleRate)
+            }
+            
+            // Clear the flag after restart
+            isIntentionalRestart = false
+        } else {
+            // If paused, just update the start offset for next play
+            playbackStartOffset = clampedTime
+        }
     }
     
     func setRate(_ rate: Double) {
@@ -227,6 +292,10 @@ final class DefaultAudioEngine: AudioEngine, @unchecked Sendable {
     }
     
     private func handlePlaybackCompletion() {
+        // Don't signal completion if we intentionally stopped to restart from a new position
+        // This prevents scrub-then-release from incorrectly setting isPlaying = false
+        guard !isIntentionalRestart else { return }
+        
         Task { @MainActor [weak self] in
             self?.onPlaybackFinished?()
         }
@@ -241,15 +310,9 @@ final class DefaultAudioEngine: AudioEngine, @unchecked Sendable {
                 
                 let time = self.computeCurrentTime(sampleRate: sampleRate)
                 
-                // Handle loop boundary (for software-managed looping during playback)
-                if self.loopEnabled,
-                   let b = self.loopB,
-                   time >= b,
-                   let a = self.loopA {
-                    // Jump back to loop start
-                    self.play(from: a)
-                    break // Exit this loop, new one will start
-                }
+                // NOTE: Loop boundary logic has been moved to the Domain layer (Reducer.tick)
+                // The engine is STATELESS and should not make business decisions.
+                // The domain receives tick events and decides when to seek back to loop start.
                 
                 self.onTimeUpdate?(time)
                 
@@ -267,4 +330,5 @@ final class DefaultAudioEngine: AudioEngine, @unchecked Sendable {
         // playerTime is relative to the scheduled buffer, add the start offset
         return playbackStartOffset + Double(playerTime.sampleTime) / sampleRate
     }
+    
 }

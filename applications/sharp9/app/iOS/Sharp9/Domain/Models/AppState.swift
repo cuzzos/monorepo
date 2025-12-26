@@ -10,6 +10,8 @@ struct AppState: Sendable, Equatable {
     var viewport: Viewport
     var isLoading: Bool
     var toast: ToastState?
+    /// Track if user is actively scrubbing (to ignore engine tick events during scrub)
+    var isScrubbing: Bool
     
     init(
         track: TrackMeta? = nil,
@@ -19,7 +21,8 @@ struct AppState: Sendable, Equatable {
         markers: [Marker] = [],
         viewport: Viewport = Viewport(),
         isLoading: Bool = false,
-        toast: ToastState? = nil
+        toast: ToastState? = nil,
+        isScrubbing: Bool = false
     ) {
         self.track = track
         self.transport = transport
@@ -29,6 +32,7 @@ struct AppState: Sendable, Equatable {
         self.viewport = viewport
         self.isLoading = isLoading
         self.toast = toast
+        self.isScrubbing = isScrubbing
     }
 }
 

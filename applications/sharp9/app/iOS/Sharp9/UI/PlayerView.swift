@@ -139,7 +139,10 @@ struct PlayerView: View {
                     core.send(.tapWaveform(timeSec: time))
                 },
                 onDrag: { time in
-                    core.send(.dragScrub(timeSec: time))
+                    core.send(.transportScrubChanged(timeSec: time))
+                },
+                onDragEnded: { time in
+                    core.send(.transportScrubEnded(timeSec: time))
                 }
             )
             
@@ -148,7 +151,8 @@ struct PlayerView: View {
                 peaks: core.peaks,
                 state: core.state,
                 onTap: { time in
-                    core.send(.dragScrub(timeSec: time))
+                    // Tap in overview should immediately seek and commit
+                    core.send(.transportScrubEnded(timeSec: time))
                 }
             )
             .padding(.vertical, 8)

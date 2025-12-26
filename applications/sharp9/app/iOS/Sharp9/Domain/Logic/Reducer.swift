@@ -12,6 +12,7 @@ enum Reducer {
             state.isLoading = true
             state.transport.isPlaying = false
             state.transport.currentTimeSec = 0
+            state.isScrubbing = false  // Reset scrubbing state on new file import
             state.loop = LoopPoints()
             state.markers = []
             return [.enginePause, .engineLoad(url: url)]
@@ -19,6 +20,7 @@ enum Reducer {
         case .importSucceeded(let track):
             state.track = track
             state.isLoading = false
+            state.isScrubbing = false  // Ensure scrubbing state is reset
             state.markers = []
             state.loop = LoopPoints()
             state.transport.currentTimeSec = 0
@@ -35,6 +37,9 @@ enum Reducer {
             return []
             
         case .tapWaveform(let timeSec):
+            // Reset scrubbing state on any tap (tap is a point-in-time action, not a drag)
+            state.isScrubbing = false
+            
             switch state.mode {
             case .setA:
                 return reduce(state: &state, action: .setA(timeSec: timeSec), now: now)
@@ -52,14 +57,49 @@ enum Reducer {
             }
             
         case .dragScrub(let timeSec):
+            // Deprecated: redirect to new transportScrubChanged action
+            return reduce(state: &state, action: .transportScrubChanged(timeSec: timeSec), now: now)
+            
+        case .transportScrubChanged(let timeSec):
             let clampedTime = clampTime(timeSec, state: state)
+            let wasPlaying = state.transport.isPlaying
+            
+            // Mark that we're actively scrubbing (prevents tick events from overwriting position)
+            state.isScrubbing = true
             state.transport.currentTimeSec = clampedTime
-            // Engine is stateless - if playing, restart from new position
-            // If paused, no effect needed (Model already updated, engine will use it on next play)
-            if state.transport.isPlaying {
-                return [.enginePlay(fromTimeSec: clampedTime)]
+            
+            // CRITICAL: Do NOT mutate isPlaying during scrub
+            // Strategy:
+            // - Visual position updates immediately to follow the drag
+            // - Audio continues playing uninterrupted (if it was playing)
+            // - Ticks are ignored via isScrubbing flag
+            // - On drag end, audio will jump to final position
+            if !wasPlaying {
+                // If paused: seek immediately for visual/audio feedback
+                return [.engineSeek(timeSec: clampedTime)]
+            } else {
+                // If playing: let audio continue, just update visual position
+                // No effect - audio keeps playing, user sees drag position
+                return []
             }
-            return []
+            
+        case .transportScrubEnded(let timeSec):
+            let clampedTime = clampTime(timeSec, state: state)
+            let wasPlaying = state.transport.isPlaying
+            
+            // End scrubbing state
+            state.isScrubbing = false
+            state.transport.currentTimeSec = clampedTime
+            
+            // CRITICAL: Do NOT mutate isPlaying at end of scrub
+            // Commit final position:
+            // - If was playing: restart from new position
+            // - If was paused: just seek
+            if wasPlaying {
+                return [.enginePlay(fromTimeSec: clampedTime)]
+            } else {
+                return [.engineSeek(timeSec: clampedTime)]
+            }
             
         case .togglePlay:
             if state.transport.isPlaying {
@@ -72,7 +112,22 @@ enum Reducer {
             }
             
         case .tick(let currentTimeSec):
+            // Ignore tick events while user is actively scrubbing
+            // (prevents engine position from overwriting user's drag position)
+            guard !state.isScrubbing else { return [] }
+            
             state.transport.currentTimeSec = currentTimeSec
+            
+            // Loop boundary check: if enabled and past loop end, jump to loop start
+            // This is business logic that belongs in the domain, not the engine
+            if state.loop.enabled,
+               let a = state.loop.aSec,
+               let b = state.loop.bSec,
+               currentTimeSec >= b {
+                state.transport.currentTimeSec = a
+                return [.enginePlay(fromTimeSec: a)]
+            }
+            
             return []
             
         case .playbackFinished:
@@ -167,4 +222,5 @@ extension Comparable {
         min(max(self, range.lowerBound), range.upperBound)
     }
 }
+
 

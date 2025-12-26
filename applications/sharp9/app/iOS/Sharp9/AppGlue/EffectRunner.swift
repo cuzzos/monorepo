@@ -36,6 +36,9 @@ final class EffectRunner {
         case .enginePause:
             deps.engine.pause()
             
+        case .engineSeek(let timeSec):
+            deps.engine.seek(to: timeSec)
+            
         case .engineSetRate(let rate):
             deps.engine.setRate(rate)
             

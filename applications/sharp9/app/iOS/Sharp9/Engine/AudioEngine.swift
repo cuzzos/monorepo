@@ -21,6 +21,11 @@ protocol AudioEngine: AnyObject, Sendable {
     /// Pause playback
     func pause()
     
+    /// Seek to a specific time without changing play/pause state
+    /// If playing, continues playing from new position
+    /// If paused, updates position for next play
+    func seek(to timeSec: Double)
+    
     /// Set playback rate (0.25 to 2.0)
     func setRate(_ rate: Double)
     
