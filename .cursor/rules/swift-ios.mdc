@@ -1,0 +1,837 @@
+---
+description: Swift 6 and iOS 18+ API requirements for iOS shell - enforces modern Swift patterns
+globs:
+  - "**/*.swift"
+alwaysApply: false
+---
+
+# Swift 6 & iOS 18+ API Standards
+
+This rule enforces the latest Swift and iOS patterns. All Swift code MUST follow these requirements.
+
+## Your Role
+
+You are a **Senior iOS Engineer**, specializing in SwiftUI, SwiftData, and related frameworks. Your code must always adhere to Apple's Human Interface Guidelines and App Review guidelines.
+
+## Version Requirements
+
+- **Minimum iOS**: iOS 18.0+ (no backward compatibility)
+- **Swift Version**: Swift 6.0+ with strict concurrency enabled
+- **Xcode**: Latest version with iOS 18 SDK
+- **Target**: iOS 26.0 or later for cutting-edge features
+
+## Core Principles
+
+- Do not introduce third-party frameworks without asking first
+- Avoid UIKit unless specifically requested
+- Avoid force unwraps and force `try` unless it is unrecoverable
+- Place view logic into view models or similar, so it can be tested
+- Follow Apple's Human Interface Guidelines strictly
+
+---
+
+## Observation Framework (CRITICAL)
+
+### ✅ REQUIRED - Use These (iOS 17+/Swift 5.9+ Observation Framework)
+
+```swift
+// Use @Observable macro for observable classes
+@Observable
+@MainActor
+final class Core {
+    var view: SharedTypes.ViewModel
+    // Properties are automatically observable - no @Published needed
+}
+
+// Use @Bindable in views to create bindings from @Observable objects
+struct ContentView: View {
+    @Bindable var core: Core
+    
+    var body: some View {
+        // Access properties directly - no $ prefix needed for reading
+        Text(core.view.title)
+        
+        // Use $ prefix with @Bindable to create bindings
+        TextField("Name", text: $core.name)
+    }
+}
+
+// Use @State for view-local state only
+struct MyView: View {
+    @State private var isExpanded = false
+}
+
+// Use @Environment for dependency injection
+@Environment(\.dismiss) private var dismiss
+@Environment(Core.self) private var core
+```
+
+### ❌ NEVER USE - Deprecated Combine-based Patterns
+
+```swift
+// DEPRECATED - DO NOT USE
+@ObservableObject      // ❌ Use @Observable instead
+@Published             // ❌ Not needed with @Observable
+@StateObject           // ❌ Use @State for @Observable objects
+@ObservedObject        // ❌ Use @Bindable or pass directly
+ObservableObject       // ❌ Protocol replaced by @Observable macro
+```
+
+### Migration Pattern
+
+```swift
+// OLD (Combine-based) - DO NOT USE
+class Core: ObservableObject {
+    @Published var view: ViewModel
+}
+
+struct ContentView: View {
+    @ObservedObject var core: Core
+}
+
+// NEW (Observation framework) - USE THIS
+@Observable
+@MainActor
+final class Core {
+    var view: ViewModel  // Automatically observable
+}
+
+struct ContentView: View {
+    @Bindable var core: Core  // Creates bindings when needed
+    // OR just pass directly if no bindings needed:
+    // var core: Core
+}
+```
+
+---
+
+## Swift Concurrency (Swift 6 Strict Mode)
+
+### Required Patterns
+
+```swift
+// Use async/await - NEVER completion handlers
+func fetchData() async throws -> Data {
+    let (data, _) = try await URLSession.shared.data(from: url)
+    return data
+}
+
+// Use @MainActor for UI code
+@MainActor
+final class Core {
+    func update(_ event: Event) async {
+        // UI updates happen on main actor automatically
+    }
+}
+
+// Use Actor for thread-safe isolation
+actor DataStore {
+    private var cache: [String: Data] = [:]
+    
+    func get(_ key: String) -> Data? {
+        cache[key]
+    }
+}
+
+// Use Task for async work from sync contexts
+Button("Load") {
+    Task {
+        await core.update(.loadData)
+    }
+}
+
+// Use TaskGroup for concurrent operations
+await withTaskGroup(of: Result.self) { group in
+    for item in items {
+        group.addTask { await process(item) }
+    }
+}
+```
+
+### Sendable Conformance (Swift 6)
+
+```swift
+// Mark types that cross actor boundaries as Sendable
+struct WorkoutData: Sendable {
+    let id: String
+    let name: String
+}
+
+// Use @unchecked Sendable only when you guarantee thread safety
+final class ThreadSafeCache: @unchecked Sendable {
+    private let lock = NSLock()
+    private var storage: [String: Any] = [:]
+}
+```
+
+### ❌ NEVER USE - Old Concurrency Patterns
+
+```swift
+// DEPRECATED - DO NOT USE
+DispatchQueue.main.async { }     // ❌ Use @MainActor or Task { @MainActor in }
+DispatchQueue.global().async { } // ❌ Use Task.detached or actor isolation
+Task.sleep(nanoseconds:)         // ❌ Use Task.sleep(for:) instead
+```
+
+---
+
+## SwiftUI Navigation (iOS 16+)
+
+### Required Patterns
+
+```swift
+// Use NavigationStack (NOT NavigationView)
+NavigationStack {
+    ContentView()
+        .navigationDestination(for: WorkoutID.self) { id in
+            WorkoutDetailView(id: id)
+        }
+}
+
+// Use NavigationPath for type-erased navigation
+@State private var path = NavigationPath()
+
+NavigationStack(path: $path) {
+    List(items) { item in
+        NavigationLink(value: item.id) {
+            ItemRow(item: item)
+        }
+    }
+}
+
+// Use navigationDestination for programmatic navigation
+.navigationDestination(for: String.self) { workoutId in
+    WorkoutDetailView(workoutId: workoutId)
+}
+
+// Programmatic navigation
+path.append(workoutId)  // Push
+path.removeLast()       // Pop
+```
+
+### ❌ NEVER USE
+
+```swift
+// DEPRECATED
+NavigationView { }           // ❌ Use NavigationStack
+NavigationLink(destination:) // ❌ Use NavigationLink(value:)
+```
+
+---
+
+## iOS 18+ Specific APIs
+
+### Preview Macro
+
+```swift
+// Use @Previewable for state in previews (iOS 18+)
+#Preview {
+    @Previewable @State var count = 0
+    CounterView(count: $count)
+}
+
+// Use preview traits
+#Preview(traits: .sizeThatFitsLayout) {
+    MyView()
+}
+```
+
+### Container APIs (iOS 18+)
+
+```swift
+// Use ForEach(subviewOf:) for custom containers
+struct CustomContainer<Content: View>: View {
+    @ViewBuilder var content: Content
+    
+    var body: some View {
+        VStack {
+            ForEach(subviewOf: content) { subview in
+                subview
+                    .padding()
+            }
+        }
+    }
+}
+```
+
+### Environment Entry Macro (iOS 18+)
+
+```swift
+// Use @Entry for environment values
+extension EnvironmentValues {
+    @Entry var customValue: String = "default"
+}
+```
+
+### Scroll Position (iOS 18+)
+
+```swift
+@State private var scrollPosition = ScrollPosition()
+
+ScrollView {
+    ForEach(items) { item in
+        ItemView(item: item)
+    }
+}
+.scrollPosition($scrollPosition)
+```
+
+---
+
+## SwiftUI Best Practices
+
+### View Composition
+
+```swift
+// Keep views small and focused
+struct WorkoutView: View {
+    @Bindable var core: Core
+    
+    var body: some View {
+        VStack {
+            WorkoutHeader(workout: core.view.workout)
+            ExerciseList(exercises: core.view.exercises)
+            WorkoutControls(core: core)
+        }
+    }
+}
+
+// Extract complex logic to computed properties
+private var formattedDuration: String {
+    Duration.seconds(workout.duration).formatted(.time(pattern: .hourMinuteSecond))
+}
+
+// ❌ DO NOT break views up using computed properties
+// ✅ DO place them into new View structs instead
+// BAD:
+private var headerView: some View {
+    Text("Header")
+}
+
+// GOOD:
+struct HeaderView: View {
+    var body: some View {
+        Text("Header")
+    }
+}
+```
+
+### Bindings from @Observable
+
+```swift
+// Creating bindings with @Bindable
+struct TabContainer: View {
+    @Bindable var core: Core
+    
+    var body: some View {
+        // Manual binding for complex cases
+        TabView(selection: Binding(
+            get: { core.view.selectedTab },
+            set: { newTab in
+                Task { await core.update(.changeTab(tab: newTab)) }
+            }
+        )) {
+            // tabs...
+        }
+    }
+}
+```
+
+### Sheet Presentation
+
+```swift
+// Use sheet with binding
+.sheet(isPresented: Binding(
+    get: { core.view.showingModal },
+    set: { if !$0 { Task { await core.update(.dismissModal) } } }
+)) {
+    ModalContent()
+}
+
+// Or use sheet(item:) for optional item presentation
+.sheet(item: $selectedItem) { item in
+    DetailView(item: item)
+}
+```
+
+### Styling & Appearance
+
+```swift
+// ✅ ALWAYS use foregroundStyle() instead of foregroundColor()
+Text("Hello").foregroundStyle(.blue)
+
+// ✅ ALWAYS use clipShape(.rect(cornerRadius:)) instead of cornerRadius()
+RoundedRectangle(cornerRadius: 10)  // ❌ Old API
+    .clipShape(.rect(cornerRadius: 10))  // ✅ Modern API
+
+// ✅ Use static member lookup for styles
+Button("Tap", action: action)
+    .buttonStyle(.borderedProminent)  // ✅ Not BorderedProminentButtonStyle()
+
+// ✅ Prefer .circle over Circle() when possible
+Image(systemName: "star")
+    .clipShape(.circle)  // ✅ Static member
+```
+
+### Buttons & Gestures
+
+```swift
+// ✅ ALWAYS use Button unless you need tap location/count
+Button("Tap me", systemImage: "plus") {
+    // action
+}
+
+// ❌ DO NOT use onTapGesture() for simple taps
+// Only use when you need:
+.onTapGesture(count: 2) { /* double tap */ }
+.onTapGesture { location in /* need tap location */ }
+
+// ✅ If using an image for button, ALWAYS specify text
+Button("Add Item", systemImage: "plus", action: addItem)  // ✅ Accessible
+Button(action: addItem) { Image(systemName: "plus") }     // ❌ Missing label
+```
+
+### Layout & Sizing
+
+```swift
+// ❌ DO NOT use GeometryReader if newer alternatives work
+// ✅ Use containerRelativeFrame() for container-relative sizing
+Rectangle()
+    .containerRelativeFrame(.horizontal) { length, axis in
+        length * 0.5
+    }
+
+// ✅ Use visualEffect() for geometry-aware effects
+Text("Hello")
+    .visualEffect { content, proxy in
+        content.offset(x: proxy.size.width * 0.1)
+    }
+
+// ❌ NEVER use UIScreen.main.bounds for size
+// ✅ Use containerRelativeFrame or visualEffect instead
+```
+
+### Text & Formatting
+
+```swift
+// ❌ NEVER use C-style formatting
+Text(String(format: "%.2f", myNumber))  // ❌ Old style
+
+// ✅ ALWAYS use modern formatting
+Text(myNumber, format: .number.precision(.fractionLength(2)))  // ✅ Modern
+
+// ✅ Use Dynamic Type - don't force font sizes
+Text("Hello")
+    .font(.headline)  // ✅ Scales with user preferences
+
+// ❌ Avoid hard-coded sizes
+Text("Hello")
+    .font(.system(size: 18))  // ❌ Doesn't scale
+
+// ✅ Use bold() instead of fontWeight(.bold)
+Text("Important").bold()  // ✅ Preferred
+Text("Important").fontWeight(.bold)  // ❌ Only if needed for other weights
+```
+
+### ScrollViews & Lists
+
+```swift
+// ✅ Hide indicators using modifier
+ScrollView {
+    content
+}
+.scrollIndicators(.hidden)  // ✅ Modern API
+
+// ❌ Don't use initializer parameter
+ScrollView(showsIndicators: false) {  // ❌ Old API
+    content
+}
+
+// ✅ ForEach with enumerated - don't convert to Array
+ForEach(items.enumerated(), id: \.element.id) { index, item in
+    ItemView(item: item, index: index)
+}
+
+// ❌ Don't convert to Array first
+ForEach(Array(items.enumerated()), id: \.element.id) { /* ... */ }  // ❌
+```
+
+### Tabs (iOS 18+)
+
+```swift
+// ✅ ALWAYS use Tab API (iOS 18+)
+TabView {
+    Tab("Home", systemImage: "house") {
+        HomeView()
+    }
+    Tab("Settings", systemImage: "gear") {
+        SettingsView()
+    }
+}
+
+// ❌ NEVER use tabItem() - deprecated pattern
+TabView {
+    HomeView()
+        .tabItem {  // ❌ Old API
+            Label("Home", systemImage: "house")
+        }
+}
+```
+
+### State Changes
+
+```swift
+// ✅ Use onChange with two parameters or none
+.onChange(of: value) { oldValue, newValue in
+    // Handle change
+}
+
+.onChange(of: value) {
+    // Handle change (no old/new values needed)
+}
+
+// ❌ NEVER use 1-parameter variant
+.onChange(of: value) { newValue in  // ❌ Deprecated
+    // ...
+}
+```
+
+### Rendering Views
+
+```swift
+// ✅ ALWAYS use ImageRenderer for SwiftUI views
+let renderer = ImageRenderer(content: myView)
+if let image = renderer.uiImage {
+    // Use image
+}
+
+// ❌ Don't use UIGraphicsImageRenderer for SwiftUI
+// Only use UIGraphicsImageRenderer for UIKit drawing
+```
+
+### Performance & Best Practices
+
+```swift
+// ✅ Avoid AnyView unless absolutely required
+// BAD:
+func makeView() -> AnyView {
+    AnyView(Text("Hello"))
+}
+
+// GOOD:
+@ViewBuilder
+func makeView() -> some View {
+    Text("Hello")
+}
+
+// ✅ Avoid hard-coded padding/spacing unless requested
+VStack {  // ✅ Uses default spacing
+    Text("One")
+    Text("Two")
+}
+
+VStack(spacing: 8) {  // ❌ Only if specifically needed
+    Text("One")
+    Text("Two")
+}
+
+// ❌ Avoid UIKit colors in SwiftUI
+.foregroundColor(UIColor.systemBlue)  // ❌
+.foregroundStyle(.blue)               // ✅
+```
+
+---
+
+## Swift Language Best Practices
+
+### String Operations
+
+```swift
+// ✅ Use Swift-native string methods
+let result = text.replacing("hello", with: "world")  // ✅ Modern Swift
+
+// ❌ Avoid Foundation methods when Swift alternatives exist
+let result = text.replacingOccurrences(of: "hello", with: "world")  // ❌ Old style
+
+// ✅ Use localizedStandardContains for user-input filtering
+items.filter { $0.name.localizedStandardContains(searchText) }  // ✅ Locale-aware
+
+// ❌ Don't use contains() for user-facing search
+items.filter { $0.name.contains(searchText) }  // ❌ Not locale-aware
+```
+
+### URL & File Operations
+
+```swift
+// ✅ Use modern Foundation URL APIs
+let documentsURL = URL.documentsDirectory  // ✅ Modern
+let fileURL = documentsURL.appending(path: "data.json")  // ✅ Modern
+
+// ❌ Avoid old FileManager patterns
+let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]  // ❌
+let fileURL = documentsURL.appendingPathComponent("data.json")  // ❌ Old API
+```
+
+### Error Handling
+
+```swift
+// ✅ Proper error handling
+do {
+    let data = try await fetchData()
+    process(data)
+} catch {
+    logger.error("Failed to fetch: \(error)")
+    showError(error)
+}
+
+// ❌ Avoid force try unless unrecoverable
+let data = try! fetchData()  // ❌ Only for truly unrecoverable errors
+
+// ❌ Avoid force unwraps
+let value = optional!  // ❌ Crashes if nil
+
+// ✅ Use proper optional handling
+guard let value = optional else { return }  // ✅
+if let value = optional { /* use value */ }  // ✅
+let value = optional ?? defaultValue        // ✅
+```
+
+---
+
+## SwiftData Best Practices
+
+### CloudKit Integration
+
+If SwiftData is configured to use CloudKit:
+
+```swift
+// ❌ NEVER use @Attribute(.unique) with CloudKit
+@Model
+class Item {
+    @Attribute(.unique) var id: String  // ❌ Breaks CloudKit sync
+}
+
+// ✅ All properties must have defaults or be optional
+@Model
+class Item {
+    var name: String = ""           // ✅ Has default
+    var createdAt: Date = Date()    // ✅ Has default
+    var notes: String?              // ✅ Optional
+}
+
+// ✅ All relationships must be optional with CloudKit
+@Model
+class Item {
+    var category: Category?  // ✅ Optional relationship
+    var tags: [Tag]?         // ✅ Optional array relationship
+}
+```
+
+---
+
+## Project Structure & Organization
+
+### File Organization
+
+```swift
+// ✅ One type per file - use consistent naming
+// Files:
+// - WorkoutView.swift
+// - WorkoutViewModel.swift
+// - Workout.swift
+// - WorkoutService.swift
+
+// ❌ Don't put multiple types in one file
+// WorkoutStuff.swift containing WorkoutView, WorkoutViewModel, Workout  // ❌
+```
+
+### Folder Structure
+
+```
+MyApp/
+├── Features/
+│   ├── Workout/
+│   │   ├── Views/
+│   │   ├── ViewModels/
+│   │   └── Models/
+│   └── History/
+│       ├── Views/
+│       └── ViewModels/
+├── Shared/
+│   ├── Services/
+│   └── Extensions/
+└── Resources/
+```
+
+### Naming Conventions
+
+```swift
+// ✅ Clear, descriptive names
+class WorkoutViewModel { }      // ✅
+struct WorkoutDetailView { }    // ✅
+enum WorkoutState { }           // ✅
+
+// ❌ Avoid abbreviations
+class WOViewModel { }           // ❌
+struct WODetailView { }         // ❌
+```
+
+### Testing
+
+```swift
+// ✅ Write unit tests for core logic
+class WorkoutViewModelTests: XCTestCase {
+    func testWorkoutCalculation() async throws {
+        let viewModel = WorkoutViewModel()
+        await viewModel.calculateTotal()
+        XCTAssertEqual(viewModel.total, expectedValue)
+    }
+}
+
+// ✅ Only write UI tests if unit tests aren't possible
+// UI tests are slower and more brittle
+```
+
+### Documentation
+
+```swift
+// ✅ Add documentation comments for public APIs
+/// Calculates the total volume for a workout session.
+/// - Parameter exercises: The exercises to calculate volume for
+/// - Returns: Total volume in kilograms
+/// - Throws: `WorkoutError.invalidData` if exercise data is malformed
+func calculateVolume(exercises: [Exercise]) throws -> Double {
+    // Implementation
+}
+
+// ✅ Add inline comments for complex logic
+// Calculate 1RM using Epley formula: weight × (1 + reps/30)
+let oneRepMax = weight * (1 + Double(reps) / 30.0)
+```
+
+### Security
+
+```swift
+// ❌ NEVER commit API keys or secrets
+let apiKey = "sk_live_abc123"  // ❌ NEVER do this
+
+// ✅ Use environment variables or secure storage
+let apiKey = ProcessInfo.processInfo.environment["API_KEY"]  // ✅
+// Or use Keychain for sensitive data
+```
+
+### Code Quality
+
+```swift
+// ✅ Run SwiftLint before committing (if installed)
+// Make sure there are no warnings or errors
+
+// ✅ Follow consistent code style
+// - Use 4 spaces for indentation
+// - Place opening braces on same line
+// - Use trailing closures when appropriate
+```
+
+---
+
+## Documentation Verification
+
+Before implementing ANY Swift feature:
+
+1. Verify API availability: https://developer.apple.com/documentation/
+2. Check iOS 18 release notes for new APIs
+3. Review Swift 6 migration guide: https://www.swift.org/migration/documentation/swift-6-concurrency-migration-guide/
+4. Use `web_search` tool with: "iOS 18 SwiftUI [feature]" or "Swift 6 [pattern]"
+
+---
+
+## Quick Reference
+
+### Observation & State Management
+| ❌ Old Pattern | ✅ New Pattern (iOS 18+) |
+|-------------|----------------------|
+| `@ObservableObject` | `@Observable` |
+| `@Published` | (automatic with @Observable) |
+| `@StateObject` | `@State` (for @Observable) |
+| `@ObservedObject` | `@Bindable` or direct reference |
+
+### Navigation
+| ❌ Old Pattern | ✅ New Pattern |
+|-------------|----------------------|
+| `NavigationView` | `NavigationStack` |
+| `NavigationLink(destination:)` | `NavigationLink(value:)` |
+| `.navigationDestination(for:)` | Required for type-safe navigation |
+
+### Concurrency
+| ❌ Old Pattern | ✅ New Pattern |
+|-------------|----------------------|
+| Completion handlers | `async/await` |
+| `DispatchQueue.main.async` | `@MainActor` or `Task { @MainActor in }` |
+| `DispatchQueue.global()` | `Task.detached` or actor isolation |
+| `Task.sleep(nanoseconds:)` | `Task.sleep(for:)` |
+
+### SwiftUI Styling
+| ❌ Old Pattern | ✅ New Pattern |
+|-------------|----------------------|
+| `.foregroundColor()` | `.foregroundStyle()` |
+| `.cornerRadius()` | `.clipShape(.rect(cornerRadius:))` |
+| `.tabItem { }` | `Tab("Title", systemImage:)` |
+| `.onChange(of:) { new in }` | `.onChange(of:) { old, new in }` |
+| `showsIndicators: false` | `.scrollIndicators(.hidden)` |
+
+### Text & Formatting
+| ❌ Old Pattern | ✅ New Pattern |
+|-------------|----------------------|
+| `String(format: "%.2f", num)` | `Text(num, format: .number.precision(.fractionLength(2)))` |
+| `.fontWeight(.bold)` | `.bold()` (for bold specifically) |
+| Hard-coded font sizes | Dynamic Type (`.headline`, `.body`, etc.) |
+
+### Strings & URLs
+| ❌ Old Pattern | ✅ New Pattern |
+|-------------|----------------------|
+| `.replacingOccurrences(of:with:)` | `.replacing(_:with:)` |
+| `.contains()` (for search) | `.localizedStandardContains()` |
+| `FileManager.default.urls(for:in:)[0]` | `URL.documentsDirectory` |
+| `.appendingPathComponent()` | `.appending(path:)` |
+
+### Buttons & Gestures
+| ❌ Old Pattern | ✅ New Pattern |
+|-------------|----------------------|
+| `.onTapGesture { }` (simple tap) | `Button("Label") { }` |
+| `Button { } label: { Image() }` | `Button("Label", systemImage:) { }` |
+
+### Layout
+| ❌ Old Pattern | ✅ New Pattern |
+|-------------|----------------------|
+| `GeometryReader` (for size) | `.containerRelativeFrame()` or `.visualEffect()` |
+| `UIScreen.main.bounds` | `.containerRelativeFrame()` |
+
+### View Structure
+| ❌ Old Pattern | ✅ New Pattern |
+|-------------|----------------------|
+| Computed properties for views | Separate `View` structs |
+| Multiple types per file | One type per file |
+| `AnyView` | `@ViewBuilder` or `some View` |
+
+---
+
+## Summary Checklist
+
+Before submitting code, verify:
+
+- ✅ Using `@Observable` with `@MainActor` (not `@ObservableObject`)
+- ✅ Using `async/await` (not completion handlers or GCD)
+- ✅ Using `NavigationStack` (not `NavigationView`)
+- ✅ Using `.foregroundStyle()` (not `.foregroundColor()`)
+- ✅ Using modern string methods (`.replacing()` not `.replacingOccurrences()`)
+- ✅ Using `Button` for taps (not `.onTapGesture()` unless needed)
+- ✅ Using proper error handling (not force unwraps/try)
+- ✅ Using Dynamic Type (not hard-coded font sizes)
+- ✅ One type per file with clear naming
+- ✅ Unit tests for business logic
+- ✅ No API keys or secrets in code
+- ✅ SwiftLint passes (if installed)
+
+---
+
+**REMEMBER**: When in doubt, search Apple Developer Documentation. Never use deprecated APIs. Target iOS 18+ with Swift 6 strict concurrency.

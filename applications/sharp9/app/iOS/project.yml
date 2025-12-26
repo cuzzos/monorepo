@@ -1,0 +1,23 @@
+name: Sharp9
+options:
+  bundleIdPrefix: com.cuzzos.Sharp9
+attributes:
+  BuildIndependentTargetsInParallel: true
+targets:
+  Sharp9:
+    type: application
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: Sharp9
+        excludes:
+          - Tests
+    info:
+      path: Sharp9/Info.plist
+      properties:
+        CFBundleDisplayName: sharp9
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UILaunchScreen: {}
