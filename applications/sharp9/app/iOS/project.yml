@@ -12,6 +12,8 @@ targets:
       - path: Sharp9
         excludes:
           - Tests
+    resources:
+      - Sharp9/Assets.xcassets
     settings:
       base:
         DEVELOPMENT_TEAM: WGS9LUKK32
