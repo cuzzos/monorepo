@@ -62,8 +62,8 @@ struct WaveformView: View {
                         height: viewportHeight
                     )
                     
-                    // Draw selection overlay
-                    if let range = Selectors.selectionRange(state) {
+                    // Draw selection overlay (only show when loop is enabled)
+                    if Selectors.shouldShowLoopOverlay(state), let range = Selectors.selectionRange(state) {
                         drawSelectionOverlay(
                             context: context,
                             range: range,
@@ -79,6 +79,22 @@ struct WaveformView: View {
                             height: viewportHeight
                         )
                     }
+                    
+                    // Draw A/B loop point markers
+                    let effectiveA = state.loop.effectiveA(trackDuration: trackDuration)
+                    let effectiveB = state.loop.effectiveB(trackDuration: trackDuration)
+                    drawLoopPointMarker(
+                        context: context,
+                        timeSec: effectiveA,
+                        label: "A",
+                        height: viewportHeight
+                    )
+                    drawLoopPointMarker(
+                        context: context,
+                        timeSec: effectiveB,
+                        label: "B",
+                        height: viewportHeight
+                    )
                 }
                 .frame(width: viewportWidth, height: viewportHeight)
                 
@@ -210,6 +226,32 @@ struct WaveformView: View {
         linePath.move(to: CGPoint(x: x, y: 8))
         linePath.addLine(to: CGPoint(x: x, y: height))
         context.stroke(linePath, with: .color(markerColor), lineWidth: 2)
+    }
+    
+    private func drawLoopPointMarker(context: GraphicsContext, timeSec: Double, label: String, height: CGFloat) {
+        let x = timeToCanvasX(timeSec: timeSec)
+        let squareSize: CGFloat = 16
+        
+        // Draw vertical line (same height as playhead)
+        var linePath = Path()
+        linePath.move(to: CGPoint(x: x, y: squareSize))
+        linePath.addLine(to: CGPoint(x: x, y: height))
+        context.stroke(linePath, with: .color(loopColor), lineWidth: 2)
+        
+        // Draw square at top (aligned right with the line)
+        let squareRect = CGRect(x: x - squareSize, y: 0, width: squareSize, height: squareSize)
+        context.fill(Path(squareRect), with: .color(loopColor))
+        
+        // Draw label text inside the square
+        let text = Text(label)
+            .font(.caption2)
+            .bold()
+            .foregroundColor(.white)
+        context.draw(
+            context.resolve(text),
+            at: CGPoint(x: x - squareSize / 2, y: squareSize / 2),
+            anchor: .center
+        )
     }
     
     private func playheadLine(height: CGFloat) -> some View {

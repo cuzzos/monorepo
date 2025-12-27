@@ -205,6 +205,35 @@ final class DefaultAudioEngine: AudioEngine, @unchecked Sendable {
         self.loopA = aSec
         self.loopB = bSec
         self.loopEnabled = enabled
+        
+        // If currently playing, reschedule playback with new loop settings
+        guard let file = audioFile, let buffer = audioBuffer else { return }
+        
+        let wasPlaying = playerNode.isPlaying
+        if wasPlaying {
+            // Mark intentional restart to prevent completion handler from firing
+            isIntentionalRestart = true
+            
+            // Compute current time before stopping
+            let sampleRate = file.processingFormat.sampleRate
+            let currentTime = computeCurrentTime(sampleRate: sampleRate)
+            
+            // Stop and reschedule with new loop settings
+            timeUpdateTask?.cancel()
+            timeUpdateTask = nil
+            playerNode.stop()
+            
+            // Update offset to current position
+            playbackStartOffset = currentTime
+            
+            // Restart playback from current position with new loop settings
+            schedulePlayback(from: currentTime, buffer: buffer, file: file)
+            playerNode.play()
+            startTimeUpdateLoop(sampleRate: sampleRate)
+            
+            // Clear the flag after restart
+            isIntentionalRestart = false
+        }
     }
     
     // MARK: - Private Methods

@@ -22,8 +22,8 @@ struct OverviewWaveformView: View {
                     drawWaveform(context: context, size: canvasSize)
                 }
                 
-                // Selection overlay
-                if let range = Selectors.selectionRange(state) {
+                // Selection overlay (only show when loop is enabled)
+                if Selectors.shouldShowLoopOverlay(state), let range = Selectors.selectionRange(state) {
                     selectionOverlay(range: range, size: size)
                 }
                 

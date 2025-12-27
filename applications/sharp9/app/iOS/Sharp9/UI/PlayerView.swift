@@ -21,11 +21,19 @@ struct PlayerView: View {
                     ModeBar(
                         currentMode: core.state.mode,
                         loopEnabled: core.state.loop.enabled,
+                        hasManualA: core.state.loop.hasManualA,
+                        hasManualB: core.state.loop.hasManualB,
                         onModeSelected: { mode in
                             core.send(.setMode(mode))
                         },
                         onLoopToggle: { enabled in
                             core.send(.toggleLoopEnabled(enabled))
+                        },
+                        onATapped: {
+                            core.send(.tappedAButton)
+                        },
+                        onBTapped: {
+                            core.send(.tappedBButton)
                         }
                     )
                     .padding(.vertical, 8)
@@ -42,15 +50,16 @@ struct PlayerView: View {
                             core.send(.togglePlay)
                         },
                         onSeekPrev: {
-                            // Seek to A if set, otherwise start
-                            let time = core.state.loop.aSec ?? 0
-                            core.send(.dragScrub(timeSec: time))
+                            // Seek to effective A position
+                            let duration = core.state.track?.durationSec ?? 0
+                            let time = core.state.loop.effectiveA(trackDuration: duration)
+                            core.send(.transportScrubEnded(timeSec: time))
                         },
                         onSeekNext: {
-                            // Seek to B if set, otherwise end
+                            // Seek to effective B position
                             let duration = core.state.track?.durationSec ?? 0
-                            let time = core.state.loop.bSec ?? duration
-                            core.send(.dragScrub(timeSec: time))
+                            let time = core.state.loop.effectiveB(trackDuration: duration)
+                            core.send(.transportScrubEnded(timeSec: time))
                         }
                     )
                     .padding(.bottom, 16)

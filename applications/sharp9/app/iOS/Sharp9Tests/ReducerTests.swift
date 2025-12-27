@@ -818,5 +818,197 @@ struct ReducerTests {
         #expect(state.markers.isEmpty)
         #expect(effects.isEmpty)
     }
+    
+    // MARK: - tappedAButton Tests
+    
+    @Test("Tapped A button sets A at current playhead position")
+    func testTappedAButton_setsAAtCurrentPlayhead() {
+        var state = makeState(
+            transport: Transport(currentTimeSec: 25.0),
+            loop: LoopPoints()
+        )
+        
+        let effects = Reducer.reduce(state: &state, action: .tappedAButton, now: fixedNow)
+        
+        #expect(state.loop.aSec == 25.0)
+        #expect(effects == [.engineSetLoop(aSec: 25.0, bSec: nil, enabled: false)])
+    }
+    
+    @Test("Tapped A button resets B when current time is past B")
+    func testTappedAButton_resetsBWhenCurrentTimePastB() {
+        var state = makeState(
+            transport: Transport(currentTimeSec: 50.0),
+            loop: LoopPoints(aSec: 10.0, bSec: 30.0, enabled: false) // B is at 30, current is at 50
+        )
+        
+        let effects = Reducer.reduce(state: &state, action: .tappedAButton, now: fixedNow)
+        
+        #expect(state.loop.aSec == 50.0, "A should be set to current time")
+        #expect(state.loop.bSec == nil, "B should be reset to nil (default) when current > B")
+        #expect(effects == [.engineSetLoop(aSec: 50.0, bSec: nil, enabled: false)])
+    }
+    
+    @Test("Tapped A button does not reset B when current time is before B")
+    func testTappedAButton_doesNotResetBWhenCurrentTimeBeforeB() {
+        var state = makeState(
+            transport: Transport(currentTimeSec: 20.0),
+            loop: LoopPoints(aSec: 10.0, bSec: 30.0, enabled: false) // B is at 30, current is at 20
+        )
+        
+        let effects = Reducer.reduce(state: &state, action: .tappedAButton, now: fixedNow)
+        
+        #expect(state.loop.aSec == 20.0, "A should be set to current time")
+        #expect(state.loop.bSec == 30.0, "B should remain unchanged")
+        #expect(effects == [.engineSetLoop(aSec: 20.0, bSec: 30.0, enabled: false)])
+    }
+    
+    // MARK: - tappedBButton Tests
+    
+    @Test("Tapped B button sets B at current playhead position")
+    func testTappedBButton_setsBAtCurrentPlayhead() {
+        var state = makeState(
+            transport: Transport(currentTimeSec: 75.0),
+            loop: LoopPoints()
+        )
+        
+        let effects = Reducer.reduce(state: &state, action: .tappedBButton, now: fixedNow)
+        
+        #expect(state.loop.bSec == 75.0)
+        #expect(effects == [.engineSetLoop(aSec: nil, bSec: 75.0, enabled: false)])
+    }
+    
+    @Test("Tapped B button resets A when current time is before A")
+    func testTappedBButton_resetsAWhenCurrentTimeBeforeA() {
+        var state = makeState(
+            transport: Transport(currentTimeSec: 5.0),
+            loop: LoopPoints(aSec: 30.0, bSec: 60.0, enabled: false) // A is at 30, current is at 5
+        )
+        
+        let effects = Reducer.reduce(state: &state, action: .tappedBButton, now: fixedNow)
+        
+        #expect(state.loop.bSec == 5.0, "B should be set to current time")
+        #expect(state.loop.aSec == nil, "A should be reset to nil (default) when current < A")
+        #expect(effects == [.engineSetLoop(aSec: nil, bSec: 5.0, enabled: false)])
+    }
+    
+    @Test("Tapped B button does not reset A when current time is after A")
+    func testTappedBButton_doesNotResetAWhenCurrentTimeAfterA() {
+        var state = makeState(
+            transport: Transport(currentTimeSec: 50.0),
+            loop: LoopPoints(aSec: 30.0, bSec: 60.0, enabled: false) // A is at 30, current is at 50
+        )
+        
+        let effects = Reducer.reduce(state: &state, action: .tappedBButton, now: fixedNow)
+        
+        #expect(state.loop.bSec == 50.0, "B should be set to current time")
+        #expect(state.loop.aSec == 30.0, "A should remain unchanged")
+        #expect(effects == [.engineSetLoop(aSec: 30.0, bSec: 50.0, enabled: false)])
+    }
+    
+    // MARK: - Loop with Effective Values Tests
+    
+    @Test("Tick at effective B boundary with only A set triggers loop using default B")
+    func testTick_atEffectiveBBoundary_withOnlyASet_triggersLoop() {
+        // When only A is set, effective B = track duration (100.0)
+        var state = makeState(
+            track: TrackMeta(name: "Test", durationSec: 100),
+            transport: Transport(isPlaying: true, currentTimeSec: 95.0),
+            loop: LoopPoints(aSec: 10.0, bSec: nil, enabled: true) // B uses default (track duration)
+        )
+        
+        // Tick at track end (effective B)
+        let effects = Reducer.reduce(state: &state, action: .tick(currentTimeSec: 100.0), now: fixedNow)
+        
+        #expect(state.transport.currentTimeSec == 10.0, "Should jump to A")
+        #expect(effects == [.enginePlay(fromTimeSec: 10.0)], "Should restart from A")
+    }
+    
+    @Test("Tick at effective A boundary with only B set uses default A of 0")
+    func testTick_loopWithOnlyBSet_usesDefaultAOfZero() {
+        // When only B is set, effective A = 0
+        var state = makeState(
+            track: TrackMeta(name: "Test", durationSec: 100),
+            transport: Transport(isPlaying: true, currentTimeSec: 45.0),
+            loop: LoopPoints(aSec: nil, bSec: 50.0, enabled: true) // A uses default (0)
+        )
+        
+        // Tick at B boundary
+        let effects = Reducer.reduce(state: &state, action: .tick(currentTimeSec: 50.0), now: fixedNow)
+        
+        #expect(state.transport.currentTimeSec == 0, "Should jump to effective A (0)")
+        #expect(effects == [.enginePlay(fromTimeSec: 0)], "Should restart from effective A")
+    }
+    
+    @Test("Tick with both loop points nil uses full track as loop range")
+    func testTick_withBothPointsNil_usesFullTrackRange() {
+        // When both are nil: effective A = 0, effective B = track duration
+        var state = makeState(
+            track: TrackMeta(name: "Test", durationSec: 100),
+            transport: Transport(isPlaying: true, currentTimeSec: 95.0),
+            loop: LoopPoints(aSec: nil, bSec: nil, enabled: true)
+        )
+        
+        // Tick at track end
+        let effects = Reducer.reduce(state: &state, action: .tick(currentTimeSec: 100.0), now: fixedNow)
+        
+        #expect(state.transport.currentTimeSec == 0, "Should jump to effective A (0)")
+        #expect(effects == [.enginePlay(fromTimeSec: 0)], "Should restart from 0")
+    }
+    
+    // MARK: - Selectors Tests (Loop Overlay Visibility)
+    
+    @Test("shouldShowLoopOverlay returns false when loop is disabled")
+    func testShouldShowLoopOverlay_whenDisabled_returnsFalse() {
+        let state = makeState(
+            loop: LoopPoints(aSec: 10.0, bSec: 20.0, enabled: false)
+        )
+        
+        #expect(!Selectors.shouldShowLoopOverlay(state))
+    }
+    
+    @Test("shouldShowLoopOverlay returns false when A is not set")
+    func testShouldShowLoopOverlay_whenANotSet_returnsFalse() {
+        let state = makeState(
+            loop: LoopPoints(aSec: nil, bSec: 20.0, enabled: true)
+        )
+        
+        #expect(!Selectors.shouldShowLoopOverlay(state))
+    }
+    
+    @Test("shouldShowLoopOverlay returns false when B is not set")
+    func testShouldShowLoopOverlay_whenBNotSet_returnsFalse() {
+        let state = makeState(
+            loop: LoopPoints(aSec: 10.0, bSec: nil, enabled: true)
+        )
+        
+        #expect(!Selectors.shouldShowLoopOverlay(state))
+    }
+    
+    @Test("shouldShowLoopOverlay returns false when neither A nor B is set")
+    func testShouldShowLoopOverlay_whenNeitherSet_returnsFalse() {
+        let state = makeState(
+            loop: LoopPoints(aSec: nil, bSec: nil, enabled: true)
+        )
+        
+        #expect(!Selectors.shouldShowLoopOverlay(state))
+    }
+    
+    @Test("shouldShowLoopOverlay returns true when loop is enabled and both A and B are set")
+    func testShouldShowLoopOverlay_whenEnabledAndBothSet_returnsTrue() {
+        let state = makeState(
+            loop: LoopPoints(aSec: 10.0, bSec: 20.0, enabled: true)
+        )
+        
+        #expect(Selectors.shouldShowLoopOverlay(state))
+    }
+    
+    @Test("shouldShowLoopOverlay returns false when both A and B are set but loop is disabled")
+    func testShouldShowLoopOverlay_whenBothSetButDisabled_returnsFalse() {
+        let state = makeState(
+            loop: LoopPoints(aSec: 10.0, bSec: 20.0, enabled: false)
+        )
+        
+        #expect(!Selectors.shouldShowLoopOverlay(state))
+    }
 }
 

@@ -17,5 +17,21 @@ struct LoopPoints: Sendable, Equatable {
         guard let a = aSec, let b = bSec else { return nil }
         return a <= b ? (a, b) : (b, a)
     }
+    
+    /// Effective A position (returns 0 if not manually set)
+    func effectiveA(trackDuration: Double) -> Double {
+        aSec ?? 0
+    }
+    
+    /// Effective B position (returns track duration if not manually set)
+    func effectiveB(trackDuration: Double) -> Double {
+        bSec ?? trackDuration
+    }
+    
+    /// Whether the user has manually set A
+    var hasManualA: Bool { aSec != nil }
+    
+    /// Whether the user has manually set B
+    var hasManualB: Bool { bSec != nil }
 }
 

@@ -39,6 +39,10 @@ enum Action: Sendable, Equatable {
     case toggleLoopEnabled(Bool)
     case setA(timeSec: Double)
     case setB(timeSec: Double)
+    /// Set A at current playhead position (from ModeBar button)
+    case tappedAButton
+    /// Set B at current playhead position (from ModeBar button)
+    case tappedBButton
     
     // Toast
     case clearToastIfExpired(now: Date)
