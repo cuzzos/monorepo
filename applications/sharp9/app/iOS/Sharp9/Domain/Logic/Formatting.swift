@@ -9,7 +9,11 @@ enum Formatting {
         let secs = totalSeconds.truncatingRemainder(dividingBy: 60)
 
         let minutesPart = minutes.formatted(.number.precision(.integerLength(2)))
-        let secondsPart = secs.formatted(.number.precision(.fractionLength(2)))
+        // Manually format seconds with rounding to 2 decimal places
+        let roundedSecs = (secs * 100).rounded() / 100
+        let integerSeconds = Int(roundedSecs)
+        let fractionalSeconds = Int((roundedSecs - Double(integerSeconds)) * 100)
+        let secondsPart = String(format: "%02d.%02d", integerSeconds, fractionalSeconds)
 
         return "\(minutesPart):\(secondsPart)"
     }
