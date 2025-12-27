@@ -72,7 +72,7 @@ target/
 # Cursor IDE
 # Track shared rules, ignore user-specific settings
 .cursor/rules/
-**/. cursor/rules/
+**/.cursor/rules/
 **/.cursor/*
 !**/.cursor/rules/
 *.pbxproj
