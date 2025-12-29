@@ -18,27 +18,27 @@ struct PlayerView: View {
                     .frame(maxHeight: .infinity)
                 
                 VStack(spacing: 0) {
-                    ModeBar(
-                        currentMode: core.state.mode,
-                        loopEnabled: core.state.loop.enabled,
-                        hasManualA: core.state.loop.hasManualA,
-                        hasManualB: core.state.loop.hasManualB,
-                        onModeSelected: { mode in
-                            core.send(.setMode(mode))
+                    LoopBar(
+                        selectedTool: core.state.tool,
+                        isLoopEnabled: core.state.loop.enabled,
+                        hasLoopStart: core.state.loop.aSec != nil,
+                        hasLoopEnd: core.state.loop.bSec != nil,
+                        onToolSelected: { tool in
+                            core.send(.setTool(tool))
                         },
-                        onLoopToggle: { enabled in
+                        onSetLoopEnabled: { enabled in
                             core.send(.toggleLoopEnabled(enabled))
                         },
-                        onATapped: {
-                            core.send(.tappedAButton)
+                        onSetLoopStart: {
+                            core.send(.setA(timeSec: core.state.transport.currentTimeSec))
                         },
-                        onBTapped: {
-                            core.send(.tappedBButton)
+                        onSetLoopEnd: {
+                            core.send(.setB(timeSec: core.state.transport.currentTimeSec))
                         }
                     )
                     .padding(.vertical, 8)
                     
-                    TransportBar(
+                    PlaybackBar(
                         state: core.state,
                         onSpeedDelta: { delta in
                             core.send(.speedDelta(delta))
@@ -145,7 +145,7 @@ struct PlayerView: View {
                 peaks: core.peaks,
                 state: core.state,
                 onTap: { time in
-                    core.send(.tapWaveform(timeSec: time))
+                    core.send(.togglePlay)
                 },
                 onDrag: { time in
                     core.send(.transportScrubChanged(timeSec: time))
@@ -229,15 +229,15 @@ struct PlayerView: View {
 #Preview {
     PlayerView(core: Core(deps: .live))
 }
-
-#Preview("Christmas Time is Here") {
-    let core = Core(deps: .live)
-    core.state = AppState(
-        track: TrackMeta(name: "Christmas Time is Here", durationSec: 180.0),
-        transport: Transport(isPlaying: false, currentTimeSec: 45.0, speed: 1.0, pitchSemitones: 0.0),
-        loop: LoopPoints(aSec: 30.0, bSec: 90.0, enabled: true),
-        mode: .loop
-    )
-    return PlayerView(core: core)
-}
-
+//
+//#Preview("Christmas Time is Here") {
+//    let core = Core(deps: .live)
+//    core.state = AppState(
+//        track: TrackMeta(name: "Christmas Time is Here", durationSec: 180.0),
+//        transport: Transport(isPlaying: false, currentTimeSec: 45.0, speed: 1.0, pitchSemitones: 0.0),
+//        loop: LoopPoints(aSec: 30.0, bSec: 90.0, enabled: true),
+//        mode: .loop
+//    )
+//    return PlayerView(core: core)
+//}
+//

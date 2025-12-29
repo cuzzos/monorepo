@@ -10,7 +10,7 @@ struct ReducerTests {
         track: TrackMeta? = TrackMeta(name: "Test", durationSec: 100),
         transport: Transport = Transport(),
         loop: LoopPoints = LoopPoints(),
-        mode: Mode = .loop,
+        tool: LoopTool = .loop,
         markers: [Marker] = [],
         isLoading: Bool = false
     ) -> AppState {
@@ -18,7 +18,7 @@ struct ReducerTests {
             track: track,
             transport: transport,
             loop: loop,
-            mode: mode,
+            tool: tool,
             markers: markers,
             viewport: Viewport(startSec: 0, endSec: track?.durationSec ?? 0),
             isLoading: isLoading
@@ -66,37 +66,6 @@ struct ReducerTests {
         #expect(!state.transport.isPlaying)
         #expect(state.transport.currentTimeSec == 45.0) // Unchanged
         #expect(effects == [.enginePause])
-    }
-    
-    // MARK: - dragScrub Tests (deprecated - redirects to transportScrubChanged)
-
-    @Test("Drag scrub redirects to transportScrubChanged when paused")
-    func testDragScrub_whenPaused_redirectsToTransportScrubChanged() {
-        var state = makeState(
-            transport: Transport(isPlaying: false, currentTimeSec: 0)
-        )
-
-        let effects = Reducer.reduce(state: &state, action: .dragScrub(timeSec: 50.0), now: fixedNow)
-
-        #expect(state.transport.currentTimeSec == 50.0)
-        #expect(!state.transport.isPlaying) // Must NOT change playing state
-        // When paused, seeks immediately
-        #expect(effects == [.engineSeek(timeSec: 50.0)])
-    }
-
-    @Test("Drag scrub redirects to transportScrubChanged when playing")
-    func testDragScrub_whenPlaying_redirectsToTransportScrubChanged() {
-        var state = makeState(
-            transport: Transport(isPlaying: true, currentTimeSec: 10.0)
-        )
-
-        let effects = Reducer.reduce(state: &state, action: .dragScrub(timeSec: 50.0), now: fixedNow)
-
-        #expect(state.transport.currentTimeSec == 50.0)
-        #expect(state.transport.isPlaying) // Must NOT change playing state
-        #expect(state.isScrubbing)
-        // When playing, audio continues - no effect (visual updates only)
-        #expect(effects == [])
     }
     
     // MARK: - transportScrubChanged Tests
@@ -389,20 +358,6 @@ struct ReducerTests {
         #expect(state.isScrubbing == false, "Import succeeded should reset isScrubbing")
     }
     
-    @Test("Tap waveform resets isScrubbing flag")
-    func testTapWaveform_resetsScrubbingFlag() {
-        var state = makeState(
-            transport: Transport(isPlaying: false, currentTimeSec: 10.0),
-            mode: .loop
-        )
-        state.isScrubbing = true // Simulate stuck scrubbing state
-        
-        _ = Reducer.reduce(state: &state, action: .tapWaveform(timeSec: 25.0), now: fixedNow)
-        
-        #expect(state.isScrubbing == false, "Tap should reset isScrubbing")
-        #expect(state.transport.currentTimeSec == 25.0, "Time should update to tap position")
-    }
-    
     // MARK: - Problem 2 Regression: Pause button should work after scrubbing while playing
     // This tests the domain behavior for the bug where pause button turned into play after scrubbing
     
@@ -568,34 +523,6 @@ struct ReducerTests {
         #expect(!state.transport.isPlaying)
         #expect(state.transport.currentTimeSec == 100.0) // Unchanged
         #expect(effects.isEmpty)
-    }
-
-    // MARK: - tapWaveform Tests (in loop mode)
-
-    @Test("Tap waveform in loop mode updates time only when paused")
-    func testTapWaveform_loopMode_whenPaused_updatesTimeOnly() {
-        var state = makeState(
-            transport: Transport(isPlaying: false, currentTimeSec: 0),
-            mode: .loop
-        )
-
-        let effects = Reducer.reduce(state: &state, action: .tapWaveform(timeSec: 25.0), now: fixedNow)
-
-        #expect(state.transport.currentTimeSec == 25.0)
-        #expect(effects.isEmpty)
-    }
-
-    @Test("Tap waveform in loop mode restarts from tap position when playing")
-    func testTapWaveform_loopMode_whenPlaying_restartsFromTapPosition() {
-        var state = makeState(
-            transport: Transport(isPlaying: true, currentTimeSec: 10.0),
-            mode: .loop
-        )
-
-        let effects = Reducer.reduce(state: &state, action: .tapWaveform(timeSec: 25.0), now: fixedNow)
-
-        #expect(state.transport.currentTimeSec == 25.0)
-        #expect(effects == [.enginePlay(fromTimeSec: 25.0)])
     }
 
     // MARK: - Speed/Pitch Tests

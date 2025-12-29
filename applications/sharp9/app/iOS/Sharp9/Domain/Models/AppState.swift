@@ -5,7 +5,7 @@ struct AppState: Sendable, Equatable {
     var track: TrackMeta?
     var transport: Transport
     var loop: LoopPoints
-    var mode: Mode
+    var tool: LoopTool
     var markers: [Marker]
     var viewport: Viewport
     var isLoading: Bool
@@ -17,7 +17,7 @@ struct AppState: Sendable, Equatable {
         track: TrackMeta? = nil,
         transport: Transport = Transport(),
         loop: LoopPoints = LoopPoints(),
-        mode: Mode = .loop,
+        tool: LoopTool = .loop,
         markers: [Marker] = [],
         viewport: Viewport = Viewport(),
         isLoading: Bool = false,
@@ -27,7 +27,7 @@ struct AppState: Sendable, Equatable {
         self.track = track
         self.transport = transport
         self.loop = loop
-        self.mode = mode
+        self.tool = tool
         self.markers = markers
         self.viewport = viewport
         self.isLoading = isLoading

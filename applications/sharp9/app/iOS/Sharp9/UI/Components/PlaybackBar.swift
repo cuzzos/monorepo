@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Transport control bar with speed, play/pause, and pitch controls
-struct TransportBar: View {
+struct PlaybackBar: View {
     let state: AppState
     let onSpeedDelta: (Double) -> Void
     let onPitchDelta: (Double) -> Void
@@ -17,7 +17,7 @@ struct TransportBar: View {
             Spacer()
             
             // Transport controls
-            transportControls()
+            playbackControls()
             
             Spacer()
             
@@ -60,7 +60,7 @@ struct TransportBar: View {
     }
     
     @ViewBuilder
-    private func transportControls() -> some View {
+    private func playbackControls() -> some View {
         HStack(spacing: 24) {
             // Previous (seek to A or start)
             Button("Previous", systemImage: "backward.end.fill") {
@@ -122,7 +122,7 @@ struct TransportBar: View {
 }
 
 #Preview {
-    TransportBar(
+    PlaybackBar(
         state: AppState(),
         onSpeedDelta: { _ in },
         onPitchDelta: { _ in },

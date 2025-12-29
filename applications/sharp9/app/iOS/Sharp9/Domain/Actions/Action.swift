@@ -10,12 +10,7 @@ enum Action: Sendable, Equatable {
     case importSucceeded(track: TrackMeta)
     case importFailed(message: String)
     
-    // Mode
-    case setMode(Mode)
-    
-    // Waveform interaction
-    case tapWaveform(timeSec: Double)
-    case dragScrub(timeSec: Double) // Deprecated: use transportScrubChanged/Ended instead
+    case setTool(LoopTool)
     
     // Transport scrubbing (Elm-style: separate changed/ended)
     case transportScrubChanged(timeSec: Double)
@@ -39,9 +34,9 @@ enum Action: Sendable, Equatable {
     case toggleLoopEnabled(Bool)
     case setA(timeSec: Double)
     case setB(timeSec: Double)
-    /// Set A at current playhead position (from ModeBar button)
+    /// Set A at current playhead position (from LoopBar button)
     case tappedAButton
-    /// Set B at current playhead position (from ModeBar button)
+    /// Set B at current playhead position (from LoopBar button)
     case tappedBButton
     
     // Toast

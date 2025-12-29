@@ -32,33 +32,9 @@ enum Reducer {
             state.toast = ToastState(message: message.isEmpty ? "Unable to open file" : message, now: now())
             return []
             
-        case .setMode(let mode):
-            state.mode = mode
+        case .setTool(let tool):
+            state.tool = tool
             return []
-            
-        case .tapWaveform(let timeSec):
-            // Reset scrubbing state on any tap (tap is a point-in-time action, not a drag)
-            state.isScrubbing = false
-            
-            switch state.mode {
-            case .setA:
-                return reduce(state: &state, action: .setA(timeSec: timeSec), now: now)
-            case .setB:
-                return reduce(state: &state, action: .setB(timeSec: timeSec), now: now)
-            case .marker:
-                return reduce(state: &state, action: .addMarker(timeSec: timeSec), now: now)
-            case .loop:
-                state.transport.currentTimeSec = timeSec
-                // Engine is stateless - if playing, restart from new position
-                if state.transport.isPlaying {
-                    return [.enginePlay(fromTimeSec: timeSec)]
-                }
-                return []
-            }
-            
-        case .dragScrub(let timeSec):
-            // Deprecated: redirect to new transportScrubChanged action
-            return reduce(state: &state, action: .transportScrubChanged(timeSec: timeSec), now: now)
             
         case .transportScrubChanged(let timeSec):
             let clampedTime = clampTime(timeSec, state: state)
