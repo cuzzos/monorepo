@@ -1,69 +1,48 @@
 import SwiftUI
 
-enum LoopTool: Sendable, Equatable {
-    case marker
-    case loop
-    case setA
-    case setB
-}
-
 /// Loop + marker controls:
-/// - Marker: selectable tool
-/// - A/B: momentary actions to set loop start/end at playhead
+/// - Marker: adds marker at current playhead
+/// - A/B: set loop start/end at playhead
 /// - Loop: toggle loop on/off
 struct LoopBar: View {
-    let selectedTool: LoopTool
-
-    let isLoopEnabled: Bool
-    let hasLoopStart: Bool
-    let hasLoopEnd: Bool
-
-    let onToolSelected: (LoopTool) -> Void
-    let onSetLoopEnabled: (Bool) -> Void
-    let onSetLoopStart: () -> Void
-    let onSetLoopEnd: () -> Void
+    let state: AppState
+    let send: (Action) -> Void
 
     private let loopColor = Color(hex: 0x2F6DFF)
 
     var body: some View {
         HStack(spacing: 0) {
-            toolButton(tool: .marker, icon: "mappin")
-
-            setPointButton(label: "A", isSet: hasLoopStart) {
-                onSetLoopStart()
-            }
-
-            setLoopEnabledButton()
-
-            setPointButton(label: "B", isSet: hasLoopEnd) {
-                onSetLoopEnd()
-            }
+            markerButton()
+            setAButton()
+            loopButton()
+            setBButton()
         }
         .background(Color(hex: 0x111317))
         .clipShape(.rect(cornerRadius: 12))
     }
 
     @ViewBuilder
-    private func toolButton(tool: LoopTool, icon: String) -> some View {
-        let isSelected = selectedTool == tool
-
+    private func markerButton() -> some View {
         Button {
-            onToolSelected(tool)
+            send(.addMarker(timeSec: state.transport.currentTimeSec))
         } label: {
-            Image(systemName: icon)
-                .foregroundStyle(isSelected ? .white : .white.opacity(0.6))
+            Image(systemName: "mappin")
+                .foregroundStyle(.white.opacity(0.6))
                 .frame(maxWidth: .infinity)
                 .frame(height: 44)
-                .background(isSelected ? loopColor : Color.clear)
         }
         .buttonStyle(.plain)
     }
 
     @ViewBuilder
-    private func setPointButton(label: String, isSet: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
+    private func setAButton() -> some View {
+        let isSet = Selectors.hasLoopStart(state)
+
+        Button {
+            send(.tappedAButton)
+        } label: {
             HStack(spacing: 4) {
-                Text(label)
+                Text("A")
                     .font(.headline)
                     .bold()
 
@@ -81,15 +60,42 @@ struct LoopBar: View {
     }
 
     @ViewBuilder
-    private func setLoopEnabledButton() -> some View {
+    private func loopButton() -> some View {
+        let isEnabled = Selectors.isLoopEnabled(state)
+
         Button {
-            onSetLoopEnabled(!isLoopEnabled)
+            send(.toggleLoopEnabled(!isEnabled))
         } label: {
             Image(systemName: "repeat")
-                .foregroundStyle(isLoopEnabled ? .white : .white.opacity(0.6))
+                .foregroundStyle(isEnabled ? .white : .white.opacity(0.6))
                 .frame(maxWidth: .infinity)
                 .frame(height: 44)
-                .background(isLoopEnabled ? loopColor : Color.clear)
+                .background(isEnabled ? loopColor : Color.clear)
+        }
+        .buttonStyle(.plain)
+    }
+
+    @ViewBuilder
+    private func setBButton() -> some View {
+        let isSet = Selectors.hasLoopEnd(state)
+
+        Button {
+            send(.tappedBButton)
+        } label: {
+            HStack(spacing: 4) {
+                Text("B")
+                    .font(.headline)
+                    .bold()
+
+                if isSet {
+                    Circle()
+                        .fill(loopColor)
+                        .frame(width: 6, height: 6)
+                }
+            }
+            .foregroundStyle(isSet ? loopColor : .white.opacity(0.6))
+            .frame(maxWidth: .infinity)
+            .frame(height: 44)
         }
         .buttonStyle(.plain)
     }
@@ -97,38 +103,14 @@ struct LoopBar: View {
 
 #Preview {
     VStack(spacing: 16) {
-        LoopBar(
-            selectedTool: .loop,
-            isLoopEnabled: false,
-            hasLoopStart: false,
-            hasLoopEnd: false,
-            onToolSelected: { _ in },
-            onSetLoopEnabled: { _ in },
-            onSetLoopStart: {},
-            onSetLoopEnd: {}
-        )
+        let state1 = AppState(loop: LoopPoints(enabled: false))
+        LoopBar(state: state1, send: { _ in })
 
-        LoopBar(
-            selectedTool: .loop,
-            isLoopEnabled: false,
-            hasLoopStart: true,
-            hasLoopEnd: false,
-            onToolSelected: { _ in },
-            onSetLoopEnabled: { _ in },
-            onSetLoopStart: {},
-            onSetLoopEnd: {}
-        )
+        let state2 = AppState(loop: LoopPoints(aSec: 10, enabled: false))
+        LoopBar(state: state2, send: { _ in })
 
-        LoopBar(
-            selectedTool: .loop,
-            isLoopEnabled: true,
-            hasLoopStart: true,
-            hasLoopEnd: true,
-            onToolSelected: { _ in },
-            onSetLoopEnabled: { _ in },
-            onSetLoopStart: {},
-            onSetLoopEnd: {}
-        )
+        let state3 = AppState(loop: LoopPoints(aSec: 10, bSec: 20, enabled: true))
+        LoopBar(state: state3, send: { _ in })
     }
     .padding()
     .background(Color(hex: 0x0B0C0E))

@@ -19,22 +19,8 @@ struct PlayerView: View {
                 
                 VStack(spacing: 0) {
                     LoopBar(
-                        selectedTool: core.state.tool,
-                        isLoopEnabled: core.state.loop.enabled,
-                        hasLoopStart: core.state.loop.aSec != nil,
-                        hasLoopEnd: core.state.loop.bSec != nil,
-                        onToolSelected: { tool in
-                            core.send(.setTool(tool))
-                        },
-                        onSetLoopEnabled: { enabled in
-                            core.send(.toggleLoopEnabled(enabled))
-                        },
-                        onSetLoopStart: {
-                            core.send(.setA(timeSec: core.state.transport.currentTimeSec))
-                        },
-                        onSetLoopEnd: {
-                            core.send(.setB(timeSec: core.state.transport.currentTimeSec))
-                        }
+                        state: core.state,
+                        send: core.send
                     )
                     .padding(.vertical, 8)
                     

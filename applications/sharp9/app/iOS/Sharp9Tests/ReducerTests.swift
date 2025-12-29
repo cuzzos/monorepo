@@ -10,7 +10,6 @@ struct ReducerTests {
         track: TrackMeta? = TrackMeta(name: "Test", durationSec: 100),
         transport: Transport = Transport(),
         loop: LoopPoints = LoopPoints(),
-        tool: LoopTool = .loop,
         markers: [Marker] = [],
         isLoading: Bool = false
     ) -> AppState {
@@ -18,7 +17,6 @@ struct ReducerTests {
             track: track,
             transport: transport,
             loop: loop,
-            tool: tool,
             markers: markers,
             viewport: Viewport(startSec: 0, endSec: track?.durationSec ?? 0),
             isLoading: isLoading

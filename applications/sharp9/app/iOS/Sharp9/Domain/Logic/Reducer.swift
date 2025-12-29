@@ -32,10 +32,6 @@ enum Reducer {
             state.toast = ToastState(message: message.isEmpty ? "Unable to open file" : message, now: now())
             return []
             
-        case .setTool(let tool):
-            state.tool = tool
-            return []
-            
         case .transportScrubChanged(let timeSec):
             let clampedTime = clampTime(timeSec, state: state)
             let wasPlaying = state.transport.isPlaying

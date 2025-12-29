@@ -9,9 +9,7 @@ enum Action: Sendable, Equatable {
     case importPicked(url: URL)
     case importSucceeded(track: TrackMeta)
     case importFailed(message: String)
-    
-    case setTool(LoopTool)
-    
+
     // Transport scrubbing (Elm-style: separate changed/ended)
     case transportScrubChanged(timeSec: Double)
     case transportScrubEnded(timeSec: Double)

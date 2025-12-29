@@ -40,5 +40,20 @@ enum Selectors {
         let viewport = state.viewport
         return viewport.startSec + position * viewport.durationSec
     }
+
+    /// Whether looping is currently enabled
+    static func isLoopEnabled(_ state: AppState) -> Bool {
+        state.loop.enabled
+    }
+
+    /// Whether loop point A is set
+    static func hasLoopStart(_ state: AppState) -> Bool {
+        state.loop.aSec != nil
+    }
+
+    /// Whether loop point B is set
+    static func hasLoopEnd(_ state: AppState) -> Bool {
+        state.loop.bSec != nil
+    }
 }
 
