@@ -45,4 +45,21 @@ struct FormattingTests {
         #expect(Formatting.formatTime(3599) == "59:59.00") // 59:59
         #expect(Formatting.formatTime(3600) == "60:00.00") // 60 minutes
     }
+
+    @Test("formatTime correctly rounds up seconds to next minute at boundaries")
+    func testFormatTime_roundUpToNextMinute() {
+        #expect(Formatting.formatTime(59.995) == "01:00.00") // Rounds up from 59.995
+        #expect(Formatting.formatTime(119.995) == "02:00.00") // Rounds up from 119.995
+        #expect(Formatting.formatTime(179.995) == "03:00.00") // Rounds up from 179.995
+        #expect(Formatting.formatTime(239.995) == "04:00.00") // Rounds up from 239.995
+        #expect(Formatting.formatTime(299.995) == "05:00.00") // Rounds up from 299.995
+    }
+
+    @Test("formatTime never outputs seconds as 60.00, always rolls over to next minute")
+    func testFormatTime_noSixtySeconds() {
+        // Test that exact multiples of 60 roll over correctly
+        #expect(Formatting.formatTime(60) == "01:00.00") // Exactly 60 seconds
+        #expect(Formatting.formatTime(120) == "02:00.00") // Exactly 120 seconds
+        #expect(Formatting.formatTime(180) == "03:00.00") // Exactly 180 seconds
+    }
 }
