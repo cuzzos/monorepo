@@ -285,6 +285,10 @@ final class DefaultAudioEngine: AudioEngine, @unchecked Sendable {
                 playerNode.scheduleBuffer(seekBuffer, at: nil, options: []) { [weak self] in
                     self?.handlePlaybackCompletion()
                 }
+            } else {
+                // Edge case: seeking to or past the end of the track
+                // No frames to play - immediately signal completion
+                handlePlaybackCompletion()
             }
         }
     }
