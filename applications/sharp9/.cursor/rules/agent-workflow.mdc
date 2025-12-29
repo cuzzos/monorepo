@@ -1,0 +1,350 @@
+---
+description: Essential commands and workflows for AI agents developing the Sharp9 iOS app
+globs:
+  - "**/*.swift"
+  - "**/Makefile"
+  - "**/project.yml"
+alwaysApply: true
+---
+
+# Agent Workflow - Essential Commands for AI Development
+
+## Overview
+
+This guide is specifically for AI agents (Claude, Cursor AI, etc.) working on the Sharp9 iOS app. Follow these workflows to efficiently develop, test, and validate changes.
+
+## Core Philosophy
+
+**ALWAYS use Makefile commands.** They handle complexity and provide clear feedback.
+
+## Primary Agent Workflows
+
+### 🚀 Fast Development Loop (Most Common)
+
+When modifying Swift code, use this rapid iteration cycle:
+
+```bash
+# 1. Navigate to project root
+cd "$(git rev-parse --show-toplevel)/applications/sharp9"
+
+# 2. Edit Swift files
+# (use your editor tools)
+
+# 3. Build and validate (generates project + builds)
+make xcode-build
+
+# 4. If build passes, run tests
+make test
+
+# Done! Changes are validated.
+```
+
+**Key commands:**
+
+| Command | What It Does | When to Use | Speed |
+|---------|--------------|-------------|-------|
+| `make build` | Generate Xcode project from project.yml | After changing project structure | ⚡ Fast (2-3s) |
+| `make xcode-build` | Generate + build iOS app | After ANY Swift changes | 🐢 Medium (15-30s) |
+| `make test` | Run unit tests in simulator | Before considering task complete | 🐢 Medium (20-40s) |
+| `make run-sim` | Build + run in simulator with logs | For visual testing | 🐌 Slowest (30s+) |
+
+### 🎯 Complete Validation (Before Marking Task Complete)
+
+Before considering a task done, run the complete validation:
+
+```bash
+cd "$(git rev-parse --show-toplevel)/applications/sharp9"
+
+# 1. Build the app
+make xcode-build
+
+# 2. Run tests
+make test
+
+# If both pass, your work is validated.
+```
+
+**MANDATORY:** Always run both `make xcode-build` and `make test` before marking any task as complete.
+
+### 📝 Common Development Patterns
+
+#### Adding a New Domain Model
+
+```bash
+# 1. Add model to Domain/Models/
+# e.g., app/iOS/Sharp9/Domain/Models/NewModel.swift
+
+# 2. Build to validate
+make xcode-build
+
+# 3. Add tests in Sharp9Tests/
+make test
+```
+
+#### Adding a New Action/Event
+
+```bash
+# 1. Add case to Domain/Actions/Action.swift
+# 2. Add handler in Domain/Logic/Reducer.swift
+# 3. Add any new effects to Domain/Actions/Effect.swift
+# 4. Build and test
+make xcode-build && make test
+```
+
+#### Modifying UI Components
+
+```bash
+# 1. Edit Swift file in UI/Components/
+# 2. Build and run in simulator to see changes
+make run-sim
+
+# 3. Watch logs for errors (streams automatically)
+# Press Ctrl+C to stop
+
+# 4. If errors, check xcodebuild.log
+cat xcodebuild.log | grep -i error
+```
+
+#### Adding a New UI Component
+
+```bash
+# 1. Create new .swift file in UI/Components/
+# 2. Import in ContentView or parent component
+# 3. Build first
+make xcode-build
+
+# 4. Then run in simulator to verify visually
+make run-sim
+```
+
+## Essential Makefile Commands Reference
+
+### Building Commands
+
+```bash
+make build              # Generate Xcode project from project.yml (FAST)
+make xcode-build        # Generate + build iOS app (USE THIS MOST)
+make run-sim            # Build, install, and run in simulator with logs
+make open               # Open Xcode project (for manual debugging)
+```
+
+### Testing Commands
+
+```bash
+make test               # Run all unit tests in simulator
+```
+
+### Validation Commands
+
+```bash
+make check              # Check if build environment is set up correctly
+```
+
+### Debugging Commands
+
+```bash
+make logs               # Stream app logs from running simulator (filtered)
+make logs-all           # Stream ALL system logs (verbose, unfiltered)
+make list-sims          # List available iOS simulators
+make close-sims         # Close all running simulators
+cat xcodebuild.log      # Check detailed build output for errors
+```
+
+### Cleanup Commands
+
+```bash
+make clean              # Clean build artifacts and DerivedData
+```
+
+## File Organization (Where to Make Changes)
+
+| Task | File(s) to Modify | Then Run |
+|------|-------------------|----------|
+| Add domain model | `Domain/Models/NewModel.swift` | `make xcode-build` |
+| Add action/event | `Domain/Actions/Action.swift` | `make xcode-build` |
+| Add effect type | `Domain/Actions/Effect.swift` | `make xcode-build` |
+| Add business logic | `Domain/Logic/Reducer.swift` | `make test` |
+| Add formatting helper | `Domain/Logic/Formatting.swift` | `make test` |
+| Add selector/computed | `Domain/Logic/Selectors.swift` | `make test` |
+| Modify audio engine | `Engine/DefaultAudioEngine.swift` | `make run-sim` |
+| Add waveform feature | `Engine/WaveformPeakComputer.swift` | `make run-sim` |
+| Add UI component | `UI/Components/NewView.swift` | `make run-sim` |
+| Modify main view | `UI/PlayerView.swift` | `make run-sim` |
+| Wire up effects | `AppGlue/EffectRunner.swift` | `make run-sim` |
+| Add dependency | `AppGlue/Dependencies.swift` | `make xcode-build` |
+| Modify app state | `AppGlue/Core.swift` | `make xcode-build` |
+
+## Working Directory Context
+
+**CRITICAL:** Always be aware of your current directory.
+
+```bash
+# All make commands run from project root:
+cd "$(git rev-parse --show-toplevel)/applications/sharp9"
+make xcode-build  # ✅ Works
+
+# DON'T run from subdirectories:
+cd app/iOS
+make xcode-build  # ❌ Fails - wrong directory
+```
+
+**Best practice:** Always `cd` to project root first:
+```bash
+cd "$(git rev-parse --show-toplevel)/applications/sharp9"
+make xcode-build  # Now guaranteed to work
+```
+
+## Agent-Specific Tips
+
+### When Asked to "Test Your Changes"
+
+```bash
+# For any changes:
+make xcode-build && make test
+```
+
+### When Asked to "Build the App"
+
+```bash
+# If user might want to see it:
+make run-sim
+
+# If just verifying it builds:
+make xcode-build
+```
+
+### When Unsure Which Command to Use
+
+```bash
+# See all available commands:
+make help
+```
+
+### For Performance
+
+- **Use `make xcode-build` constantly** - validates code compiles
+- **Save `make run-sim` for when you need to see UI** - it's slower
+- **Use `make test` before completing tasks** - catches logic errors
+
+## Common Errors and Solutions
+
+### Error: "Xcode project not found"
+
+```bash
+# Solution: Generate the project first
+make build
+# Then build
+make xcode-build
+```
+
+### Error: "Simulator not found"
+
+```bash
+# Solution: Check available simulators
+make list-sims
+
+# Use a different simulator
+make run-sim SIMULATOR='iPhone 16'
+```
+
+### Error: "Build failed"
+
+```bash
+# Solution:
+# 1. Check detailed logs
+cat xcodebuild.log | grep -i error
+
+# 2. Common issues:
+#    - Missing import statements
+#    - Type mismatches in Reducer
+#    - Protocol conformance issues in Engine
+```
+
+### Error: "Tests failed"
+
+```bash
+# Solution:
+# 1. Check test output
+make test 2>&1 | grep -A 5 "failed"
+
+# 2. Common issues:
+#    - State mutation in wrong order
+#    - Missing effect handling
+#    - Incorrect reducer behavior
+```
+
+### Error: "App crashes on launch"
+
+```bash
+# Solution:
+# 1. Check logs
+make logs
+
+# 2. Common issues:
+#    - Force unwrap on nil value
+#    - Missing @MainActor annotation
+#    - Audio engine initialization failure
+```
+
+## Pre-Handoff Checklist
+
+Before telling the user "I'm done":
+
+```bash
+cd "$(git rev-parse --show-toplevel)/applications/sharp9"
+
+# 1. Build succeeds
+make xcode-build
+
+# 2. Tests pass
+make test
+
+# If both pass, you can confidently say:
+# "✅ All changes validated. Build succeeds and tests pass."
+```
+
+## Quick Reference: Decision Tree
+
+```
+What type of change did you make?
+├─ Domain changes (Models, Actions, Logic)
+│  ├─ Run: make xcode-build
+│  └─ Run: make test
+│
+├─ Engine changes (Audio, Waveform)
+│  ├─ Run: make xcode-build
+│  └─ Run: make run-sim (to hear/see changes)
+│
+├─ UI changes (Components, Views)
+│  ├─ Run: make xcode-build
+│  └─ Run: make run-sim (to see changes)
+│
+└─ AppGlue changes (Core, Effects, Dependencies)
+   ├─ Run: make xcode-build
+   └─ Run: make test
+```
+
+## Simulator Configuration
+
+Default simulator is `iPhone 17 Pro`. To use a different one:
+
+```bash
+# List available simulators
+make list-sims
+
+# Use specific simulator
+make run-sim SIMULATOR='iPhone 16'
+make test SIMULATOR='iPhone SE'
+```
+
+## Resources
+
+- Full command reference: `make help`
+- Architecture documentation: `docs/SPEC.md`
+- Design specification: `docs/DESIGN_SPEC.md`
+- Swift standards: `.cursor/rules/swift-ios.mdc`
+
+---
+
+**Last Updated:** December 26, 2025
+**Purpose:** Optimize AI agent development workflows for Sharp9 iOS app
