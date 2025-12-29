@@ -37,18 +37,6 @@ struct WaveformView: View {
                 viewportWidth: viewportWidth
             )
             
-            // Debug: Print values at time 0
-            let _ = {
-                if currentTime < 0.1 {
-                    print("⚙️ WaveformView Debug:")
-                    print("  currentTime: \(currentTime)")
-                    print("  canvasWidth: \(canvasWidth)")
-                    print("  viewportWidth: \(viewportWidth)")
-                    print("  scrollOffset: \(scrollOffset)")
-                    print("  Expected: at time 0, offset should be +\(viewportWidth/2)")
-                }
-            }()
-            
             ZStack {
                 // Waveform canvas layer (scrollable, wide canvas)
                 Canvas { context, _ in
@@ -302,4 +290,3 @@ private extension Double {
         onDragEnded: { _ in }
     )
 }
-

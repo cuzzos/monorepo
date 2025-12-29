@@ -25,7 +25,7 @@ When modifying Swift code, use this rapid iteration cycle:
 
 ```bash
 # 1. Navigate to project root
-cd /Users/huyanhhoang/Developer/Goonlytics/applications/sharp9
+cd "$(git rev-parse --show-toplevel)/applications/sharp9"
 
 # 2. Edit Swift files
 # (use your editor tools)
@@ -53,7 +53,7 @@ make test
 Before considering a task done, run the complete validation:
 
 ```bash
-cd /Users/huyanhhoang/Developer/Goonlytics/applications/sharp9
+cd "$(git rev-parse --show-toplevel)/applications/sharp9"
 
 # 1. Build the app
 make xcode-build
@@ -180,7 +180,7 @@ make clean              # Clean build artifacts and DerivedData
 
 ```bash
 # All make commands run from project root:
-cd /Users/huyanhhoang/Developer/Goonlytics/applications/sharp9
+cd "$(git rev-parse --show-toplevel)/applications/sharp9"
 make xcode-build  # ✅ Works
 
 # DON'T run from subdirectories:
@@ -190,7 +190,7 @@ make xcode-build  # ❌ Fails - wrong directory
 
 **Best practice:** Always `cd` to project root first:
 ```bash
-cd /Users/huyanhhoang/Developer/Goonlytics/applications/sharp9
+cd "$(git rev-parse --show-toplevel)/applications/sharp9"
 make xcode-build  # Now guaranteed to work
 ```
 
@@ -291,7 +291,7 @@ make logs
 Before telling the user "I'm done":
 
 ```bash
-cd /Users/huyanhhoang/Developer/Goonlytics/applications/sharp9
+cd "$(git rev-parse --show-toplevel)/applications/sharp9"
 
 # 1. Build succeeds
 make xcode-build

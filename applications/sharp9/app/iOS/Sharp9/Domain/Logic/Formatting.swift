@@ -5,12 +5,16 @@ enum Formatting {
     /// Formats time as "MM:SS.xx" (e.g., "03:45.12")
     static func formatTime(_ seconds: Double) -> String {
         let totalSeconds = max(0, seconds)
-        let minutes = Int(totalSeconds) / 60
+        var minutes = Int(totalSeconds) / 60
         let secs = totalSeconds.truncatingRemainder(dividingBy: 60)
 
         let minutesPart = minutes.formatted(.number.precision(.integerLength(2)))
         // Manually format seconds with rounding to 2 decimal places
-        let roundedSecs = (secs * 100).rounded() / 100
+        var roundedSecs = (secs * 100).rounded() / 100
+        if roundedSecs >= 60 {
+            minutes += 1
+            roundedSecs = 0
+        }
         let integerSeconds = Int(roundedSecs)
         let fractionalSeconds = Int((roundedSecs - Double(integerSeconds)) * 100)
         let secondsPart = String(format: "%02d.%02d", integerSeconds, fractionalSeconds)
@@ -42,4 +46,3 @@ enum Formatting {
         return "Pitch \(formatted)"
     }
 }
-
