@@ -1,5 +1,17 @@
 # Phase 6-10: Remaining Phases (Skeletons)
 
+> **TLDR:** High-level overview of phases 6-10. Phase 6: Live workout tracking (1-2 weeks). Phase 7: Analytics & charts (1 week). Phase 8: Trainer features with Clerk Organizations (2 weeks). Phase 9: Workout planning with calendar (2 weeks). Phase 10: Polish, performance, accessibility (1 week). Total: 13-14 weeks to production MVP.
+
+## Table of Contents
+- [Phase 6: Live Workout Tracking](#phase-6-live-workout-tracking)
+- [Phase 7: Analytics & Data Visualization](#phase-7-analytics--data-visualization)
+- [Phase 8: Trainer Features](#phase-8-trainer-features)
+- [Phase 9: Workout Planning](#phase-9-workout-planning)
+- [Phase 10: Polish & Production Readiness](#phase-10-polish--production-readiness)
+- [Total Timeline](#total-timeline)
+
+---
+
 This document contains skeleton outlines for phases 6-10. Each will be expanded when that phase begins.
 
 ---

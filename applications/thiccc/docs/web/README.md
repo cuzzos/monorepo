@@ -1,5 +1,24 @@
 # Thiccc Web Documentation - Index
 
+> **TLDR:** Central navigation hub for thiccc web app documentation. Contains links to all phase guides (0-10), reference docs (API, database, feature flags), Dagger toolchains, and quick commands for developers and AI agents. Start here to find everything.
+
+## Table of Contents
+- [Getting Started](#-getting-started)
+- [Phase Documentation](#-phase-documentation)
+- [Reference Documentation](#-reference-documentation)
+- [AI Agent Guides](#-ai-agent-guides)
+- [Dagger Devtools](#-dagger-devtools)
+- [Quick Commands](#-quick-commands)
+- [Project Structure](#-project-structure)
+- [External Links](#-external-links)
+- [FAQ](#-faq)
+- [Deployment URLs](#-deployment-urls)
+- [Progress Tracking](#-progress-tracking)
+- [Contributing](#-contributing)
+- [Support](#-support)
+
+---
+
 Welcome to the thiccc web application documentation. This index helps you find what you need.
 
 ---

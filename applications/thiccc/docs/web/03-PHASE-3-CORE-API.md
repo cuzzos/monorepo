@@ -1,5 +1,26 @@
 # Phase 3: Core API & Database
 
+> **TLDR:** Create PostgreSQL database schema (workouts, exercises, sets) matching iOS app structure. Set up SQLx for database connection and migrations. Build foundational API endpoints (health check, `/api/me`), error handling middleware, and CORS configuration. Add React Query API client to frontend. Estimated time: 1 week.
+
+## Table of Contents
+- [AI Agent Instructions](#-ai-agent-instructions)
+- [Required Context](#-required-context)
+- [Feature Overview](#-feature-overview)
+- [Tasks](#-tasks)
+  - [Task 1: Design Database Schema](#task-1-design-database-schema-estimated-30-mins)
+  - [Task 2: Setup SQLx](#task-2-setup-sqlx-estimated-20-mins)
+  - [Task 3: Run First Migration](#task-3-run-first-migration-estimated-10-mins)
+  - [Task 4: Create Error Handling Middleware](#task-4-create-error-handling-middleware-estimated-25-mins)
+  - [Task 5: Create `/api/me` Endpoint](#task-5-create-apime-endpoint-estimated-30-mins)
+  - [Task 6: Setup CORS](#task-6-setup-cors-estimated-10-mins)
+  - [Task 7: Add API Client to Frontend](#task-7-add-api-client-to-frontend-estimated-20-mins)
+- [Phase Completion Checklist](#-phase-completion-checklist)
+- [Common Issues](#-common-issues)
+- [Dependencies](#-dependencies)
+- [Next Phase](#next-phase)
+
+---
+
 ## 🤖 AI Agent Instructions
 
 **When starting this phase:**

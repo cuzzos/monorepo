@@ -1,5 +1,22 @@
 # API Specification
 
+> **TLDR:** Complete REST API reference for thiccc web backend. Follows Google JSON Style Guide with `camelCase` properties. All responses wrapped in `data` object. JWT authentication (Clerk) required for protected endpoints. Includes health check, user endpoints, workout CRUD, exercise/set management, admin endpoints, pagination, and rate limiting. Base URLs: `http://localhost:8000` (dev), `https://api.thiccc.app` (prod).
+
+## Table of Contents
+- [Health Check](#health-check)
+- [User Endpoints](#user-endpoints)
+- [Workout Endpoints](#workout-endpoints)
+- [Exercise Endpoints](#exercise-endpoints)
+- [Set Endpoints](#set-endpoints)
+- [Admin Endpoints](#admin-endpoints)
+- [Rate Limiting](#rate-limiting)
+- [Pagination](#pagination)
+- [Versioning](#versioning)
+- [CORS](#cors)
+- [WebSockets (Future)](#websockets-future)
+
+---
+
 **Style Guide:** This API follows the [Google JSON Style Guide](https://google.github.io/styleguide/jsoncstyleguide.xml)
 
 **Base URL (Development):** `http://localhost:8000`  

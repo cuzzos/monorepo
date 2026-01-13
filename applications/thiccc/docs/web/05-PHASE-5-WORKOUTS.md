@@ -1,5 +1,20 @@
 # Phase 5: Workouts CRUD
 
+> **TLDR:** Core workout management feature. Complete CRUD operations for workouts, exercises, and sets. Backend imports business logic from `shared/` crate. Frontend uses TypeScript types from `shared_types`. Includes workout list page, detail page, creation flow, and React Query mutations with optimistic updates. Estimated time: 2 weeks.
+
+## Table of Contents
+- [AI Agent Instructions](#-ai-agent-instructions)
+- [Required Context](#-required-context)
+- [Feature Overview](#-feature-overview)
+- [Tasks](#-tasks)
+  - [Backend Tasks](#backend-tasks)
+  - [Frontend Tasks](#frontend-tasks)
+- [Phase Completion Checklist](#-phase-completion-checklist)
+- [Dependencies](#-dependencies)
+- [Next Phase](#next-phase)
+
+---
+
 ## 🤖 AI Agent Instructions
 
 **When starting this phase:**

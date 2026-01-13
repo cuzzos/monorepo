@@ -1,5 +1,25 @@
 # Feature Flags System
 
+> **TLDR:** Role-based feature flag system using Clerk metadata. Enables admin-only features (debug panel, admin dashboard), trainer features (client management), and beta testing in production. Frontend hook `useFeatureFlag()` checks user roles from `publicMetadata`. Includes comprehensive testing examples with fixtures and mocks. Admin flags require 'admin' role, trainer flags require 'admin' or 'trainer' role.
+
+## Table of Contents
+- [Overview](#overview)
+- [Implementation](#implementation)
+  - [Frontend Hook](#frontend-hook)
+  - [Usage in Components](#usage-in-components)
+  - [Usage in Routes](#usage-in-routes)
+- [Available Flags](#available-flags)
+  - [Admin Flags](#admin-flags)
+  - [Trainer Flags](#trainer-flags)
+- [Setting User Metadata](#setting-user-metadata)
+- [Security](#security)
+- [Debug Panel Feature Flag](#debug-panel-feature-flag)
+- [Future Enhancements](#future-enhancements)
+- [Testing](#testing)
+- [Summary](#summary)
+
+---
+
 Feature flags allow selective feature access based on user roles or other criteria.
 
 ## Overview

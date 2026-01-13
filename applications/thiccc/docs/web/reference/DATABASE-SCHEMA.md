@@ -1,5 +1,36 @@
 # Database Schema
 
+> **TLDR:** PostgreSQL 16 database schema for thiccc. Supports 8 workout formats (traditional, EMOM, AMRAP, For Time, Tabata, Interval, Circuit, Hyrox). Fully normalized design (no JSONB) for iOS/SQLite compatibility. Slim core tables with optional 1:1 relationships for format-specific data. Includes users, workouts, exercises, sets, body measurements, trainer relationships, templates, and planned workouts. Uses UUIDs, `TIMESTAMPTZ`, internal user IDs with Clerk integration.
+
+## Table of Contents
+- [Schema Overview](#schema-overview)
+- [Workout Format Types Supported](#workout-format-types-supported)
+- [Tables](#tables)
+  - [users](#users)
+  - [workout_format_definitions](#workout_format_definitions)
+  - [workouts](#workouts)
+  - [workout_timings](#workout_timings)
+  - [workout_completions](#workout_completions)
+  - [workout_sections](#workout_sections)
+  - [workout_exercises](#workout_exercises)
+  - [exercise_sets](#exercise_sets)
+  - [exercise_definitions](#exercise_definitions)
+  - [user_body_measurements](#user_body_measurements)
+  - [measurement_definitions](#measurement_definitions)
+  - [user_performance_records](#user_performance_records)
+  - [trainer_client_relationships](#trainer_client_relationships)
+  - [workout_templates](#workout_templates)
+  - [planned_workouts](#planned_workouts)
+- [Workout Format Examples](#workout-format-examples)
+- [Migrations](#migrations)
+- [Data Types](#data-types)
+- [Query Examples](#query-examples)
+- [Schema Evolution Strategy](#schema-evolution-strategy)
+- [Benefits of This Design](#benefits-of-this-design)
+- [Next Steps](#next-steps)
+
+---
+
 **Database:** PostgreSQL 16  
 **Migration tool:** sqlx  
 **Character set:** UTF-8

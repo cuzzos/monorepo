@@ -1,5 +1,22 @@
 # Thiccc Web Application - Overview
 
+> **TLDR:** Architecture overview for thiccc web app. Tech stack: Next.js (frontend), Rust+Axum (backend), PostgreSQL (database), Clerk (auth), hosted on Vercel+Railway. 13-week phased development plan (0-10). Reuses existing Rust business logic from iOS app's `shared/` crate. Uses Dagger for containerized dev tools.
+
+## Table of Contents
+- [What We're Building](#what-were-building)
+- [Architecture](#architecture)
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Development Phases](#development-phases)
+- [Key Principles](#key-principles)
+- [Architecture Decisions](#architecture-decisions)
+- [Data Flow Example](#data-flow-example)
+- [Next Steps](#next-steps)
+- [Questions?](#questions)
+- [Success Metrics](#success-metrics)
+
+---
+
 ## What We're Building
 
 A web frontend for **thiccc**, the workout tracking application. The web app will have feature parity with the iOS app, plus web-specific features like analytics dashboards, trainer client management, and workout planning.

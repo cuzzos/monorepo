@@ -1,5 +1,25 @@
 # Phase 2: Authentication with Clerk
 
+> **TLDR:** Implement complete authentication flow using Clerk. Set up sign-up/sign-in pages, protected routes with middleware, JWT validation in Rust backend, user profile, and sign-out. Estimated time: 1 week.
+
+## Table of Contents
+- [AI Agent Instructions](#-ai-agent-instructions)
+- [Required Context](#-required-context)
+- [Feature Overview](#-feature-overview)
+- [Tasks](#-tasks)
+  - [Task 1: Install Clerk SDK in Frontend](#task-1-install-clerk-sdk-in-frontend-estimated-10-mins)
+  - [Task 2: Create Auth Pages](#task-2-create-auth-pages-estimated-20-mins)
+  - [Task 3: Protect Routes with Middleware](#task-3-protect-routes-with-middleware-estimated-15-mins)
+  - [Task 4: Add JWT Validation to Backend](#task-4-add-jwt-validation-to-backend-estimated-30-mins)
+  - [Task 5: Create Protected Dashboard Page](#task-5-create-protected-dashboard-page-estimated-20-mins)
+  - [Task 6: Add User Profile Dropdown](#task-6-add-user-profile-dropdown-estimated-15-mins)
+- [Phase Completion Checklist](#-phase-completion-checklist)
+- [Common Issues](#-common-issues)
+- [Dependencies](#-dependencies)
+- [Next Phase](#next-phase)
+
+---
+
 ## 🤖 AI Agent Instructions
 
 **When starting this phase:**

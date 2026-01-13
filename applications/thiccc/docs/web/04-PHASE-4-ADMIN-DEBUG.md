@@ -1,5 +1,27 @@
 # Phase 4: Admin Dashboard & Debug Panel
 
+> **TLDR:** Build admin-only features with feature flags. Create debug panel accessible via Cmd+Shift+D (shows API logs, React Query state, database queries, auth tokens). Build admin dashboard with user management, system health, and role-based access control. Works in production but only for admin users. Estimated time: 1 week.
+
+## Table of Contents
+- [AI Agent Instructions](#-ai-agent-instructions)
+- [Required Context](#-required-context)
+- [Feature Overview](#-feature-overview)
+- [Tasks](#-tasks)
+  - [Task 1: Add Role to User Metadata](#task-1-add-role-to-user-metadata-estimated-15-mins)
+  - [Task 2: Create Feature Flag System](#task-2-create-feature-flag-system-estimated-25-mins)
+  - [Task 3: Create Debug Panel Component](#task-3-create-debug-panel-component-estimated-45-mins)
+  - [Task 4: Add API Request Logging](#task-4-add-api-request-logging-estimated-20-mins)
+  - [Task 5: Create Admin Layout](#task-5-create-admin-layout-estimated-20-mins)
+  - [Task 6: Create Admin Dashboard Page](#task-6-create-admin-dashboard-page-estimated-30-mins)
+  - [Task 7: Create Admin Users Page](#task-7-create-admin-users-page-estimated-40-mins)
+  - [Task 8: Add Admin Role Middleware to Backend](#task-8-add-admin-role-middleware-to-backend-estimated-20-mins)
+- [Phase Completion Checklist](#-phase-completion-checklist)
+- [Common Issues](#-common-issues)
+- [Dependencies](#-dependencies)
+- [Next Phase](#next-phase)
+
+---
+
 ## 🤖 AI Agent Instructions
 
 **When starting this phase:**

@@ -1,5 +1,30 @@
 # Phase 1: Development Environment Setup
 
+> **TLDR:** Set up complete dev environment for thiccc web app. Install Dagger CLI, verify Docker, create project structure, initialize Rust backend and Next.js frontend, set up Clerk (auth), Railway (PostgreSQL + backend hosting), and Vercel (frontend hosting). Test full stack locally. Estimated time: 1 week. Multiple human checkpoints for account creation and API keys.
+
+## Table of Contents
+- [AI Agent Instructions](#-ai-agent-instructions)
+- [Required Context](#-required-context)
+- [Feature Overview](#-feature-overview)
+- [Tasks](#-tasks)
+  - [Task 1: Install Dagger CLI](#task-1-install-dagger-cli-estimated-5-mins)
+  - [Task 2: Verify Docker is Running](#task-2-verify-docker-is-running-estimated-2-mins)
+  - [Task 2.5: Create Dagger Module](#task-25-create-dagger-module-estimated-20-mins)
+  - [Task 3: Create Project Structure](#task-3-create-project-structure-estimated-10-mins)
+  - [Task 4: Initialize Backend (Rust)](#task-4-initialize-backend-rust-estimated-15-mins)
+  - [Task 5: Initialize Frontend (Next.js)](#task-5-initialize-frontend-nextjs-estimated-15-mins)
+  - [Task 6: Setup Clerk Account](#task-6-setup-clerk-account-estimated-10-mins)
+  - [Task 7: Setup Railway Project](#task-7-setup-railway-project-estimated-10-mins)
+  - [Task 8: Setup Vercel Project](#task-8-setup-vercel-project-estimated-5-mins)
+  - [Task 9: Test Full Stack Locally](#task-9-test-full-stack-locally-estimated-15-mins)
+- [Phase Completion Checklist](#-phase-completion-checklist)
+- [Common Issues](#-common-issues)
+- [Dependencies](#-dependencies)
+- [Progress Tracking](#-progress-tracking)
+- [Next Phase](#next-phase)
+
+---
+
 ## 🤖 AI Agent Instructions
 
 **When starting this phase:**
