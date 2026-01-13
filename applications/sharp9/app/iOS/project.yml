@@ -1,0 +1,56 @@
+name: Sharp9
+options:
+  bundleIdPrefix: com.cuzzos
+attributes:
+  BuildIndependentTargetsInParallel: true
+targets:
+  Sharp9:
+    type: application
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: Sharp9
+        excludes:
+          - Tests
+    resources:
+      - Sharp9/Assets.xcassets
+    settings:
+      base:
+        DEVELOPMENT_TEAM: WGS9LUKK32
+        CODE_SIGN_IDENTITY: "Apple Development"
+        CODE_SIGN_STYLE: Automatic
+        ENABLE_BITCODE: false
+        ENABLE_USER_SCRIPT_SANDBOXING: YES
+      configs:
+        Debug:
+          ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS: YES
+          ASSETCATALOG_COMPILER_GENERATE_ASSET_SYMBOL_FRAMEWORK_SUPPORT: YES
+          SWIFT_EMIT_LOC_STRINGS: YES
+        Release:
+          ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS: YES
+          ASSETCATALOG_COMPILER_GENERATE_ASSET_SYMBOL_FRAMEWORK_SUPPORT: YES
+          SWIFT_EMIT_LOC_STRINGS: YES
+    info:
+      path: Sharp9/Info.plist
+      properties:
+        CFBundleDisplayName: sharp9
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UILaunchScreen: {}
+  
+  Sharp9Tests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: Sharp9Tests
+    dependencies:
+      - target: Sharp9
+    settings:
+      base:
+        DEVELOPMENT_TEAM: WGS9LUKK32
+        CODE_SIGN_IDENTITY: "Apple Development"
+        CODE_SIGN_STYLE: Automatic
+        GENERATE_INFOPLIST_FILE: YES
