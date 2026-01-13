@@ -675,12 +675,12 @@ round_number = 3, set_number = 1, reps = 15
 *AMRAP 10 minutes (as many rounds as possible):*
 ```sql
 -- Round 1
-round_number = 1, set_number = 1, reps = 10, timing_metadata = {"started_at_offset_seconds": 0}
-round_number = 1, set_number = 1, reps = 10, timing_metadata = {"started_at_offset_seconds": 15}
+round_number = 1, set_number = 1, reps = 10, started_at_offset_seconds = 0
+round_number = 1, set_number = 1, reps = 10, started_at_offset_seconds = 15
 
 -- Round 2
-round_number = 2, set_number = 1, reps = 10, timing_metadata = {"started_at_offset_seconds": 90}
-round_number = 2, set_number = 1, reps = 10, timing_metadata = {"started_at_offset_seconds": 105}
+round_number = 2, set_number = 1, reps = 10, started_at_offset_seconds = 90
+round_number = 2, set_number = 1, reps = 10, started_at_offset_seconds = 105
 
 -- ... continues until time cap
 ```
