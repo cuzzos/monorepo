@@ -11,11 +11,16 @@
 ```
 users (internal UUID + clerk_user_id)
   ↓
-workouts
+workout_format_definitions (reference data: traditional, EMOM, AMRAP, etc.)
+  ↓
+workouts (slim table: core fields only)
+  ├─ workout_timings (optional 1:1: format-specific timing)
+  ├─ workout_completions (optional 1:1: format-specific results)
+  └─ workout_sections (optional: for circuits, EMOMs, supersets)
   ↓
 workout_exercises → exercise_definitions (optional reference)
   ↓
-exercise_sets
+        exercise_sets (with round_number support)
 
 users → user_body_measurements → measurement_definitions
 
@@ -26,13 +31,33 @@ user_performance_records (view computed from exercise_sets)
 trainer_client_relationships (Phase 8) - links users
 planned_workouts (Phase 9)
 workout_templates (Phase 9)
+  └─ workout_template_timings (optional 1:1: default timing)
 ```
 
-**Key Design Decision:**
+**Key Design Decisions:**
 - Internal `UUID` for `user_id` (stable, vendor-agnostic)
 - External `clerk_user_id` stored in `users` table (auth provider reference)
 - **Exercise library** (`exercise_definitions`) for consistent exercise metadata
-- Exercises can reference library or be custom (free-text)
+- **Slim core tables** with optional 1:1 relationships for format-specific data
+- **No JSONB** - fully normalized, iOS-compatible (SQLite)
+- **Reference data** (`workout_format_definitions`) for format selection UX
+- **Optional sectioning** via `workout_sections` for circuits, EMOMs, supersets
+- **Round tracking** via `round_number` on sets for circuits and AMRAP
+
+---
+
+## Workout Format Types Supported
+
+| Format | Description | Timing Structure | Scoring |
+|--------|-------------|------------------|---------|
+| `traditional` | Standard strength training | Per-exercise rest times | Weight × Reps (volume) |
+| `emom` | Every Minute On the Minute | Fixed interval (e.g., 60s) | Rounds completed |
+| `amrap` | As Many Rounds/Reps As Possible | Time cap (e.g., 10 min) | Rounds + reps completed |
+| `for_time` | Complete work as fast as possible | Time cap (optional) | Time to complete |
+| `tabata` | 20s work / 10s rest × 8 rounds | 20s work, 10s rest | Rounds completed |
+| `interval` | Custom work/rest intervals | Configurable | Rounds completed |
+| `circuit` | Round-robin through exercises | Rest between rounds | Rounds completed |
+| `hyrox` | Structured race format | Segments (run + exercise) | Total time |
 
 ---
 
@@ -64,26 +89,92 @@ CREATE INDEX idx_users_email ON users(email);
 - **Roles array**: Supports multiple roles per user (e.g., `['user', 'trainer', 'admin']`)
 - **Email**: Cached for queries, synced from Clerk on login
 - **default_measurement_unit**: User's preferred unit for new sets ('lbs' or 'kg')
-  - Frontend can pre-fill this value when creating sets
-  - User can override on per-set basis if needed
 - **Last login tracking**: For analytics and admin dashboard
 
 **Phase:** 2 (Auth setup)
 
 ---
 
+### workout_format_definitions
+
+Reference table for workout format types and their metadata.
+
+```sql
+CREATE TABLE workout_format_definitions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    format_key TEXT UNIQUE NOT NULL,
+    display_name TEXT NOT NULL,
+    description TEXT,
+    category TEXT NOT NULL CHECK (category IN ('strength', 'cardio', 'hybrid', 'sport')),
+    
+    -- Default timing values (null if not applicable to this format)
+    default_time_cap_seconds INTEGER,
+    default_interval_seconds INTEGER,
+    default_work_seconds INTEGER,
+    default_rest_seconds INTEGER,
+    default_rounds INTEGER,
+    
+    -- Format characteristics (for UI filtering/selection)
+    is_timed BOOLEAN NOT NULL DEFAULT false,        -- Has time cap or intervals
+    is_scored BOOLEAN NOT NULL DEFAULT false,       -- Tracks competitive score
+    requires_rounds BOOLEAN NOT NULL DEFAULT false, -- Exercises done in rounds
+    
+    -- Display metadata
+    icon_name TEXT,
+    display_order INTEGER,
+    is_active BOOLEAN DEFAULT true,
+    
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_format_defs_category ON workout_format_definitions(category);
+CREATE INDEX idx_format_defs_active ON workout_format_definitions(is_active);
+```
+
+**Seed Data:**
+```sql
+INSERT INTO workout_format_definitions 
+(format_key, display_name, description, category, default_rounds, is_timed, is_scored, requires_rounds, display_order) 
+VALUES
+('traditional', 'Traditional', 'Standard strength training with rest between sets', 'strength', NULL, false, false, false, 1),
+('emom', 'EMOM', 'Every Minute On the Minute - complete work within each minute', 'cardio', 10, true, true, true, 2),
+('amrap', 'AMRAP', 'As Many Rounds As Possible in a time limit', 'hybrid', NULL, true, true, true, 3),
+('for_time', 'For Time', 'Complete prescribed work as fast as possible', 'hybrid', NULL, true, true, false, 4),
+('tabata', 'Tabata', '20 seconds work, 10 seconds rest, 8 rounds', 'cardio', 8, true, false, true, 5),
+('circuit', 'Circuit', 'Multiple exercises done in sequence for rounds', 'strength', 3, false, false, true, 6),
+('interval', 'Interval', 'Custom work/rest intervals', 'cardio', NULL, true, false, true, 7),
+('hyrox', 'Hyrox', 'Structured race format (8x 1km run + 8 exercises)', 'sport', NULL, true, true, false, 8);
+```
+
+**Rationale:**
+- **Reference data**: Static workout format types with metadata
+- **Default values**: Pre-populate UI forms when user selects format
+- **Format characteristics**: UI can filter/display formats appropriately
+- **No schema migrations**: Add new formats by inserting rows
+- **iOS compatible**: No JSONB, pure relational design
+
+**Phase:** 3 (Core API)
+
+---
+
 ### workouts
 
-Stores workout sessions.
+Stores core workout session data (slim table, format-specific data in child tables).
 
 ```sql
 CREATE TABLE workouts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    workout_format_id UUID NOT NULL REFERENCES workout_format_definitions(id),
+    
     name TEXT NOT NULL,
     notes TEXT,
+    
+    -- Timestamps
     started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     completed_at TIMESTAMPTZ,
+    duration_seconds INTEGER,       -- Actual workout duration (excluding pauses)
+    
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -91,14 +182,194 @@ CREATE TABLE workouts (
 CREATE INDEX idx_workouts_user_id ON workouts(user_id);
 CREATE INDEX idx_workouts_started_at ON workouts(started_at DESC);
 CREATE INDEX idx_workouts_user_started ON workouts(user_id, started_at DESC);
+CREATE INDEX idx_workouts_format_id ON workouts(workout_format_id);
+CREATE INDEX idx_workouts_user_format ON workouts(user_id, workout_format_id);
 ```
 
 **Rationale:**
-- **Foreign key to users**: `user_id` references internal UUID, not Clerk ID
-- **Cascade delete**: If user deleted, all workouts deleted (GDPR compliance)
-- **Composite index**: Optimized for "get user's recent workouts" query
-- **started_at and completed_at separate**: Workout might not be finished
-- **Timestamps**: Track creation and modifications for sync/audit
+- **Slim table**: Core fields only (8 columns total)
+- **Format-agnostic**: No format-specific nullable columns
+- **1:1 relationships**: Timing and scoring data in separate tables
+- **Clean separation**: Core workout data vs format configuration vs scoring
+
+**Phase:** 3 (Core API)
+
+---
+
+### workout_timings
+
+Stores format-specific timing configuration (optional, 1:1 with workouts).
+
+```sql
+CREATE TABLE workout_timings (
+    workout_id UUID PRIMARY KEY REFERENCES workouts(id) ON DELETE CASCADE,
+    
+    -- Timing fields (nullable, populated based on format)
+    time_cap_seconds INTEGER,             -- AMRAP, For Time, Interval
+    interval_seconds INTEGER,             -- EMOM
+    work_seconds INTEGER,                 -- Tabata, Interval
+    rest_seconds INTEGER,                 -- Tabata, Interval
+    rounds INTEGER,                       -- EMOM, Tabata, Circuit, Interval
+    rest_between_rounds_seconds INTEGER,  -- Circuit, Interval
+    
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_workout_timings_rounds ON workout_timings(rounds);
+CREATE INDEX idx_workout_timings_time_cap ON workout_timings(time_cap_seconds);
+```
+
+**When to create:**
+- Traditional workouts: **Don't create** (no timing config needed)
+- EMOM/AMRAP/Circuit: **Create** with relevant fields populated
+
+**Examples:**
+
+*EMOM (10 minutes, 60-second intervals):*
+```sql
+INSERT INTO workout_timings (workout_id, interval_seconds, rounds)
+VALUES (<workout_uuid>, 60, 10);
+```
+
+*AMRAP (10 minutes):*
+```sql
+INSERT INTO workout_timings (workout_id, time_cap_seconds)
+VALUES (<workout_uuid>, 600);
+```
+
+*Tabata:*
+```sql
+INSERT INTO workout_timings (workout_id, work_seconds, rest_seconds, rounds)
+VALUES (<workout_uuid>, 20, 10, 8);
+```
+
+*Circuit (3 rounds, 2-minute rest):*
+```sql
+INSERT INTO workout_timings (workout_id, rounds, rest_between_rounds_seconds)
+VALUES (<workout_uuid>, 3, 120);
+```
+
+**Phase:** 3 (Core API)
+
+---
+
+### workout_completions
+
+Stores format-specific completion results (optional, 1:1 with workouts).
+
+```sql
+CREATE TABLE workout_completions (
+    workout_id UUID PRIMARY KEY REFERENCES workouts(id) ON DELETE CASCADE,
+    
+    -- Completion fields (nullable, populated based on format)
+    rounds_completed INTEGER,        -- AMRAP, EMOM
+    additional_reps INTEGER,         -- AMRAP (partial round)
+    time_to_complete_seconds INTEGER,  -- For Time, Hyrox
+    is_scaled BOOLEAN,               -- For Time, AMRAP (Rx vs Scaled)
+    notes TEXT,                      -- Additional completion context
+    
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_workout_completions_time ON workout_completions(time_to_complete_seconds);
+CREATE INDEX idx_workout_completions_rounds ON workout_completions(rounds_completed);
+CREATE INDEX idx_workout_completions_scaled ON workout_completions(is_scaled);
+```
+
+**When to create:**
+- Traditional workouts: **Don't create** (volume is implicit)
+- AMRAP/For Time/EMOM: **Create** after workout completion
+
+**Examples:**
+
+*AMRAP completion (5 rounds + 12 reps, Rx):*
+```sql
+INSERT INTO workout_completions (workout_id, rounds_completed, additional_reps, is_scaled)
+VALUES (<workout_uuid>, 5, 12, false);
+```
+
+*For Time completion (8:07, Rx):*
+```sql
+INSERT INTO workout_completions (workout_id, time_to_complete_seconds, is_scaled, notes)
+VALUES (<workout_uuid>, 487, false, 'Rx weight (95lbs)');
+```
+
+*EMOM completion:*
+```sql
+INSERT INTO workout_completions (workout_id, rounds_completed)
+VALUES (<workout_uuid>, 10);
+```
+
+**Phase:** 3 (Core API)
+
+---
+
+### workout_sections (Optional Grouping)
+
+Logical grouping of exercises for circuits, supersets, EMOM blocks, or Hyrox segments.
+
+```sql
+CREATE TABLE workout_sections (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    workout_id UUID NOT NULL REFERENCES workouts(id) ON DELETE CASCADE,
+    name TEXT,  -- e.g., "Circuit A", "EMOM Block", "Superset 1", "Run 1"
+    section_type TEXT NOT NULL CHECK (section_type IN (
+        'standard',   -- Regular exercise grouping
+        'circuit',    -- Circuit training
+        'superset',   -- Superset (2-3 exercises back-to-back)
+        'emom',       -- EMOM block
+        'interval',   -- Interval block
+        'segment'     -- Hyrox segment or timed section
+    )),
+    order_index INTEGER NOT NULL,
+    
+    -- Section-specific timing (overrides workout-level timing if present)
+    -- Nullable - only populated if section has custom timing
+    time_cap_seconds INTEGER,
+    interval_seconds INTEGER,
+    work_seconds INTEGER,
+    rest_seconds INTEGER,
+    rounds INTEGER,
+    rest_between_rounds_seconds INTEGER,
+    
+    notes TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_sections_workout_id ON workout_sections(workout_id);
+CREATE INDEX idx_sections_workout_order ON workout_sections(workout_id, order_index);
+CREATE INDEX idx_sections_type ON workout_sections(section_type);
+```
+
+**Rationale:**
+- **Optional**: Traditional workouts don't need sections
+- **Flexible grouping**: Supports circuits, supersets, EMOM blocks, Hyrox segments
+- **Section-level timing**: Sections can override workout-level timing
+  - Example: Workout has EMOM format, but one section is "For Time"
+- **order_index**: Maintains section order (Strength → Circuit → Finisher)
+- **iOS compatible**: No JSONB, pure relational design
+
+**Examples:**
+
+*Workout without sections:*
+- Traditional strength training (5 exercises, no grouping needed)
+
+*Workout with sections:*
+- Section 1 (standard): Warm-up exercises
+- Section 2 (circuit): 4 exercises, 3 rounds, 2-min rest between rounds
+- Section 3 (emom): Cardio finisher, 5 minutes
+
+*Hyrox with sections:*
+- Section 1 (segment): 1km Run
+- Section 2 (segment): 1000m SkiErg
+- Section 3 (segment): 1km Run
+- Section 4 (segment): 50m Sled Push
+- ... (16 total sections)
+
+**Phase:** 5 (Workouts CRUD) - Optional, can be added later if needed
 
 ---
 
@@ -136,20 +407,6 @@ CREATE INDEX idx_exercise_definitions_tracking ON exercise_definitions(tracking_
 CREATE INDEX idx_exercise_definitions_muscle ON exercise_definitions(primary_muscle_group);
 ```
 
-**Rationale:**
-- **Shared exercise library**: Consistent naming, autocomplete, analytics
-- **exercise_type**: Categorizes equipment (barbell, dumbbell, bodyweight, cardio, etc.)
-- **tracking_type**: Defines how performance is measured for this exercise
-  - `weight_reps`: Traditional strength training (bench press, squats)
-  - `duration`: Time-based holds (plank, wall sit)
-  - `distance`: Distance only (swimming laps)
-  - `distance_duration`: Both distance and time for pace calculation (running, rowing)
-  - `reps_only`: Bodyweight movements without weight (jumping jacks, burpees)
-- **Muscle groups**: For building balanced workout programs
-- **Difficulty**: Helps beginners find appropriate exercises
-- **Instructions**: Can display technique tips in UI
-- **Unique name constraint**: Prevents duplicates
-
 **Seed Data Examples:**
 ```sql
 INSERT INTO exercise_definitions (name, exercise_type, tracking_type, primary_muscle_group, secondary_muscle_groups) VALUES
@@ -183,33 +440,106 @@ Stores exercises within a workout (references exercise library or custom).
 CREATE TABLE workout_exercises (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     workout_id UUID NOT NULL REFERENCES workouts(id) ON DELETE CASCADE,
+    section_id UUID REFERENCES workout_sections(id) ON DELETE SET NULL,
     exercise_definition_id UUID REFERENCES exercise_definitions(id) ON DELETE SET NULL,
+    
     name TEXT NOT NULL,
     order_index INTEGER NOT NULL,
     notes TEXT,
+    
+    -- Prescribed work (for AMRAP, For Time, etc.)
+    -- Nullable - only populated for formats that prescribe work
+    prescribed_reps INTEGER,           -- AMRAP: reps per round, For Time: total reps
+    prescribed_duration_seconds INTEGER,  -- Timed holds (planks in AMRAP/For Time)
+    prescribed_distance REAL,          -- Distance-based (Hyrox runs)
+    prescribed_distance_unit TEXT,     -- 'meters', 'km', 'miles'
+    prescribed_weight REAL,            -- Prescribed weight (competition format)
+    prescribed_weight_unit TEXT,       -- 'lbs', 'kg'
+    
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX idx_workout_exercises_workout_id ON workout_exercises(workout_id);
 CREATE INDEX idx_workout_exercises_workout_order ON workout_exercises(workout_id, order_index);
+CREATE INDEX idx_workout_exercises_section_id ON workout_exercises(section_id);
 CREATE INDEX idx_workout_exercises_definition_id ON workout_exercises(exercise_definition_id);
 ```
 
-**Rationale:**
-- **exercise_definition_id**: Optional reference to exercise library
-  - If set: Exercise selected from library (consistent naming, metadata available)
-  - If NULL: Custom exercise (user typed free-text name)
-- **name**: Cached for quick display (denormalized from exercise_definitions.name)
-  - Always populated (either from library or user input)
-  - Allows fast queries without JOINing exercise_definitions every time
-- **ON DELETE SET NULL**: If exercise definition deleted from library, workout history preserved
-- **order_index**: Maintains exercise order in workout
-- **Composite index**: Optimized for "get workout's exercises in order"
+**Prescribed Work by Format:**
 
-**Usage Patterns:**
-- **From library**: `exercise_definition_id` set, `name` copied from library
-- **Custom exercise**: `exercise_definition_id = NULL`, `name` is free-text
+| Format | Prescribed Fields Used | Example |
+|--------|----------------------|---------|
+| `traditional` | None | Free-form sets |
+| `emom` | `prescribed_reps` | 10 burpees per minute |
+| `amrap` | `prescribed_reps` | 10 pullups per round |
+| `for_time` | `prescribed_reps` | 100 pullups total |
+| `tabata` | None (work time is format-level) | Max reps in 20s |
+| `circuit` | None or `prescribed_reps` | 15 reps per round |
+| `hyrox` | `prescribed_distance`, `prescribed_distance_unit` | 1km run, 1000m SkiErg |
+
+**Examples:**
+
+*AMRAP (Cindy):*
+```sql
+-- Exercise 1: Pull-ups
+prescribed_reps = 5  -- Do 5 pullups each round
+
+-- Exercise 2: Push-ups
+prescribed_reps = 10  -- Do 10 pushups each round
+
+-- Exercise 3: Air Squats
+prescribed_reps = 15  -- Do 15 squats each round
+```
+
+*For Time (Fran 21-15-9):*
+```sql
+-- Round 1: 21 reps
+-- Exercise 1: Thrusters
+prescribed_reps = 21
+
+-- Exercise 2: Pull-ups
+prescribed_reps = 21
+
+-- Round 2: 15 reps (create new workout_exercise records)
+-- Exercise 3: Thrusters
+prescribed_reps = 15
+
+-- Exercise 4: Pull-ups
+prescribed_reps = 15
+
+-- Round 3: 9 reps
+-- Exercise 5: Thrusters
+prescribed_reps = 9
+
+-- Exercise 6: Pull-ups
+prescribed_reps = 9
+```
+
+*Hyrox:*
+```sql
+-- Section 1, Exercise 1: Run
+prescribed_distance = 1.0
+prescribed_distance_unit = 'km'
+
+-- Section 2, Exercise 1: SkiErg
+prescribed_distance = 1000.0
+prescribed_distance_unit = 'meters'
+```
+
+**Rationale:**
+- **section_id**: Optional grouping (circuits, supersets, EMOMs)
+  - `NULL` for traditional workouts (no sections)
+  - Set for workouts with logical grouping
+- **exercise_definition_id**: Optional reference to exercise library
+- **Prescribed work**: Flat columns for different prescription types
+  - Reps: AMRAP, For Time, circuits
+  - Duration: Timed holds in scored workouts
+  - Distance: Hyrox, running workouts
+  - Weight: Competition standards (Rx weight)
+- **iOS compatible**: No JSONB, pure relational design
+
+**Phase:** 5 (Workouts CRUD)
 
 ---
 
@@ -221,6 +551,10 @@ Stores individual sets within an exercise.
 CREATE TABLE exercise_sets (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     exercise_id UUID NOT NULL REFERENCES workout_exercises(id) ON DELETE CASCADE,
+    
+    -- Round tracking (for circuits, AMRAP, etc.)
+    round_number INTEGER DEFAULT 1,
+    set_number INTEGER,  -- Set number within this round/exercise
     
     -- Weight-based fields
     weight REAL,
@@ -239,7 +573,12 @@ CREATE TABLE exercise_sets (
     distance_unit TEXT CHECK (distance_unit IN ('meters', 'km', 'miles', 'yards', 'laps')),
     
     -- Common fields
-    rpe INTEGER,  -- Rate of Perceived Exertion (1-10)
+    rpe INTEGER CHECK (rpe BETWEEN 1 AND 10),  -- Rate of Perceived Exertion (1-10)
+    
+    -- Timing metadata (for intervals, EMOM, etc.)
+    started_at_offset_seconds INTEGER,  -- Offset from workout start (for EMOM timing)
+    rest_after_seconds INTEGER,         -- Actual rest time taken after this set
+    
     completed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -267,85 +606,55 @@ CREATE TABLE exercise_sets (
 
 CREATE INDEX idx_exercise_sets_exercise_id ON exercise_sets(exercise_id);
 CREATE INDEX idx_exercise_sets_completed_at ON exercise_sets(completed_at DESC);
-CREATE INDEX idx_exercise_sets_bodyweight ON exercise_sets(exercise_id, is_bodyweight);
+CREATE INDEX idx_exercise_sets_round ON exercise_sets(exercise_id, round_number);
 ```
 
 **Rationale:**
-- **Flexible schema**: Different tracking types populate different fields
-- **exercise_id**: References `workout_exercises` (the specific exercise instance in a workout)
-
-**Weight-based fields (tracking_type = 'weight_reps'):**
-- **weight**: User's bodyweight (for bodyweight exercises) OR total weight moved (for loaded exercises)
-- **additional_weight**: Added resistance or assistance for bodyweight exercises
-  - Positive: Added weight (e.g., 25 lbs on dip belt)
-  - Zero: Pure bodyweight
-  - Negative: Assistance (e.g., -50 lbs from assisted pull-up machine)
-- **measurement_unit**: The unit for `weight` and `additional_weight` ('lbs' or 'kg')
-- **is_bodyweight**: Boolean flag (`true` for bodyweight exercises, `false` for loaded)
-- **reps**: Number of repetitions
-
-**Duration-based fields (tracking_type = 'duration'):**
-- **duration_seconds**: Total time in seconds (e.g., 90 for 1:30 plank)
-
-**Distance-based fields (tracking_type = 'distance' or 'distance_duration'):**
-- **distance**: Distance value (e.g., 5.0 for 5km run)
-- **distance_unit**: Unit of distance ('meters', 'km', 'miles', 'yards', 'laps')
-
-**Reps-only fields (tracking_type = 'reps_only'):**
-- **reps**: Number of repetitions (e.g., 50 jumping jacks)
-
-**Common fields:**
-- **rpe**: Rate of Perceived Exertion 1-10 (optional)
-- **completed_at**: Timestamp when set was completed
-- **Constraints**: Ensure data integrity based on which fields are populated
-
-**Field Usage by Tracking Type:**
-
-| Tracking Type | weight | reps | duration_seconds | distance |
-|--------------|--------|------|------------------|----------|
-| `weight_reps` | ✅ Required | ✅ Required | ❌ | ❌ |
-| `duration` | ❌ | ❌ | ✅ Required | ❌ |
-| `distance` | ❌ | ❌ | ❌ | ✅ Required |
-| `distance_duration` | ❌ | ❌ | ✅ Required | ✅ Required |
-| `reps_only` | ❌ | ✅ Required | ❌ | ❌ |
+- **round_number**: Tracks which round of a circuit/AMRAP
+  - Traditional: Always `1` (single round per exercise)
+  - Circuit: `1, 2, 3` (three rounds)
+  - AMRAP: Increments with each completed round
+- **set_number**: Set number within a round
+  - Traditional: `1, 2, 3, 4` for 4 sets of bench press
+  - Circuit: `1` (usually one set per round)
+- **timing_metadata**: Captures EMOM timing, rest periods, etc.
 
 **Examples:**
 
-*Traditional strength (Bench Press):*
+*Traditional Strength (Bench Press, 3 sets):*
 ```sql
-weight = 225.0, reps = 5, measurement_unit = 'lbs', is_bodyweight = false
--- Volume: 225 × 5 = 1125 lbs
+round_number = 1, set_number = 1, weight = 225, reps = 5
+round_number = 1, set_number = 2, weight = 225, reps = 5
+round_number = 1, set_number = 3, weight = 225, reps = 4
 ```
 
-*Bodyweight with added weight (Weighted Dips):*
+*Circuit (3 rounds, 3 exercises):*
 ```sql
-weight = 185.0, additional_weight = 25.0, reps = 8, measurement_unit = 'lbs', is_bodyweight = true
--- Effective weight: 210 lbs, Volume: 210 × 8 = 1680 lbs
+-- Exercise 1 (Squats)
+round_number = 1, set_number = 1, weight = 185, reps = 10
+round_number = 2, set_number = 1, weight = 185, reps = 10
+round_number = 3, set_number = 1, weight = 185, reps = 8
+
+-- Exercise 2 (Push-ups)
+round_number = 1, set_number = 1, reps = 20
+round_number = 2, set_number = 1, reps = 18
+round_number = 3, set_number = 1, reps = 15
 ```
 
-*Duration-based (Plank):*
+*AMRAP 10 minutes (as many rounds as possible):*
 ```sql
-duration_seconds = 90
--- 1 minute 30 seconds
+-- Round 1
+round_number = 1, set_number = 1, reps = 10, timing_metadata = {"started_at_offset_seconds": 0}
+round_number = 1, set_number = 1, reps = 10, timing_metadata = {"started_at_offset_seconds": 15}
+
+-- Round 2
+round_number = 2, set_number = 1, reps = 10, timing_metadata = {"started_at_offset_seconds": 90}
+round_number = 2, set_number = 1, reps = 10, timing_metadata = {"started_at_offset_seconds": 105}
+
+-- ... continues until time cap
 ```
 
-*Distance only (Swimming):*
-```sql
-distance = 500, distance_unit = 'meters'
--- 500 meter swim
-```
-
-*Distance + Duration (5K Run):*
-```sql
-distance = 5.0, distance_unit = 'km', duration_seconds = 1500
--- 5km in 25:00, pace = 5:00/km
-```
-
-*Reps only (Jumping Jacks):*
-```sql
-reps = 50
--- 50 jumping jacks
-```
+**Phase:** 5 (Workouts CRUD)
 
 ---
 
@@ -377,14 +686,6 @@ CREATE INDEX idx_measurement_definitions_category ON measurement_definitions(cat
 CREATE INDEX idx_measurement_definitions_active ON measurement_definitions(is_active);
 ```
 
-**Rationale:**
-- **Normalized reference data**: Centralizes measurement metadata
-- **No schema migrations for new types**: Just insert new rows
-- **Rich metadata for UI**: Display names, descriptions, icons, ordering
-- **Flexible validation**: `valid_units` array defines allowed units per type
-- **Soft deletes**: `is_active` allows deprecating types without losing history
-- **Supports body part tracking**: `supports_body_part` indicates if left/right makes sense
-
 **Seed Data:**
 ```sql
 INSERT INTO measurement_definitions 
@@ -396,13 +697,7 @@ VALUES
 ('muscle_mass_percentage', 'Muscle Mass %', 'composition', ARRAY['percentage'], 'percentage', false, 4),
 ('bicep_circumference', 'Bicep Size', 'circumference', ARRAY['inches', 'cm'], 'inches', true, 5),
 ('chest_circumference', 'Chest Size', 'circumference', ARRAY['inches', 'cm'], 'inches', false, 6),
-('waist_circumference', 'Waist Size', 'circumference', ARRAY['inches', 'cm'], 'inches', false, 7),
-('hip_circumference', 'Hip Size', 'circumference', ARRAY['inches', 'cm'], 'inches', false, 8),
-('thigh_circumference', 'Thigh Size', 'circumference', ARRAY['inches', 'cm'], 'inches', true, 9),
-('calf_circumference', 'Calf Size', 'circumference', ARRAY['inches', 'cm'], 'inches', true, 10),
-('neck_circumference', 'Neck Size', 'circumference', ARRAY['inches', 'cm'], 'inches', false, 11),
-('forearm_circumference', 'Forearm Size', 'circumference', ARRAY['inches', 'cm'], 'inches', true, 12),
-('shoulder_circumference', 'Shoulder Size', 'circumference', ARRAY['inches', 'cm'], 'inches', false, 13);
+('waist_circumference', 'Waist Size', 'circumference', ARRAY['inches', 'cm'], 'inches', false, 7);
 ```
 
 **Phase:** 3 (Core API)
@@ -435,14 +730,6 @@ CREATE INDEX idx_body_measurements_user_type_date ON user_body_measurements(user
 CREATE INDEX idx_body_measurements_definition ON user_body_measurements(measurement_definition_id);
 ```
 
-**Rationale:**
-- **Normalized design**: References `measurement_definitions` for metadata
-- **Time-series data**: Track changes over time with `recorded_at`
-- **Flexible unit tracking**: User can change units over time
-- **Source tracking**: Know if data is self-reported vs device-measured
-- **Body part support**: Track left/right for circumferences (e.g., bicep imbalances)
-- **Validation at app level**: Check `measurement_unit` is in `measurement_definitions.valid_units`
-
 **Phase:** 3 (Core API)
 
 ---
@@ -454,45 +741,29 @@ Computed view showing user's personal records from workout data.
 ```sql
 CREATE VIEW user_performance_records AS
 SELECT 
-    we.user_id,
+    w.user_id,
     LOWER(REPLACE(we.name, ' ', '_')) as exercise_name,
     we.name as exercise_display_name,
     ed.exercise_type,
     ed.tracking_type,
     ed.primary_muscle_group,
     
-    -- Weight/Reps metrics (tracking_type = 'weight_reps')
+    -- Weight/Reps metrics
     es.weight as pr_weight,
-    es.additional_weight as pr_additional_weight,
     es.measurement_unit,
     es.reps as pr_reps,
-    es.is_bodyweight,
     CASE 
         WHEN ed.tracking_type = 'weight_reps' AND es.is_bodyweight = false AND es.reps BETWEEN 1 AND 10
         THEN es.weight * (1 + es.reps / 30.0)
         ELSE NULL
     END as estimated_1rm,
-    CASE
-        WHEN ed.tracking_type = 'weight_reps' AND es.is_bodyweight = true
-        THEN es.weight + es.additional_weight
-        WHEN ed.tracking_type = 'weight_reps'
-        THEN es.weight
-        ELSE NULL
-    END as effective_weight,
     
-    -- Duration metrics (tracking_type = 'duration')
+    -- Duration metrics
     es.duration_seconds as pr_duration_seconds,
     
-    -- Distance metrics (tracking_type = 'distance' or 'distance_duration')
+    -- Distance metrics
     es.distance as pr_distance,
     es.distance_unit as pr_distance_unit,
-    
-    -- Pace calculation (tracking_type = 'distance_duration')
-    CASE
-        WHEN ed.tracking_type = 'distance_duration' AND es.duration_seconds > 0
-        THEN es.distance / (es.duration_seconds / 3600.0)  -- per hour
-        ELSE NULL
-    END as pace_per_hour,
     
     es.completed_at as pr_date,
     w.id as workout_id,
@@ -502,55 +773,17 @@ JOIN workout_exercises we ON es.exercise_id = we.id
 JOIN workouts w ON we.workout_id = w.id
 LEFT JOIN exercise_definitions ed ON we.exercise_definition_id = ed.id
 WHERE ed.tracking_type IS NOT NULL
--- Only show personal records (best for each exercise)
 QUALIFY ROW_NUMBER() OVER (
-    PARTITION BY we.user_id, LOWER(we.name)
+    PARTITION BY w.user_id, LOWER(we.name)
     ORDER BY 
         CASE ed.tracking_type
-            WHEN 'weight_reps' THEN 
-                CASE 
-                    WHEN es.is_bodyweight = false THEN es.weight * (1 + es.reps / 30.0)
-                    ELSE (es.weight + es.additional_weight) * es.reps
-                END
+            WHEN 'weight_reps' THEN es.weight * (1 + COALESCE(es.reps, 0) / 30.0)
             WHEN 'duration' THEN es.duration_seconds
             WHEN 'distance' THEN es.distance
-            WHEN 'distance_duration' THEN es.distance  -- Could also sort by pace
             WHEN 'reps_only' THEN es.reps
             ELSE 0
         END DESC NULLS LAST
 ) = 1;
-```
-
-**Rationale:**
-- **Zero manual entry**: PRs automatically computed from workout data
-- **Single source of truth**: Reflects actual logged sets
-- **Handles all tracking types**: 
-  - `weight_reps`: Best 1RM estimate or volume
-  - `duration`: Longest time
-  - `distance`: Furthest distance
-  - `distance_duration`: Fastest pace or furthest distance
-  - `reps_only`: Most reps
-- **Always current**: Updates automatically when new PRs are set
-- **Rich context**: Includes workout info, exercise metadata, tracking type
-
-**Usage Examples:**
-```sql
--- Get all user PRs
-SELECT * FROM user_performance_records WHERE user_id = $1;
-
--- Get PRs by tracking type
-SELECT * FROM user_performance_records 
-WHERE user_id = $1 AND tracking_type = 'duration';
-
--- Get cardio PRs (running, rowing)
-SELECT exercise_display_name, pr_distance, pr_distance_unit, 
-       pr_duration_seconds, pace_per_hour
-FROM user_performance_records 
-WHERE user_id = $1 AND tracking_type = 'distance_duration';
-
--- Recent PRs (last 30 days)
-SELECT * FROM user_performance_records 
-WHERE user_id = $1 AND pr_date > NOW() - INTERVAL '30 days';
 ```
 
 **Phase:** 5 (After workouts are implemented)
@@ -564,9 +797,9 @@ Stores trainer → client connections.
 ```sql
 CREATE TABLE trainer_client_relationships (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    trainer_id TEXT NOT NULL,  -- Clerk user ID
-    client_id TEXT NOT NULL,   -- Clerk user ID
-    status TEXT NOT NULL DEFAULT 'pending',  -- 'pending' | 'active' | 'inactive'
+    trainer_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    client_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'active', 'inactive')),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     
@@ -577,11 +810,7 @@ CREATE INDEX idx_trainer_clients ON trainer_client_relationships(trainer_id, sta
 CREATE INDEX idx_client_trainers ON trainer_client_relationships(client_id, status);
 ```
 
-**Rationale:**
-- One trainer can have many clients
-- One client can have many trainers (gym + personal)
-- Status tracks invitation state
-- UNIQUE constraint prevents duplicate relationships
+**Phase:** 8 (Trainer features)
 
 ---
 
@@ -592,7 +821,7 @@ Stores future scheduled workouts.
 ```sql
 CREATE TABLE planned_workouts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id TEXT NOT NULL,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     planned_date DATE NOT NULL,
     workout_template_id UUID REFERENCES workout_templates(id) ON DELETE SET NULL,
     name TEXT NOT NULL,
@@ -607,11 +836,7 @@ CREATE INDEX idx_planned_user_date ON planned_workouts(user_id, planned_date);
 CREATE INDEX idx_planned_date ON planned_workouts(planned_date);
 ```
 
-**Rationale:**
-- `planned_date` is DATE (no time, just day)
-- Links to optional `workout_template`
-- Links to actual `workout` once completed
-- User can plan without template (custom workouts)
+**Phase:** 9 (Workout planning)
 
 ---
 
@@ -622,22 +847,301 @@ Stores reusable workout templates.
 ```sql
 CREATE TABLE workout_templates (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id TEXT NOT NULL,
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    workout_format_id UUID NOT NULL REFERENCES workout_format_definitions(id),
+    
     name TEXT NOT NULL,
     description TEXT,
+    
+    -- Sharing
     is_public BOOLEAN NOT NULL DEFAULT FALSE,
+    is_official BOOLEAN NOT NULL DEFAULT FALSE,  -- Official Hyrox, Murph, etc.
+    
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX idx_templates_user ON workout_templates(user_id);
+CREATE INDEX idx_templates_format ON workout_templates(workout_format_id);
 CREATE INDEX idx_templates_public ON workout_templates(is_public) WHERE is_public = TRUE;
+CREATE INDEX idx_templates_official ON workout_templates(is_official) WHERE is_official = TRUE;
+```
+
+**Seed Data (Famous Workouts):**
+```sql
+-- Murph (Memorial Day Challenge)
+INSERT INTO workout_templates (user_id, workout_format_id, name, description, is_official)
+VALUES (NULL, <for_time_uuid>, 'Murph', '1 mile run, 100 pullups, 200 pushups, 300 squats, 1 mile run', true);
+
+-- Fran (Classic CrossFit)
+INSERT INTO workout_templates (user_id, workout_format_id, name, description, is_official)
+VALUES (NULL, <for_time_uuid>, 'Fran', '21-15-9 Thrusters (95/65) and Pull-ups', true);
+
+-- Cindy (20-minute AMRAP)
+WITH cindy_template AS (
+    INSERT INTO workout_templates (user_id, workout_format_id, name, description, is_official)
+    VALUES (NULL, <amrap_uuid>, 'Cindy', '5 Pull-ups, 10 Push-ups, 15 Air Squats', true)
+    RETURNING id
+)
+INSERT INTO workout_template_timings (template_id, time_cap_seconds)
+SELECT id, 1200 FROM cindy_template;
 ```
 
 **Rationale:**
-- Users can save favorite workouts as templates
-- `is_public` allows sharing templates (future community feature)
-- Template exercises stored in separate table (not shown here)
+- **Slim table**: Core template fields only
+- **user_id**: Can be NULL for official templates (Murph, Fran, etc.)
+- **workout_format_id**: References workout format definition
+- **is_official**: Built-in famous workouts (Murph, Fran, Cindy, Hyrox)
+- **Timing in separate table**: Same pattern as workouts
+
+**Phase:** 9 (Workout planning/templates)
+
+---
+
+### workout_template_timings (Phase 9)
+
+Stores default timing configuration for templates (optional, 1:1 with templates).
+
+```sql
+CREATE TABLE workout_template_timings (
+    template_id UUID PRIMARY KEY REFERENCES workout_templates(id) ON DELETE CASCADE,
+    
+    -- Same fields as workout_timings
+    time_cap_seconds INTEGER,
+    interval_seconds INTEGER,
+    work_seconds INTEGER,
+    rest_seconds INTEGER,
+    rounds INTEGER,
+    rest_between_rounds_seconds INTEGER,
+    
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+```
+
+**Rationale:**
+- **Optional**: Only create if template has default timing
+- **1:1 relationship**: Each template has at most one timing config
+- **Consistent structure**: Mirrors `workout_timings` table
+
+**Phase:** 9 (Workout planning/templates)
+
+---
+
+## Workout Format Examples
+
+### Traditional Strength Training
+
+```sql
+-- Workout record
+workout_format_id = <traditional_format_uuid>
+name = "Push Day"
+notes = "Heavy chest focus"
+-- All timing/scoring fields: NULL
+
+-- Exercises added independently
+-- Sets tracked with round_number = 1 (single round per exercise)
+```
+
+**UI Flow:**
+1. User selects "Traditional" format
+2. No timing configuration needed
+3. Add exercises freely
+4. Track sets independently per exercise
+
+---
+
+### EMOM (Every Minute On the Minute)
+
+```sql
+-- Workout record
+workout_format_id = <emom_format_uuid>
+name = "EMOM 10"
+interval_seconds = 60
+rounds = 10
+rounds_completed = 10  -- After completion
+score_notes = "All rounds completed Rx"
+
+-- Exercises done each minute
+-- Sets tracked with timing_metadata for precision
+```
+
+**UI Flow:**
+1. User selects "EMOM" format
+2. Configure: interval (60s), total rounds (10)
+3. Add exercises to be done each minute
+4. Track which rounds were completed
+
+**Example:**
+- Minute 1: 10 Burpees
+- Minute 2: 15 Kettlebell Swings
+- Repeat for 10 minutes (5 full cycles)
+
+---
+
+### AMRAP (As Many Rounds As Possible)
+
+```sql
+-- Workout record
+workout_format_id = <amrap_format_uuid>
+name = "Cindy"
+time_cap_seconds = 600  -- 10 minutes
+rounds_completed = 5
+additional_reps = 12  -- Into 6th round
+is_scaled = false
+
+-- Exercises have prescribed_work: {"reps": 10}
+-- Sets increment round_number: 1, 2, 3, 4, 5
+```
+
+**UI Flow:**
+1. User selects "AMRAP" format
+2. Configure: time cap (10 minutes)
+3. Add exercises with prescribed reps per round
+4. Track: How many complete rounds + partial round reps
+
+**Example (Cindy):**
+- 5 Pull-ups (prescribed: 5 reps per round)
+- 10 Push-ups (prescribed: 10 reps per round)
+- 15 Air Squats (prescribed: 15 reps per round)
+- Complete as many rounds as possible in 10 minutes
+
+---
+
+### For Time
+
+```sql
+-- Workout record
+workout_format_id = <for_time_format_uuid>
+name = "Fran"
+time_cap_seconds = 300  -- 5 min cap (optional)
+time_to_complete_seconds = 243  -- 4:03
+is_scaled = false
+score_notes = "Rx weight (95lbs)"
+
+-- Exercises have prescribed_work: {"total_reps": 21}
+-- Then {"total_reps": 15}, then {"total_reps": 9}
+```
+
+**UI Flow:**
+1. User selects "For Time" format
+2. Configure: optional time cap
+3. Add exercises with total reps to complete
+4. Track: Time to complete all work
+
+**Example (Fran - 21-15-9):**
+- 21 Thrusters
+- 21 Pull-ups
+- 15 Thrusters
+- 15 Pull-ups
+- 9 Thrusters
+- 9 Pull-ups
+- Timer stops when all reps complete
+
+---
+
+### Tabata
+
+```sql
+-- Workout record
+workout_format_id = <tabata_format_uuid>
+name = "Tabata Burpees"
+work_seconds = 20
+rest_seconds = 10
+rounds = 8
+
+-- Each exercise gets 8 rounds
+-- Sets have round_number 1-8
+-- duration_seconds tracks each 20-second work interval
+```
+
+**UI Flow:**
+1. User selects "Tabata" format
+2. Defaults: 20s work, 10s rest, 8 rounds (can customize)
+3. Add exercises
+4. Each exercise done for all 8 intervals
+
+**Example:**
+- 20s: Max effort burpees
+- 10s: Rest
+- Repeat 8 times (4 minutes total)
+
+---
+
+### Circuit
+
+```sql
+-- Workout record
+workout_format_id = <circuit_format_uuid>
+name = "Full Body Circuit"
+rounds = 3
+rest_between_rounds_seconds = 120
+
+-- Exercises done in sequence
+-- After completing all exercises = 1 round
+-- Sets tracked with round_number: 1, 2, 3
+```
+
+**UI Flow:**
+1. User selects "Circuit" format
+2. Configure: number of rounds (3), rest between rounds (2 min)
+3. Add exercises in order
+4. Complete all exercises = 1 round, then rest
+
+**Example:**
+- Round 1: Squats → Push-ups → Rows → Plank
+- Rest 2 minutes
+- Round 2: Squats → Push-ups → Rows → Plank
+- Rest 2 minutes
+- Round 3: Squats → Push-ups → Rows → Plank
+
+---
+
+### Interval Training
+
+```sql
+-- Workout record
+workout_format_id = <interval_format_uuid>
+name = "Sprint Intervals"
+work_seconds = 45
+rest_seconds = 15
+rounds = 10
+rest_between_rounds_seconds = 60  -- After all exercises
+
+-- Custom work/rest intervals
+-- Can combine with circuit structure
+```
+
+**UI Flow:**
+1. User selects "Interval" format
+2. Configure: work time, rest time, rounds, rest between cycles
+3. Add exercises
+4. Each exercise done for specified work/rest/rounds
+
+---
+
+### Hyrox
+
+```sql
+-- Workout record (simplified - actual Hyrox uses sections)
+workout_format_id = <hyrox_format_uuid>
+name = "Hyrox Doubles"
+time_to_complete_seconds = 5400  -- 1:30:00
+score_notes = "Division: Pro Men"
+
+-- Use workout_sections for 16 segments:
+-- Section 1: 1km Run
+-- Section 2: 1000m SkiErg
+-- Section 3: 1km Run
+-- Section 4: 50m Sled Push
+-- ... etc
+```
+
+**UI Flow:**
+1. User selects "Hyrox" format
+2. Template pre-populates 8 runs + 8 exercises
+3. Track time for entire event
+4. Optional: track split times per section
 
 ---
 
@@ -648,18 +1152,21 @@ Migrations are stored in `api_server/migrations/` and applied via sqlx.
 ### Migration naming convention:
 ```
 001_initial_schema.sql
-002_add_trainer_relationships.sql
-003_add_planned_workouts.sql
+002_add_workout_formats.sql
+003_add_sections.sql
+004_add_trainer_relationships.sql
+005_add_planned_workouts.sql
 ```
 
 ### Running migrations:
 ```bash
-dagger call db-migrate --source=applications/thiccc/api_server
+cd applications/thiccc/api_server
+sqlx migrate run
 ```
 
 ### Creating new migration:
 ```bash
-dagger call db-create-migration --name="add_new_feature"
+sqlx migrate add add_new_feature
 ```
 
 ---
@@ -669,320 +1176,213 @@ dagger call db-create-migration --name="add_new_feature"
 | Type | PostgreSQL | Rust | TypeScript |
 |------|-----------|------|------------|
 | ID | UUID | `Uuid` | `string` |
-| User ID | TEXT | `String` | `string` |
+| User ID | UUID | `Uuid` | `string` |
 | Name/Notes | TEXT | `String` | `string` |
 | Weight | REAL | `f32` | `number` |
 | Reps/RPE | INTEGER | `i32` | `number` |
+| JSONB | JSONB | `serde_json::Value` | `object` |
 | Timestamp | TIMESTAMPTZ | `DateTime<Utc>` | `Date` or `string` (ISO 8601) |
 | Date | DATE | `NaiveDate` | `string` (YYYY-MM-DD) |
 | Boolean | BOOLEAN | `bool` | `boolean` |
 
 ---
 
-## Query Performance
+## Query Examples
 
-### Common queries and their indexes:
+### Get user's workouts by format
 
-**Get user by Clerk ID:**
 ```sql
-SELECT id, email, roles FROM users WHERE clerk_user_id = $1;
-```
-Uses: `idx_users_clerk_id`
-
-**Search exercise library:**
-```sql
-SELECT * FROM exercise_definitions 
-WHERE name ILIKE '%bench%' 
-ORDER BY name
-LIMIT 10;
-```
-Uses: `idx_exercise_definitions_name`
-
-**Get exercises by type:**
-```sql
-SELECT * FROM exercise_definitions
-WHERE exercise_type = 'bodyweight'
-ORDER BY name;
-```
-Uses: `idx_exercise_definitions_type`
-
-**Get latest bodyweight:**
-```sql
-SELECT m.measurement_value, m.measurement_unit, m.recorded_at
-FROM user_body_measurements m
-JOIN measurement_definitions md ON m.measurement_definition_id = md.id
-WHERE m.user_id = $1 AND md.measurement_type = 'bodyweight'
-ORDER BY m.recorded_at DESC
-LIMIT 1;
-```
-Uses: `idx_body_measurements_user_type_date`
-
-**Get all current measurements (latest for each type):**
-```sql
-SELECT DISTINCT ON (md.measurement_type)
-    md.display_name,
-    md.category,
-    m.measurement_value,
-    m.measurement_unit,
-    m.recorded_at
-FROM user_body_measurements m
-JOIN measurement_definitions md ON m.measurement_definition_id = md.id
-WHERE m.user_id = $1 AND md.is_active = true
-ORDER BY md.measurement_type, m.recorded_at DESC;
-```
-Uses: `idx_body_measurements_user_type_date`, `idx_measurement_definitions_active`
-
-**Track measurement over time (for charts):**
-```sql
-SELECT m.measurement_value, m.measurement_unit, m.recorded_at
-FROM user_body_measurements m
-JOIN measurement_definitions md ON m.measurement_definition_id = md.id
-WHERE m.user_id = $1 
-    AND md.measurement_type = 'bodyweight'
-    AND m.recorded_at > NOW() - INTERVAL '90 days'
-ORDER BY m.recorded_at;
-```
-Uses: `idx_body_measurements_user_type_date`
-
-**Get user's PRs:**
-```sql
-SELECT * FROM user_performance_records 
-WHERE user_id = $1 
-ORDER BY pr_date DESC;
-```
-Uses: Underlying indexes on `exercise_sets`, `workout_exercises`
-
-**Get user's recent workouts:**
-```sql
-SELECT * FROM workouts 
-WHERE user_id = $1 
-ORDER BY started_at DESC 
-LIMIT 50;
-```
-Uses: `idx_workouts_user_started`
-
-**Get workout with exercises and sets (with exercise metadata):**
-```sql
+-- Get all AMRAP workouts with timing and completion
 SELECT 
     w.*,
-    e.*,
-    ed.exercise_type,
-    ed.primary_muscle_group,
-    s.*
+    wfd.display_name as format_name,
+    wt.time_cap_seconds,
+    wc.rounds_completed,
+    wc.additional_reps,
+    wc.is_scaled
 FROM workouts w
-LEFT JOIN workout_exercises e ON e.workout_id = w.id
-LEFT JOIN exercise_definitions ed ON e.exercise_definition_id = ed.id
-LEFT JOIN exercise_sets s ON s.exercise_id = e.id
+JOIN workout_format_definitions wfd ON w.workout_format_id = wfd.id
+LEFT JOIN workout_timings wt ON wt.workout_id = w.id
+LEFT JOIN workout_completions wc ON wc.workout_id = w.id
+WHERE w.user_id = $1 AND wfd.format_key = 'amrap'
+ORDER BY w.started_at DESC;
+
+-- Get EMOM workouts with timing details
+SELECT 
+    w.name, 
+    w.started_at,
+    wt.interval_seconds,
+    wt.rounds,
+    wc.rounds_completed,
+    wfd.display_name as format_name
+FROM workouts w
+JOIN workout_format_definitions wfd ON w.workout_format_id = wfd.id
+LEFT JOIN workout_timings wt ON wt.workout_id = w.id
+LEFT JOIN workout_completions wc ON wc.workout_id = w.id
+WHERE w.user_id = $1 AND wfd.format_key = 'emom';
+
+-- Get workouts by format category (all cardio formats)
+SELECT w.*, wfd.display_name, wfd.category
+FROM workouts w
+JOIN workout_format_definitions wfd ON w.workout_format_id = wfd.id
+WHERE w.user_id = $1 AND wfd.category = 'cardio'
+ORDER BY w.started_at DESC;
+
+-- Get traditional workouts (no timing/scoring needed)
+SELECT w.*, wfd.display_name
+FROM workouts w
+JOIN workout_format_definitions wfd ON w.workout_format_id = wfd.id
+WHERE w.user_id = $1 AND wfd.format_key = 'traditional'
+ORDER BY w.started_at DESC;
+```
+
+### Get circuit workout with all rounds
+
+```sql
+-- Get circuit workout with exercises and sets grouped by round
+SELECT 
+    w.name as workout_name,
+    we.name as exercise_name,
+    es.round_number,
+    es.weight,
+    es.reps,
+    es.completed_at
+FROM workouts w
+JOIN workout_exercises we ON we.workout_id = w.id
+JOIN exercise_sets es ON es.exercise_id = we.id
 WHERE w.id = $1
-ORDER BY e.order_index, s.completed_at;
+ORDER BY es.round_number, we.order_index, es.set_number;
 ```
-Uses: `idx_workout_exercises_workout_id`, `idx_exercise_sets_exercise_id`, `idx_workout_exercises_definition_id`
 
-**Get trainer's clients:**
-```sql
-SELECT * FROM trainer_client_relationships
-WHERE trainer_id = $1 AND status = 'active';
-```
-Uses: `idx_trainer_clients`
-
----
-
-## Constraints
-
-### Foreign Key Cascades
-
-- **users → workouts**: `ON DELETE CASCADE`
-  - Deleting user deletes all their workouts (GDPR compliance)
-  
-- **workouts → workout_exercises**: `ON DELETE CASCADE`
-  - Deleting workout deletes all exercises
-  
-- **workout_exercises → exercise_sets**: `ON DELETE CASCADE`
-  - Deleting exercise deletes all sets
-
-- **workout_templates → planned_workouts**: `ON DELETE SET NULL`
-  - Deleting template doesn't delete planned workouts (sets template_id to NULL)
-
-### Unique Constraints
-
-- `users(clerk_user_id)` - One Clerk user = one internal user
-- `users(email)` - No duplicate emails (though not enforced as PRIMARY KEY for future multi-auth)
-- `trainer_client_relationships(trainer_id, client_id)` - No duplicate relationships
-
----
-
-## Timestamps
-
-All tables have:
-- `created_at`: Set once on insert
-- `updated_at`: Updated on every modification
-
-Use trigger or application logic to update `updated_at`:
+### Get complete workout with format, timing, and scoring
 
 ```sql
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = NOW();
-    RETURN NEW;
-END;
-$$ language 'plpgsql';
+-- Get full workout details (all data)
+SELECT 
+    w.*,
+    wfd.format_key,
+    wfd.display_name as format_name,
+    wfd.category,
+    wt.*,
+    wc.*
+FROM workouts w
+JOIN workout_format_definitions wfd ON w.workout_format_id = wfd.id
+LEFT JOIN workout_timings wt ON wt.workout_id = w.id
+LEFT JOIN workout_completions wc ON wc.workout_id = w.id
+WHERE w.id = $1;
 
-CREATE TRIGGER update_workouts_updated_at BEFORE UPDATE ON workouts
-FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+-- Get For Time workout with completion time
+SELECT 
+    w.name,
+    w.started_at,
+    w.completed_at,
+    wfd.display_name as format_name,
+    wt.time_cap_seconds,
+    wc.time_to_complete_seconds,
+    wc.is_scaled,
+    wc.notes as completion_notes
+FROM workouts w
+JOIN workout_format_definitions wfd ON w.workout_format_id = wfd.id
+LEFT JOIN workout_timings wt ON wt.workout_id = w.id
+LEFT JOIN workout_completions wc ON wc.workout_id = w.id
+WHERE w.id = $1;
+
+-- Get workout formats available for selection (UI)
+SELECT 
+    id,
+    format_key,
+    display_name,
+    description,
+    category,
+    is_timed,
+    is_scored,
+    default_rounds,
+    default_interval_seconds
+FROM workout_format_definitions
+WHERE is_active = true
+ORDER BY display_order;
+
+-- Get leaderboard for a specific AMRAP workout (by rounds completed)
+SELECT 
+    u.email,
+    w.name,
+    w.started_at,
+    wc.rounds_completed,
+    wc.additional_reps,
+    wc.is_scaled
+FROM workouts w
+JOIN users u ON w.user_id = u.id
+JOIN workout_format_definitions wfd ON w.workout_format_id = wfd.id
+JOIN workout_completions wc ON wc.workout_id = w.id
+WHERE wfd.format_key = 'amrap' 
+  AND w.name = 'Cindy'
+  AND wc.is_scaled = false
+ORDER BY wc.rounds_completed DESC, wc.additional_reps DESC
+LIMIT 10;
 ```
 
 ---
 
-## Backup Strategy (Railway)
+## Schema Evolution Strategy
 
-Railway automatically:
-- Takes daily backups (retained 7 days)
-- Point-in-time recovery (within 7 days)
+### Phase 3 (Core API):
+- Create base tables: users, workouts, exercises, sets
+- **Include** workout_format and timing_config from start
+- **Omit** workout_sections (add later if needed)
 
-For manual backup:
-```bash
-dagger call db-backup --output=backup_2025-01-01.sql
-```
+### Phase 5 (Workouts CRUD):
+- Add workout_sections if circuits/EMOMs needed
+- Test with traditional, AMRAP, For Time formats
 
-For restore:
-```bash
-dagger call db-restore --input=backup_2025-01-01.sql
-```
-
----
-
-## UX Patterns for Exercise Sets
-
-### Bodyweight Exercise Flow
-
-When user is logging a bodyweight exercise (pull-ups, dips, push-ups):
-
-**Step 1: Check for recent bodyweight**
-```
-Frontend checks:
-- User's most recent workout_exercise with is_bodyweight = true
-- Or user preference/profile (future: user_measurements table)
-```
-
-**Step 2: Pre-fill form**
-```
-Your weight: [185] lbs  (pre-filled from recent data)
-
-Reps: [ ]
-RPE: [ ]
-
-○ Pure bodyweight
-○ Add resistance: [ ] lbs
-○ Use assistance: [ ] lbs
-```
-
-**Step 3: Show effective weight**
-```
-Effective weight: 185 lbs  (updates as user types)
-```
-
-**Step 4: Save to database**
-```sql
--- Pure bodyweight
-INSERT INTO exercise_sets (exercise_id, weight, additional_weight, measurement_unit, is_bodyweight, reps)
-VALUES (..., 185.0, 0, 'lbs', true, 10);
-
--- With 25lb weight belt
-INSERT INTO exercise_sets (exercise_id, weight, additional_weight, measurement_unit, is_bodyweight, reps)
-VALUES (..., 185.0, 25.0, 'lbs', true, 8);
-
--- With 50lb assistance
-INSERT INTO exercise_sets (exercise_id, weight, additional_weight, measurement_unit, is_bodyweight, reps)
-VALUES (..., 185.0, -50.0, 'lbs', true, 12);
-```
-
-### Loaded Exercise Flow
-
-When user is logging a loaded exercise (barbell, dumbbell, machine):
-
-**Form:**
-```
-Weight: [ ] lbs
-Reps: [ ]
-RPE: [ ]
-```
-
-**Save to database:**
-```sql
-INSERT INTO exercise_sets (exercise_id, weight, additional_weight, measurement_unit, is_bodyweight, reps)
-VALUES (..., 225.0, 0, 'lbs', false, 5);
-```
-
-### Benefits of This Approach
-
-- ✅ **User doesn't manually enter bodyweight every set** (pre-filled from recent data)
-- ✅ **Single unified form** for all bodyweight variations
-- ✅ **Accurate volume calculations** for analytics
-- ✅ **Progress tracking** accounts for bodyweight changes
-- ✅ **Clean data model** with explicit semantics
+### Phase 9 (Templates):
+- Add workout_templates with same format support
+- Seed official templates (Murph, Fran, Cindy, etc.)
 
 ---
 
-## Authentication Flow with Users Table
+## Benefits of This Design
 
-### First-Time User Login
-
-When a user logs in for the first time (via Clerk):
-
-1. **Frontend**: User authenticates with Clerk
-2. **Frontend**: Gets JWT with `clerk_user_id` in claims
-3. **Backend**: Receives request with JWT
-4. **Backend**: Validates JWT with Clerk
-5. **Backend**: Checks if user exists:
-   ```sql
-   SELECT id FROM users WHERE clerk_user_id = $1;
-   ```
-6. **If user doesn't exist**, create record:
-   ```sql
-   INSERT INTO users (clerk_user_id, email, roles)
-   VALUES ($1, $2, ARRAY['user'])
-   RETURNING id;
-   ```
-7. **Update last login**:
-   ```sql
-   UPDATE users SET last_login_at = NOW() WHERE clerk_user_id = $1;
-   ```
-8. **Use internal UUID** (`id`) for all subsequent operations
-
-### Typical Request Flow
-
-```
-Client Request → Clerk JWT → Backend
-                     ↓
-              Extract clerk_user_id
-                     ↓
-         Lookup internal user_id (UUID)
-                     ↓
-      Use user_id for all database queries
-```
-
-### Benefits of This Approach
-
-1. **Vendor Independence**: Auth provider can change, internal IDs stay stable
-2. **Clean Foreign Keys**: All tables reference `users.id` (UUID), not external strings
-3. **User Metadata**: Store app-specific data (roles, preferences) in `users` table
-4. **Multiple Auth Methods**: Can add social logins, iOS auth, etc. - all map to same internal user
-5. **Audit Trail**: Track when Clerk IDs change (rare, but possible)
-6. **GDPR Compliance**: Single point of deletion (`DELETE FROM users WHERE id = $1`)
+- ✅ **iOS Compatible**: No JSONB - works on both PostgreSQL AND SQLite!
+- ✅ **Slim Core Tables**: `workouts` table has only 8 columns (minimal bloat)
+- ✅ **Optional Complexity**: Simple workouts don't create timing/scoring records
+- ✅ **1:1 Relationships**: Format-specific data isolated in child tables
+- ✅ **Type-Safe Queries**: Direct column access, no JSON parsing needed
+- ✅ **Forward Compatible**: Add new formats via reference data + new columns
+- ✅ **UX-Friendly**: Reference table enables format selection UI with metadata
+- ✅ **Round Tracking**: Circuit/AMRAP support built-in via `round_number`
+- ✅ **Sectioning**: Optional `workout_sections` for complex structures (Hyrox, hybrid)
+- ✅ **No Over-Engineering**: Traditional workouts = 1 INSERT into `workouts` only
+- ✅ **Easy Validation**: Frontend knows which fields required per format
+- ✅ **Indexable**: Can efficiently filter/sort on timing and scoring fields
+- ✅ **Clean Separation**: Core data vs timing config vs scoring results
 
 ---
 
-## Schema Evolution
+## Next Steps
 
-When adding new features:
-1. Create migration file
-2. Test locally with `db-migrate`
-3. Test rollback if needed
-4. Deploy to Railway (automatic via CI/CD)
+1. **Phase 3**: Create migration `001_initial_schema.sql` with:
+   - `users` table
+   - `workout_format_definitions` table (with seed data)
+   - `workouts` table (with FK to format definitions)
+   - `exercise_definitions` table
+   - `workout_exercises` table
+   - `exercise_sets` table
+   - `measurement_definitions` table
+   - `user_body_measurements` table
 
-**Never:**
-- Modify existing migrations
-- Delete data in migrations without backups
-- Change column types without migration plan
+2. **Phase 5**: Test with multiple workout formats
+   - Build traditional strength training first
+   - Add AMRAP support (test `round_number` and scoring fields)
+   - Add circuit format (test multi-round tracking)
+   - Optionally add `workout_sections` table if needed
+
+3. **Phase 9**: Add templates system
+   - Add `workout_templates` table
+   - Seed famous workouts (Murph, Fran, Cindy, Helen)
+   - Add `planned_workouts` table
+
+4. **Future format additions**:
+   - Add new row to `workout_format_definitions`
+   - If new timing concept needed: Add nullable column to `workouts` (migration)
+   - Update docs with new format examples
 
