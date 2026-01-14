@@ -93,6 +93,88 @@ Auto-read these files before starting:
 - Edit flow: Use granular PATCH endpoints for individual changes
 - See `@applications/thiccc/docs/web/reference/API-SPEC.md` for full API details
 
+#### Quick Reference: Request/Response Examples
+
+> 📖 **Full API documentation:** [reference/API-SPEC.md](./reference/API-SPEC.md)
+
+**POST /api/workouts** - Create workout (atomic with exercises and sets):
+
+```json
+// Request
+{
+  "name": "Push Day",
+  "notes": "Feeling strong",
+  "startedAt": "2025-01-15T10:00:00Z",
+  "completedAt": "2025-01-15T11:00:00Z",
+  "exercises": [
+    {
+      "name": "Bench Press",
+      "orderIndex": 0,
+      "notes": "Pause at bottom",
+      "sets": [
+        { "weight": 225, "reps": 5, "rpe": 8 },
+        { "weight": 225, "reps": 5, "rpe": 9 },
+        { "weight": 235, "reps": 3, "rpe": 9 }
+      ]
+    }
+  ]
+}
+
+// Response: 201 Created
+{
+  "data": {
+    "id": "workout_123",
+    "userId": "user_abc",
+    "name": "Push Day",
+    "exercises": [
+      {
+        "id": "exercise_456",
+        "name": "Bench Press",
+        "orderIndex": 0,
+        "sets": [
+          { "id": "set_789", "weight": 225, "reps": 5, "rpe": 8 }
+          // ... remaining sets with assigned IDs
+        ]
+      }
+    ]
+  }
+}
+```
+
+**GET /api/workouts** - List workouts (paginated):
+
+```json
+// Response: 200 OK
+{
+  "data": {
+    "currentItemCount": 10,
+    "itemsPerPage": 50,
+    "totalItems": 42,
+    "items": [
+      { "id": "workout_123", "name": "Push Day", "startedAt": "2025-01-15T10:00:00Z" }
+    ]
+  }
+}
+```
+
+**PATCH /api/sets/:id** - Update individual set:
+
+```json
+// Request
+{ "weight": 230, "reps": 6, "rpe": 8 }
+
+// Response: 200 OK
+{
+  "data": {
+    "id": "set_789",
+    "exerciseId": "exercise_456",
+    "weight": 230,
+    "reps": 6,
+    "rpe": 8
+  }
+}
+```
+
 ### Frontend Tasks
 
 5. **Create workout list page** (30 mins)
