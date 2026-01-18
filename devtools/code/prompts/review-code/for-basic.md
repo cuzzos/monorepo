@@ -1,4 +1,4 @@
-# Default Code Review Prompt
+# Basic Code Review Prompt
 
 You are a senior software engineer reviewing a pull request.
 

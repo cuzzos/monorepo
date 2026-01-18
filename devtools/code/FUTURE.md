@@ -1,6 +1,48 @@
 # Future Development Ideas
 
-Optional enhancements for the code review toolchain.
+Optional enhancements for the code analysis toolchain.
+
+---
+
+## Design Decisions (January 2026)
+
+Documenting key architectural choices made during the refactor.
+
+### Why diff-file only (no `--source`)?
+
+We considered two approaches for getting the diff:
+1. **Upload source** → Dagger computes `git diff` inside container
+2. **Pre-computed diff** → User runs `git diff` locally, passes file to Dagger
+
+**We chose option 2 because:**
+- Uploading the monorepo adds ~12s overhead with zero benefit
+- Git computes diffs locally in <1s
+- The justfile handles pre-computation transparently
+- Keeps the Dagger function simple and single-purpose
+
+**Pattern:** Git computes diff (fast, local) → Dagger runs LLM (containerized, reproducible)
+
+### Why no containerized Ollama?
+
+We considered running Ollama inside Dagger for a "self-contained" CI experience.
+
+**We removed it because:**
+- Docker on Mac can't use Metal GPU → CPU-only → ~60s per inference
+- Most CI runners lack GPUs, making LLM review impractical
+- Practical CI setups would use self-hosted runners with GPUs or remote Ollama
+- Added significant complexity for a rarely-used feature
+
+**Recommendation:** Run Ollama natively for local dev (fast), or connect to a remote Ollama server for CI.
+
+### Why `ExecutePrompts` (plural)?
+
+One function that accepts multiple prompts and runs them in parallel.
+
+**Benefits:**
+- `just review` runs all review prompts with one call
+- Parallel execution means ~30s total, regardless of prompt count
+- Flexible: can mix prompts from different folders
+- Single implementation to maintain
 
 ---
 

@@ -1,400 +1,254 @@
 // AI-powered code analysis toolchain using local LLMs via Ollama.
 //
+// Design Decisions:
+//   - Diff-file only: Git computes diff locally (fast) → Dagger runs LLM (containerized)
+//   - No self-contained Ollama: CPU-only containers too slow; rely on host/remote Ollama
+//   - Parallel execution: ExecutePrompts runs multiple prompts concurrently
+//
 // Prerequisites:
-//   - Ollama running locally: ollama serve
-//   - Model pulled: ollama pull gemma3:4b
+//   - Ollama running: OLLAMA_HOST=0.0.0.0:11434 ollama serve
+//   - Model pulled: ollama pull gemma3:1b
 //
-// Usage from monorepo root:
+// Usage via justfile (recommended):
 //
-//	# Review changes between branches
-//	dagger -m ./devtools/code call review-diff --source=. --base=main --head=feature-branch
+//	just review                     # Run all review prompts
+//	just review for-security        # Run specific focus
+//	just summarize                  # Run all summarize prompts
 //
-//	# Review staged changes
-//	dagger -m ./devtools/code call review-staged --source=.
+// Usage via Dagger directly:
 //
-//	# Review a specific file
-//	dagger -m ./devtools/code call review-file --source=. --file-path=src/main.rs
+//	# First, compute diff locally
+//	git diff main..HEAD > /tmp/diff.txt
 //
-//	# Summarize changes for other developers
-//	dagger -m ./devtools/code call summarize-diff --source=. --base=main --head=feature-branch
-//
-//	# Custom prompt for any diff
-//	dagger -m ./devtools/code call analyze --source=. --base=main --head=HEAD --prompt="Find security issues"
-//
-//	# Use a specific review mode (loads prompt from prompts/ folder)
-//	dagger -m ./devtools/code call review-diff --source=. --base=main --head=HEAD --mode=security
+//	# Then run prompts
+//	dagger -m ./devtools/code call execute-prompts \
+//	    --diff-file=/tmp/diff.txt \
+//	    --prompts=review-code/for-basic,review-code/for-security
 
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"path/filepath"
 	"strings"
+	"sync"
+	"text/template"
+	"time"
 
 	"dagger/code/internal/dagger"
 )
 
 const (
-	// Base image for reviewer containers
+	// Base image for containers
 	alpineImage = "alpine:3.19"
 
-	// Default model - gemma3:4b is a good balance of speed and quality
-	defaultModel = "gemma3:4b"
+	// Default model - gemma3:1b is fast for quick iterations
+	defaultModel = "gemma3:1b"
 
 	// Ollama host when running on the user's machine
 	defaultOllamaHost = "host.docker.internal:11434"
 
 	// Paths relative to module root
-	configDir  = "config"
 	promptsDir = "prompts"
 )
 
 type Code struct{}
 
 // =============================================================================
-// Container Helpers
+// Main Function
 // =============================================================================
 
-// reviewerContainer creates a container with git and curl for interacting with Ollama.
-func (m *Code) reviewerContainer(source *dagger.Directory, moduleDir *dagger.Directory) *dagger.Container {
+// ExecutePrompts runs one or more prompts against a diff file in parallel.
+// This is the main entry point for all code analysis.
+//
+// Prompts are specified as paths relative to the prompts/ directory:
+//   - "review-code/for-basic" → prompts/review-code/for-basic.md
+//   - "review-code/for-security" → prompts/review-code/for-security.md
+//   - "summarize-code/for-diff" → prompts/summarize-code/for-diff.md
+func (m *Code) ExecutePrompts(
+	ctx context.Context,
+	// The diff file to analyze (compute with: git diff main..HEAD > diff.txt)
+	diffFile *dagger.File,
+	// Comma-separated list of prompts to run (e.g., "review-code/for-basic,review-code/for-security")
+	prompts string,
+	// +optional
+	// +default="gemma3:1b"
+	model string,
+	// +optional
+	// +default="host.docker.internal:11434"
+	ollamaHost string,
+) (string, error) {
+	if model == "" {
+		model = defaultModel
+	}
+	if ollamaHost == "" {
+		ollamaHost = defaultOllamaHost
+	}
+
+	// Parse prompt list
+	promptList := strings.Split(prompts, ",")
+	for i := range promptList {
+		promptList[i] = strings.TrimSpace(promptList[i])
+	}
+
+	if len(promptList) == 0 || (len(promptList) == 1 && promptList[0] == "") {
+		return "", fmt.Errorf("no prompts specified")
+	}
+
+	// Read diff content
+	diffContent, err := diffFile.Contents(ctx)
+	if err != nil {
+		return "", fmt.Errorf("failed to read diff file: %w", err)
+	}
+
+	if strings.TrimSpace(diffContent) == "" {
+		return "No changes in diff file.", nil
+	}
+
+	// Truncate if too large
+	if len(diffContent) > 50000 {
+		diffContent = diffContent[:50000] + "\n\n... [truncated - diff too large, showing first 50k chars] ..."
+	}
+
+	// Get module directory for loading prompts
+	moduleDir := dag.CurrentModule().Source()
+
+	// Run prompts in parallel
+	type result struct {
+		prompt   string
+		output   string
+		err      error
+		duration time.Duration
+	}
+
+	results := make([]result, len(promptList))
+	var wg sync.WaitGroup
+
+	for i, prompt := range promptList {
+		wg.Add(1)
+		go func(idx int, promptPath string) {
+			defer wg.Done()
+
+			start := time.Now()
+			output, err := m.executeOnePrompt(ctx, moduleDir, promptPath, diffContent, model, ollamaHost)
+			duration := time.Since(start)
+
+			results[idx] = result{prompt: promptPath, output: output, err: err, duration: duration}
+		}(i, prompt)
+	}
+
+	wg.Wait()
+
+	// Format prompt names for display
+	formatPromptName := func(prompt string) string {
+		name := strings.ReplaceAll(prompt, "/", " → ")
+		name = strings.ReplaceAll(name, "for-", "")
+		name = strings.Title(strings.ReplaceAll(name, "-", " "))
+		return name
+	}
+
+	// Generate anchor ID for markdown links
+	toAnchor := func(name string) string {
+		anchor := strings.ToLower(name)
+		anchor = strings.ReplaceAll(anchor, " → ", "-")
+		anchor = strings.ReplaceAll(anchor, " ", "-")
+		return anchor
+	}
+
+	// Format duration for display
+	formatDuration := func(d time.Duration) string {
+		if d < time.Second {
+			return fmt.Sprintf("%dms", d.Milliseconds())
+		}
+		return fmt.Sprintf("%.1fs", d.Seconds())
+	}
+
+	// Combine results with table of contents
+	var output strings.Builder
+
+	// Table of contents (only if multiple prompts)
+	if len(results) > 1 {
+		output.WriteString("## Table of Contents\n\n")
+		for _, r := range results {
+			promptName := formatPromptName(r.prompt)
+			anchor := toAnchor(promptName)
+			output.WriteString(fmt.Sprintf("- [%s](#%s) (%s)\n", promptName, anchor, formatDuration(r.duration)))
+		}
+		output.WriteString("\n---\n\n")
+	}
+
+	// Content sections
+	for i, r := range results {
+		if i > 0 {
+			output.WriteString("\n\n---\n\n")
+		}
+
+		promptName := formatPromptName(r.prompt)
+		output.WriteString(fmt.Sprintf("# %s\n\n", promptName))
+		output.WriteString(fmt.Sprintf("*Completed in %s*\n\n", formatDuration(r.duration)))
+
+		if r.err != nil {
+			output.WriteString(fmt.Sprintf("Error: %v\n", r.err))
+		} else {
+			output.WriteString(r.output)
+		}
+	}
+
+	return output.String(), nil
+}
+
+// executeOnePrompt runs a single prompt against the diff content.
+func (m *Code) executeOnePrompt(
+	ctx context.Context,
+	moduleDir *dagger.Directory,
+	promptPath string,
+	diffContent string,
+	model string,
+	ollamaHost string,
+) (string, error) {
+	// Load prompt template
+	promptContent, err := m.loadPrompt(moduleDir, promptPath, ctx)
+	if err != nil {
+		return "", err
+	}
+
+	// Create files for the container (avoids shell escaping issues)
+	diffFile := dag.Directory().
+		WithNewFile("diff.txt", diffContent).
+		File("diff.txt")
+
+	promptFile := dag.Directory().
+		WithNewFile("prompt.txt", promptContent).
+		File("prompt.txt")
+
+	// Load the script template from config file
+	scriptTemplate, err := moduleDir.File("config/execute-prompt.sh.tmpl").Contents(ctx)
+	if err != nil {
+		return "", fmt.Errorf("failed to load execute-prompt template: %w", err)
+	}
+
+	tmpl, err := template.New("execute").Parse(scriptTemplate)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse template: %w", err)
+	}
+
+	var script bytes.Buffer
+	err = tmpl.Execute(&script, map[string]string{
+		"Model": model,
+		"Host":  ollamaHost,
+	})
+	if err != nil {
+		return "", fmt.Errorf("failed to execute template: %w", err)
+	}
+
 	return dag.Container().
 		From(alpineImage).
-		WithExec([]string{"apk", "add", "--no-cache", "git", "curl", "jq"}).
-		WithDirectory("/repo", source).
-		WithDirectory("/module", moduleDir).
-		WithWorkdir("/repo")
-}
-
-// =============================================================================
-// Config Loading
-// =============================================================================
-
-// loadSkipPatterns reads skip patterns from config/skip-patterns.txt
-func loadSkipPatterns(moduleDir *dagger.Directory, ctx context.Context) ([]string, error) {
-	configFile := moduleDir.File(filepath.Join(configDir, "skip-patterns.txt"))
-	content, err := configFile.Contents(ctx)
-	if err != nil {
-		// Return empty list if file doesn't exist
-		return []string{}, nil
-	}
-
-	var patterns []string
-	for _, line := range strings.Split(content, "\n") {
-		line = strings.TrimSpace(line)
-		// Skip empty lines and comments
-		if line == "" || strings.HasPrefix(line, "#") {
-			continue
-		}
-		patterns = append(patterns, line)
-	}
-	return patterns, nil
-}
-
-// loadPrompt reads a prompt from prompts/<mode>.md
-func loadPrompt(moduleDir *dagger.Directory, mode string, ctx context.Context) (string, error) {
-	promptFile := moduleDir.File(filepath.Join(promptsDir, fmt.Sprintf("review-%s.md", mode)))
-	content, err := promptFile.Contents(ctx)
-	if err != nil {
-		return "", fmt.Errorf("prompt mode '%s' not found (looking for prompts/review-%s.md)", mode, mode)
-	}
-	return content, nil
-}
-
-// buildExcludeArgs creates git pathspec exclude arguments for skip patterns
-func buildExcludeArgs(patterns []string) string {
-	var excludes []string
-	for _, pattern := range patterns {
-		excludes = append(excludes, fmt.Sprintf("':!%s'", pattern))
-	}
-	return strings.Join(excludes, " ")
-}
-
-// =============================================================================
-// Review Functions
-// =============================================================================
-
-// ReviewDiff reviews code changes between two git refs using a local LLM.
-// Requires Ollama running on the host with the model already pulled.
-func (m *Code) ReviewDiff(
-	ctx context.Context,
-	// Source directory (should be a git repository)
-	source *dagger.Directory,
-	// Base ref to compare from (e.g., "main", "origin/main")
-	base string,
-	// Head ref to compare to (e.g., "feature-branch", "HEAD")
-	head string,
-	// +optional
-	// +default="default"
-	// Review mode: default, security, performance, staged (loads from prompts/)
-	mode string,
-	// +optional
-	// +default="gemma3:4b"
-	model string,
-	// +optional
-	// +default="host.docker.internal:11434"
-	ollamaHost string,
-) (string, error) {
-	moduleDir := dag.CurrentModule().Source()
-
-	// Load prompt based on mode
-	if mode == "" {
-		mode = "default"
-	}
-	prompt, err := loadPrompt(moduleDir, mode, ctx)
-	if err != nil {
-		return "", err
-	}
-
-	return m.analyzeDiff(ctx, source, moduleDir, base, head, model, ollamaHost, prompt+"\n\nGit diff:\n")
-}
-
-// ReviewStaged reviews currently staged changes (git diff --cached).
-func (m *Code) ReviewStaged(
-	ctx context.Context,
-	// Source directory (should be a git repository)
-	source *dagger.Directory,
-	// +optional
-	// +default="gemma3:4b"
-	model string,
-	// +optional
-	// +default="host.docker.internal:11434"
-	ollamaHost string,
-) (string, error) {
-	moduleDir := dag.CurrentModule().Source()
-
-	prompt, err := loadPrompt(moduleDir, "staged", ctx)
-	if err != nil {
-		return "", err
-	}
-
-	return m.analyzeDiff(ctx, source, moduleDir, "--cached", "", model, ollamaHost, prompt+"\n\nGit diff (staged):\n")
-}
-
-// ReviewFile reviews a single file for quality, bugs, and improvements.
-func (m *Code) ReviewFile(
-	ctx context.Context,
-	// Source directory
-	source *dagger.Directory,
-	// Path to the file to review (relative to source root)
-	filePath string,
-	// +optional
-	// +default="gemma3:4b"
-	model string,
-	// +optional
-	// +default="host.docker.internal:11434"
-	ollamaHost string,
-) (string, error) {
-	if model == "" {
-		model = defaultModel
-	}
-	if ollamaHost == "" {
-		ollamaHost = defaultOllamaHost
-	}
-
-	prompt := fmt.Sprintf(`You are reviewing the file: %s
-
-Analyze this file and provide:
-1. **Overview**: What does this file do?
-2. **Issues**: Bugs, security concerns, or problems
-3. **Improvements**: Suggestions for better code quality
-4. **Rating**: Overall quality (1-10) with brief justification
-
-File contents:
-`, filePath)
-
-	script := fmt.Sprintf(`
-set -e
-FILE_CONTENT=$(cat "%s" 2>/dev/null || echo "ERROR: File not found")
-if [ "$FILE_CONTENT" = "ERROR: File not found" ]; then
-    echo "Error: File '%s' not found"
-    exit 1
-fi
-
-ESCAPED_CONTENT=$(echo "$FILE_CONTENT" | jq -Rs .)
-ESCAPED_PROMPT=$(echo %s | jq -Rs .)
-
-curl -s "http://%s/api/chat" \
-    -H "Content-Type: application/json" \
-    -d "{
-        \"model\": \"%s\",
-        \"messages\": [{
-            \"role\": \"user\",
-            \"content\": ${ESCAPED_PROMPT:1:-1}${ESCAPED_CONTENT:1:-1}
-        }],
-        \"stream\": false
-    }" | jq -r '.message.content // .error // "Error: No response from model"'
-`, filePath, filePath, prompt, ollamaHost, model)
-
-	moduleDir := dag.CurrentModule().Source()
-	return m.reviewerContainer(source, moduleDir).
-		WithExec([]string{"sh", "-c", script}).
-		Stdout(ctx)
-}
-
-// =============================================================================
-// Summary Function (for explaining diffs to other developers)
-// =============================================================================
-
-// SummarizeDiff generates a human-friendly summary of code changes.
-// Useful for helping other developers understand what changed and why.
-func (m *Code) SummarizeDiff(
-	ctx context.Context,
-	// Source directory (should be a git repository)
-	source *dagger.Directory,
-	// Base ref to compare from (e.g., "main", "origin/main")
-	base string,
-	// Head ref to compare to (e.g., "feature-branch", "HEAD")
-	head string,
-	// +optional
-	// +default="gemma3:4b"
-	model string,
-	// +optional
-	// +default="host.docker.internal:11434"
-	ollamaHost string,
-) (string, error) {
-	moduleDir := dag.CurrentModule().Source()
-
-	prompt := `You are helping a developer understand code changes made by a teammate.
-
-Write a clear, friendly summary that explains:
-
-1. **What Changed** (2-3 sentences)
-   - High-level description of the changes
-   - Which parts of the codebase were affected
-
-2. **Why It Matters**
-   - What problem does this solve or feature does it add?
-   - How does it affect the user or system?
-
-3. **Key Details**
-   - List the most important changes (max 5 bullet points)
-   - Note any breaking changes or things to watch out for
-
-4. **Files Changed**
-   - Brief description of each file's changes (one line each)
-
-Write as if explaining to a colleague who needs to review or work with this code.
-Avoid jargon. Be specific but concise.
-
-Git diff:
-`
-	return m.analyzeDiff(ctx, source, moduleDir, base, head, model, ollamaHost, prompt)
-}
-
-// =============================================================================
-// Custom Analysis
-// =============================================================================
-
-// Analyze runs a custom analysis on a diff with a user-provided prompt.
-func (m *Code) Analyze(
-	ctx context.Context,
-	// Source directory (should be a git repository)
-	source *dagger.Directory,
-	// Base ref to compare from
-	base string,
-	// Head ref to compare to
-	head string,
-	// Custom prompt describing what to analyze
-	prompt string,
-	// +optional
-	// +default="gemma3:4b"
-	model string,
-	// +optional
-	// +default="host.docker.internal:11434"
-	ollamaHost string,
-) (string, error) {
-	moduleDir := dag.CurrentModule().Source()
-	fullPrompt := prompt + "\n\nGit diff:\n"
-	return m.analyzeDiff(ctx, source, moduleDir, base, head, model, ollamaHost, fullPrompt)
-}
-
-// =============================================================================
-// Core Analysis Engine
-// =============================================================================
-
-// analyzeDiff is the core function that gets a diff and sends it to Ollama.
-func (m *Code) analyzeDiff(
-	ctx context.Context,
-	source *dagger.Directory,
-	moduleDir *dagger.Directory,
-	base string,
-	head string,
-	model string,
-	ollamaHost string,
-	prompt string,
-) (string, error) {
-	if model == "" {
-		model = defaultModel
-	}
-	if ollamaHost == "" {
-		ollamaHost = defaultOllamaHost
-	}
-
-	// Load skip patterns from config
-	skipPatterns, err := loadSkipPatterns(moduleDir, ctx)
-	if err != nil {
-		return "", fmt.Errorf("failed to load skip patterns: %w", err)
-	}
-
-	// Build the git diff command with file exclusions
-	excludes := buildExcludeArgs(skipPatterns)
-	var diffCmd string
-	if base == "--cached" {
-		diffCmd = fmt.Sprintf("git diff --cached -- . %s", excludes)
-	} else if head == "" {
-		diffCmd = fmt.Sprintf("git diff %s -- . %s", base, excludes)
-	} else {
-		diffCmd = fmt.Sprintf("git diff %s..%s -- . %s", base, head, excludes)
-	}
-
-	// Escape the prompt for JSON
-	escapedPrompt := strings.ReplaceAll(prompt, `"`, `\"`)
-	escapedPrompt = strings.ReplaceAll(escapedPrompt, "\n", `\n`)
-
-	script := fmt.Sprintf(`
-set -e
-
-# Get the diff
-DIFF=$(%s 2>/dev/null || echo "")
-if [ -z "$DIFF" ]; then
-    echo "No changes found between the specified refs."
-    exit 0
-fi
-
-# Truncate if too large (keep first 50k chars to stay within context)
-DIFF_LENGTH=${#DIFF}
-if [ $DIFF_LENGTH -gt 50000 ]; then
-    DIFF="${DIFF:0:50000}
-
-... [truncated - diff too large, showing first 50k chars] ..."
-    echo "Warning: Diff truncated from $DIFF_LENGTH to 50000 characters" >&2
-fi
-
-# Escape diff for JSON
-ESCAPED_DIFF=$(echo "$DIFF" | jq -Rs .)
-
-# Call Ollama
-RESPONSE=$(curl -s "http://%s/api/chat" \
-    -H "Content-Type: application/json" \
-    -d "{
-        \"model\": \"%s\",
-        \"messages\": [{
-            \"role\": \"user\",
-            \"content\": \"%s\" 
-        }, {
-            \"role\": \"user\",
-            \"content\": ${ESCAPED_DIFF}
-        }],
-        \"stream\": false
-    }" 2>&1)
-
-# Extract the response
-echo "$RESPONSE" | jq -r '.message.content // .error // "Error: No response from Ollama. Is it running?"'
-`, diffCmd, ollamaHost, model, escapedPrompt)
-
-	return m.reviewerContainer(source, moduleDir).
-		WithExec([]string{"sh", "-c", script}).
+		WithExec([]string{"apk", "add", "--no-cache", "curl", "jq"}).
+		WithMountedFile("/input/diff.txt", diffFile).
+		WithMountedFile("/input/prompt.txt", promptFile).
+		WithExec([]string{"sh", "-c", script.String()}).
 		Stdout(ctx)
 }
 
@@ -402,11 +256,51 @@ echo "$RESPONSE" | jq -r '.message.content // .error // "Error: No response from
 // Utility Functions
 // =============================================================================
 
+// ListPrompts shows all available prompts organized by category.
+func (m *Code) ListPrompts(ctx context.Context) (string, error) {
+	moduleDir := dag.CurrentModule().Source()
+	promptsDirectory := moduleDir.Directory(promptsDir)
+
+	entries, err := promptsDirectory.Entries(ctx)
+	if err != nil {
+		return "", fmt.Errorf("failed to list prompts directory: %w", err)
+	}
+
+	var output strings.Builder
+	output.WriteString("Available prompts:\n\n")
+
+	for _, entry := range entries {
+		// Skip non-directories and README
+		if strings.HasSuffix(entry, ".md") {
+			continue
+		}
+
+		// List prompts in this category
+		categoryDir := promptsDirectory.Directory(entry)
+		files, err := categoryDir.Entries(ctx)
+		if err != nil {
+			continue
+		}
+
+		output.WriteString(fmt.Sprintf("## %s\n", entry))
+		for _, file := range files {
+			if strings.HasPrefix(file, "for-") && strings.HasSuffix(file, ".md") {
+				promptName := strings.TrimSuffix(file, ".md")
+				fullPath := fmt.Sprintf("%s/%s", strings.TrimSuffix(entry, "/"), promptName)
+				output.WriteString(fmt.Sprintf("  - %s\n", fullPath))
+			}
+		}
+		output.WriteString("\n")
+	}
+
+	return output.String(), nil
+}
+
 // CheckOllama verifies that Ollama is running and the model is available.
 func (m *Code) CheckOllama(
 	ctx context.Context,
 	// +optional
-	// +default="gemma3:4b"
+	// +default="gemma3:1b"
 	model string,
 	// +optional
 	// +default="host.docker.internal:11434"
@@ -419,67 +313,50 @@ func (m *Code) CheckOllama(
 		ollamaHost = defaultOllamaHost
 	}
 
-	script := fmt.Sprintf(`
-set -e
-echo "Checking Ollama at %s..."
+	// Load the script template from config file
+	moduleDir := dag.CurrentModule().Source()
+	scriptTemplate, err := moduleDir.File("config/check-ollama.sh.tmpl").Contents(ctx)
+	if err != nil {
+		return "", fmt.Errorf("failed to load check-ollama template: %w", err)
+	}
 
-# Check if Ollama is running
-if ! curl -s "http://%s/api/tags" > /dev/null 2>&1; then
-    echo "❌ Cannot connect to Ollama at %s"
-    echo ""
-    echo "To fix this, run: ollama serve"
-    exit 1
-fi
-echo "✅ Ollama is running"
+	tmpl, err := template.New("check").Parse(scriptTemplate)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse template: %w", err)
+	}
 
-# Check if model is available
-MODELS=$(curl -s "http://%s/api/tags" | jq -r '.models[].name')
-if echo "$MODELS" | grep -q "^%s"; then
-    echo "✅ Model '%s' is available"
-else
-    echo "❌ Model '%s' not found"
-    echo ""
-    echo "Available models:"
-    echo "$MODELS" | head -10
-    echo ""
-    echo "To fix this, run: ollama pull %s"
-    exit 1
-fi
-
-echo ""
-echo "🎉 Ready to review code!"
-`, ollamaHost, ollamaHost, ollamaHost, ollamaHost, model, model, model, model)
+	var script bytes.Buffer
+	err = tmpl.Execute(&script, map[string]string{
+		"Host":  ollamaHost,
+		"Model": model,
+	})
+	if err != nil {
+		return "", fmt.Errorf("failed to execute template: %w", err)
+	}
 
 	return dag.Container().
 		From(alpineImage).
 		WithExec([]string{"apk", "add", "--no-cache", "curl", "jq"}).
-		WithExec([]string{"sh", "-c", script}).
+		WithExec([]string{"sh", "-c", script.String()}).
 		Stdout(ctx)
 }
 
-// ListModes shows available review modes (prompts).
-func (m *Code) ListModes(ctx context.Context) (string, error) {
-	moduleDir := dag.CurrentModule().Source()
-	promptsDirectory := moduleDir.Directory(promptsDir)
+// =============================================================================
+// Internal Helpers
+// =============================================================================
 
-	entries, err := promptsDirectory.Entries(ctx)
+// loadPrompt reads a prompt template from the prompts directory.
+// promptPath is relative to prompts/, e.g., "review-code/for-basic"
+func (m *Code) loadPrompt(moduleDir *dagger.Directory, promptPath string, ctx context.Context) (string, error) {
+	// Add .md extension if not present
+	if !strings.HasSuffix(promptPath, ".md") {
+		promptPath = promptPath + ".md"
+	}
+
+	promptFile := moduleDir.File(filepath.Join(promptsDir, promptPath))
+	content, err := promptFile.Contents(ctx)
 	if err != nil {
-		return "", fmt.Errorf("failed to list prompts: %w", err)
+		return "", fmt.Errorf("prompt '%s' not found (looking for prompts/%s)", promptPath, promptPath)
 	}
-
-	var modes []string
-	for _, entry := range entries {
-		if strings.HasPrefix(entry, "review-") && strings.HasSuffix(entry, ".md") {
-			mode := strings.TrimPrefix(entry, "review-")
-			mode = strings.TrimSuffix(mode, ".md")
-			modes = append(modes, mode)
-		}
-	}
-
-	result := "Available review modes:\n"
-	for _, mode := range modes {
-		result += fmt.Sprintf("  - %s\n", mode)
-	}
-	result += "\nUsage: --mode=<mode>"
-	return result, nil
+	return content, nil
 }

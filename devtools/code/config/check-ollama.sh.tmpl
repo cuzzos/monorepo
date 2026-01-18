@@ -1,0 +1,51 @@
+#!/bin/sh
+# Check Ollama connectivity and model availability
+# Template variables: {{.Host}}, {{.Model}}
+
+set -e
+echo "Checking Ollama at {{.Host}}..."
+
+# Check if Ollama is running and get info
+TAGS_RESPONSE=$(curl -s "http://{{.Host}}/api/tags" 2>/dev/null)
+if [ -z "$TAGS_RESPONSE" ]; then
+    echo "❌ Cannot connect to Ollama at {{.Host}}"
+    echo ""
+    echo "To fix this, run:"
+    echo "  OLLAMA_HOST=0.0.0.0:11434 ollama serve"
+    exit 1
+fi
+
+# Get version and model count
+VERSION=$(curl -s "http://{{.Host}}/api/version" | jq -r '.version // "unknown"')
+MODEL_COUNT=$(echo "$TAGS_RESPONSE" | jq '.models | length')
+echo "✅ Ollama v${VERSION} is running (${MODEL_COUNT} models available)"
+
+# Check if model is available and get size
+MODEL_INFO=$(echo "$TAGS_RESPONSE" | jq -r '.models[] | select(.name | startswith("{{.Model}}")) | "\(.name)|\(.size)"' | head -1)
+if [ -n "$MODEL_INFO" ]; then
+    MODEL_NAME=$(echo "$MODEL_INFO" | cut -d'|' -f1)
+    MODEL_SIZE=$(echo "$MODEL_INFO" | cut -d'|' -f2)
+    
+    # Convert bytes to human readable
+    if [ "$MODEL_SIZE" -ge 1073741824 ]; then
+        SIZE_HR=$(awk "BEGIN {printf \"%.1fGB\", $MODEL_SIZE/1073741824}")
+    elif [ "$MODEL_SIZE" -ge 1048576 ]; then
+        SIZE_HR=$(awk "BEGIN {printf \"%.1fMB\", $MODEL_SIZE/1048576}")
+    else
+        SIZE_HR="${MODEL_SIZE}B"
+    fi
+    
+    echo "✅ Model '$MODEL_NAME' is available ($SIZE_HR)"
+else
+    echo "❌ Model '{{.Model}}' not found"
+    echo ""
+    echo "Available models:"
+    echo "$TAGS_RESPONSE" | jq -r '.models[].name' | head -10
+    echo ""
+    echo "To fix this, run:"
+    echo "  ollama pull {{.Model}}"
+    exit 1
+fi
+
+echo ""
+echo "🎉 Ready to analyze code!"

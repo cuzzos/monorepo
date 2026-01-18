@@ -1,43 +1,45 @@
-# LLM Prompts for Code Review
+# Prompts Directory
 
-This folder contains prompt templates for different review modes.
+This directory stores reusable prompt templates designed to assist AI systems with code-related tasks.
 
-## Available Prompts
+## Structure
 
-| File | Use Case |
-|------|----------|
-| `review-default.md` | General PR review (bugs, style, clarity) |
-| `review-security.md` | Security-focused audit |
-| `review-performance.md` | Performance analysis |
-| `review-staged.md` | Quick pre-commit sanity check |
+```
+prompts/
+  review-code/           # Code review prompts
+    for-basic.md         # General code review
+    for-security.md      # Security-focused analysis
+    for-performance.md   # Performance-focused analysis
+    for-quick-check.md   # Pre-commit quick check
+  summarize-code/        # Summarization prompts
+    for-diff.md          # Explain changes to teammates
+```
+
+## Naming Convention
+
+- **Folder**: `{verb}-{noun}` — the action being performed
+- **File**: `for-{focus}.md` — the specific focus or use case
+
+## Adding New Prompts
+
+1. Choose the appropriate folder (or create a new `{verb}-{noun}/` folder)
+2. Create `for-{focus}.md` with your prompt
+3. Follow the existing format:
+   - Clear role definition at the top
+   - Numbered sections for expected output
+   - `## ✅ DO` section with best practices
+   - `## ❌ DON'T` section with anti-patterns
 
 ## Usage
 
-Prompts are loaded by the Dagger module based on the `--mode` flag:
+Prompts are referenced by path: `{folder}/{file}` (without `.md`)
 
 ```bash
-# Default review
-dagger -m ./devtools/code call review-diff --source=. --base=main --head=HEAD
+# Via justfile (recommended)
+just review                    # All review-code/* prompts
+just review for-security       # Specific focus
+just summarize                 # All summarize-code/* prompts
 
-# Security audit
-dagger -m ./devtools/code call review-diff --source=. --base=main --head=HEAD --mode=security
-
-# Performance review  
-dagger -m ./devtools/code call review-diff --source=. --base=main --head=HEAD --mode=performance
+# Via Dagger directly
+dagger call execute-prompts --prompts=review-code/for-basic,review-code/for-security
 ```
-
-## Creating Custom Prompts
-
-1. Create a new `.md` file in this folder
-2. Use clear instructions with numbered sections
-3. Include a DO/DON'T section for guardrails
-4. Include examples of desired output format
-
-Prompts are loaded from this folder at runtime based on the `--mode` flag.
-
-## Tips for Good Prompts
-
-- **Be specific**: "Find SQL injection" > "Find security issues"
-- **Prioritize**: Tell the model what matters most
-- **Format output**: Request structured output (numbered lists, severity ratings)
-- **Set scope**: "Only comment on significant issues" reduces noise

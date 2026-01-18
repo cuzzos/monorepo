@@ -1,0 +1,39 @@
+#!/bin/sh
+# Execute a prompt against Ollama with a diff
+# Template variables: {{.Model}}, {{.Host}}
+# Mounted files: /input/diff.txt, /input/prompt.txt
+
+set -e
+
+# Read files and build JSON payload using jq (handles all escaping)
+DIFF=$(cat /input/diff.txt)
+PROMPT=$(cat /input/prompt.txt)
+
+# Use jq to build properly escaped JSON
+PAYLOAD=$(jq -n \
+    --arg model "{{.Model}}" \
+    --arg prompt "$PROMPT" \
+    --arg diff "$DIFF" \
+    '{
+        model: $model,
+        messages: [
+            {role: "user", content: $prompt},
+            {role: "user", content: "Git diff:\n"},
+            {role: "user", content: $diff}
+        ],
+        stream: false
+    }')
+
+RESPONSE=$(curl -s "http://{{.Host}}/api/chat" \
+    -H "Content-Type: application/json" \
+    -d "$PAYLOAD" 2>&1)
+
+# Check for errors
+if echo "$RESPONSE" | jq -e '.error' > /dev/null 2>&1; then
+    echo "$RESPONSE" | jq -r '.error'
+    exit 1
+fi
+
+# Extract content and escape triple backticks to prevent markdown conflicts
+# Uses ~~~ instead of ``` so nested code blocks render correctly
+echo "$RESPONSE" | jq -r '.message.content // "Error: No response from Ollama"' | sed 's/```/~~~/g'
