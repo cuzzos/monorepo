@@ -8,7 +8,7 @@ AI-powered code analysis using local LLMs via Ollama and Dagger.
    ```bash
    brew install ollama
    OLLAMA_HOST=0.0.0.0:11434 ollama serve &
-   ollama pull gemma3:1b
+   ollama pull gemma3:4b
    ```
 
 2. **Dagger** - Already configured in this monorepo

@@ -9,7 +9,7 @@
 #
 # Prerequisites:
 #   OLLAMA_HOST=0.0.0.0:11434 ollama serve &
-#   ollama pull gemma3:1b
+#   ollama pull gemma3:4b
 #
 # Note for maintainers (human & AI):
 #   When modifying recipes, keep the --help output in sync with actual behavior!
@@ -87,8 +87,7 @@ review *args:
         OUTPUT_FILE="review-$(date +%Y-%m-%d-%H%M%S).md"
         dagger -m ./devtools/code call execute-prompts \
             --diff-file="$DIFF_FILE" \
-            --prompts="$PROMPTS" | tee "$OUTPUT_FILE"
-        echo ""
+            --prompts="$PROMPTS" > "$OUTPUT_FILE"
         echo "✅ Saved to $OUTPUT_FILE"
     else
         dagger -m ./devtools/code call execute-prompts \
@@ -156,8 +155,7 @@ summarize *args:
         OUTPUT_FILE="summary-$(date +%Y-%m-%d-%H%M%S).md"
         dagger -m ./devtools/code call execute-prompts \
             --diff-file="$DIFF_FILE" \
-            --prompts="$PROMPTS" | tee "$OUTPUT_FILE"
-        echo ""
+            --prompts="$PROMPTS" > "$OUTPUT_FILE"
         echo "✅ Saved to $OUTPUT_FILE"
     else
         dagger -m ./devtools/code call execute-prompts \
@@ -184,11 +182,11 @@ check-ollama *args:
             echo "  - Ollama server connectivity"
             echo "  - Ollama version"
             echo "  - Number of available models"
-            echo "  - Required model (gemma3:1b) presence and size"
+            echo "  - Required model (gemma3:4b) presence and size"
             echo ""
             echo "Prerequisites:"
             echo "  OLLAMA_HOST=0.0.0.0:11434 ollama serve"
-            echo "  ollama pull gemma3:1b"
+            echo "  ollama pull gemma3:4b"
             exit 0
         fi
     done

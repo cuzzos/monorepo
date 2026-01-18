@@ -7,7 +7,7 @@
 //
 // Prerequisites:
 //   - Ollama running: OLLAMA_HOST=0.0.0.0:11434 ollama serve
-//   - Model pulled: ollama pull gemma3:1b
+//   - Model pulled: ollama pull gemma3:4b
 //
 // Usage via justfile (recommended):
 //
@@ -44,8 +44,8 @@ const (
 	// Base image for containers
 	alpineImage = "alpine:3.19"
 
-	// Default model - gemma3:1b is fast for quick iterations
-	defaultModel = "gemma3:1b"
+	// Default model - gemma3:4b balances speed and instruction-following
+	defaultModel = "gemma3:4b"
 
 	// Ollama host when running on the user's machine
 	defaultOllamaHost = "host.docker.internal:11434"
@@ -74,7 +74,7 @@ func (m *Code) ExecutePrompts(
 	// Comma-separated list of prompts to run (e.g., "review-code/for-basic,review-code/for-security")
 	prompts string,
 	// +optional
-	// +default="gemma3:1b"
+	// +default="gemma3:4b"
 	model string,
 	// +optional
 	// +default="host.docker.internal:11434"
@@ -300,7 +300,7 @@ func (m *Code) ListPrompts(ctx context.Context) (string, error) {
 func (m *Code) CheckOllama(
 	ctx context.Context,
 	// +optional
-	// +default="gemma3:1b"
+	// +default="gemma3:4b"
 	model string,
 	// +optional
 	// +default="host.docker.internal:11434"

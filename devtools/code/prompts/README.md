@@ -12,7 +12,7 @@ prompts/
     for-performance.md   # Performance-focused analysis
     for-quick-check.md   # Pre-commit quick check
   summarize-code/        # Summarization prompts
-    for-diff.md          # Explain changes to teammates
+    for-pr-description.md # Generate PR descriptions
 ```
 
 ## Naming Convention
