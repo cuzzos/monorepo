@@ -5,63 +5,64 @@
 # =============================================================================
 # Lock files - auto-generated dependency manifests
 # =============================================================================
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
-Cargo.lock
-Gemfile.lock
-poetry.lock
-composer.lock
-go.sum
-uv.lock
-bun.lockb
+**/package-lock.json
+**/yarn.lock
+**/pnpm-lock.yaml
+**/Cargo.lock
+**/Gemfile.lock
+**/poetry.lock
+**/composer.lock
+**/go.sum
+**/uv.lock
+**/bun.lockb
 
 # =============================================================================
 # Generated code - machine-generated, don't review
 # =============================================================================
-*.generated.*
-*.g.dart
-*.freezed.dart
-*.pb.go
-*_generated.go
-*.gen.go
-*_gen.ts
-*.graphql.ts
-*.swagger.json
-*.openapi.json
+**/*.generated.*
+**/*.g.dart
+**/*.freezed.dart
+**/*.pb.go
+**/*_generated.go
+**/*.gen.go
+**/*_gen.ts
+**/*.graphql.ts
+**/*.swagger.json
+**/*.openapi.json
 
 # =============================================================================
 # Build artifacts - compiled/minified output
 # =============================================================================
-*.min.js
-*.min.css
-*.map
-*.bundle.js
-*.chunk.js
+**/*.min.js
+**/*.min.css
+**/*.map
+**/*.bundle.js
+**/*.chunk.js
 
 # =============================================================================
 # IDE/editor config - not code
 # =============================================================================
-.idea/*
-.vscode/*
-*.xcuserstate
-*.xcworkspacedata
+**/.idea/**
+**/.vscode/**
+**/*.xcuserstate
+**/*.xcworkspacedata
 
 # =============================================================================
 # Dependencies - should never be in git, but just in case
 # =============================================================================
-node_modules/*
-vendor/*
-.dart_tool/*
-Pods/*
-.build/*
-target/debug/*
-target/release/*
+**/node_modules/**
+**/vendor/**
+**/.dart_tool/**
+**/Pods/**
+**/.build/**
+**/target/debug/**
+**/target/release/**
 
 # =============================================================================
 # Dagger generated files
 # =============================================================================
-dagger.gen.go
-internal/dagger/*
-internal/querybuilder/*
-internal/telemetry/*
+**/dagger.gen.go
+**/internal/dagger/**
+**/internal/querybuilder/**
+**/internal/telemetry/**
+**/go.mod

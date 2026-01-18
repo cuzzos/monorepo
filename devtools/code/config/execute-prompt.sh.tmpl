@@ -10,8 +10,7 @@ DIFF=$(cat /input/diff.txt)
 PROMPT=$(cat /input/prompt.txt)
 
 # Use jq to build properly escaped JSON
-# system role = the instructions for the model
-# user role = the input data to process
+# system = instructions, user = content to process
 PAYLOAD=$(jq -n \
     --arg model "{{.Model}}" \
     --arg prompt "$PROMPT" \
@@ -20,7 +19,7 @@ PAYLOAD=$(jq -n \
         model: $model,
         messages: [
             {role: "system", content: $prompt},
-            {role: "user", content: ("Process this git diff:\n\n" + $diff)}
+            {role: "user", content: $diff}
         ],
         stream: false
     }')
