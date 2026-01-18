@@ -1,0 +1,9 @@
+# Ignore node_modules to speed up Dagger source syncing
+node_modules
+
+# Build artifacts and caches
+target
+.build
+Pods
+*.xcarchive
+DerivedData
