@@ -1,0 +1,336 @@
+# Code Analysis Devtool - Justfile
+#
+# AI-powered code analysis using local LLMs via Ollama and Dagger.
+# Imported by root justfile - run from repo root with `just <recipe>`.
+#
+# Getting Help:
+#   just --list              # List all available recipes
+#   just <recipe> --help     # Show detailed usage for a specific recipe
+#
+# Prerequisites:
+#   OLLAMA_HOST=0.0.0.0:11434 ollama serve &
+#   ollama pull gemma3:4b    # For code review (fast)
+#   ollama pull llama3:8b    # For summaries (better instruction following)
+#
+# Note for maintainers (human & AI):
+#   When modifying recipes, keep the --help output in sync with actual behavior!
+
+# Default models (can be overridden with --model flag)
+# llama3:8b - best for structured output (PR descriptions, summaries)
+# gemma3:4b - faster, good for code review
+review_model := "gemma3:4b"
+summarize_model := "llama3:8b"
+
+# =============================================================================
+# Review Recipes
+# =============================================================================
+
+# Run code review prompts on your changes
+review *args:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    
+    # Parse args
+    SAVE=false
+    FOCUS=""
+    BASE="main"
+    MODEL="{{review_model}}"
+    NEXT_IS_BASE=false
+    NEXT_IS_MODEL=false
+    
+    for arg in {{args}}; do
+        if [ "$NEXT_IS_BASE" = true ]; then
+            BASE="$arg"
+            NEXT_IS_BASE=false
+        elif [ "$NEXT_IS_MODEL" = true ]; then
+            MODEL="$arg"
+            NEXT_IS_MODEL=false
+        elif [ "$arg" = "--help" ] || [ "$arg" = "-h" ]; then
+            echo "Usage: just review [focus] [--from <base>] [--model <model>] [--save]"
+            echo ""
+            echo "Run code review prompts on your changes."
+            echo ""
+            echo "Options:"
+            echo "  focus         Specific prompt (e.g., for-basic, for-security)"
+            echo "  --from BASE   Base branch/commit to diff against (default: main)"
+            echo "  --model MODEL Ollama model to use (default: {{review_model}})"
+            echo "  --save        Save output to timestamped markdown file"
+            echo ""
+            echo "Prompts are auto-discovered from: devtools/code/prompts/review-code/"
+            echo ""
+            echo "Examples:"
+            echo "  just review                      # Review changes from main"
+            echo "  just review for-security         # Run security-focused review only"
+            echo "  just review --from develop       # Review changes from develop branch"
+            echo "  just review --from HEAD~5        # Review last 5 commits"
+            echo "  just review --model gemma3:4b    # Use a specific model"
+            echo "  just review --save               # Save output to review-YYYY-MM-DD-HHMMSS.md"
+            exit 0
+        elif [ "$arg" = "--from" ]; then
+            NEXT_IS_BASE=true
+        elif [ "$arg" = "--model" ]; then
+            NEXT_IS_MODEL=true
+        elif [ "$arg" = "--save" ]; then
+            SAVE=true
+        else
+            FOCUS="$arg"
+        fi
+    done
+    
+    # Build exclusion patterns from skip-patterns.txt
+    SKIP_PATTERNS_FILE="devtools/code/config/skip-patterns.txt"
+    EXCLUDE_ARGS=""
+    if [ -f "$SKIP_PATTERNS_FILE" ]; then
+        while IFS= read -r pattern || [ -n "$pattern" ]; do
+            # Skip empty lines and comments
+            [[ -z "$pattern" || "$pattern" =~ ^[[:space:]]*# ]] && continue
+            EXCLUDE_ARGS="$EXCLUDE_ARGS ':!$pattern'"
+        done < "$SKIP_PATTERNS_FILE"
+    fi
+    
+    # Compute diff locally (fast), excluding skip patterns
+    DIFF_FILE=$(mktemp)
+    trap "rm -f $DIFF_FILE" EXIT
+    
+    eval "git diff '${BASE}..HEAD' -- $EXCLUDE_ARGS" > "$DIFF_FILE"
+    
+    if [ ! -s "$DIFF_FILE" ]; then
+        echo "No changes found between ${BASE} and HEAD"
+        exit 0
+    fi
+    
+    # Determine which prompts to run
+    if [ -z "$FOCUS" ]; then
+        # Discover all prompts in review-code folder
+        PROMPTS=$(ls devtools/code/prompts/review-code/for-*.md 2>/dev/null | \
+            sed 's|devtools/code/prompts/||g; s|\.md$||g' | \
+            tr '\n' ',' | sed 's|,$||')
+    else
+        PROMPTS="review-code/$FOCUS"
+    fi
+
+    echo "🔍 Running code review (${BASE}..HEAD) with model: $MODEL..."
+    if [ "$SAVE" = true ]; then
+        OUTPUT_FILE="review-$(date +%Y-%m-%d-%H%M%S).md"
+        dagger -m ./devtools/code call execute-prompts \
+            --diff-file="$DIFF_FILE" \
+            --prompts="$PROMPTS" \
+            --model="$MODEL" > "$OUTPUT_FILE"
+        echo "✅ Saved to $OUTPUT_FILE"
+    else
+        dagger -m ./devtools/code call execute-prompts \
+            --diff-file="$DIFF_FILE" \
+            --prompts="$PROMPTS" \
+            --model="$MODEL"
+    fi
+
+# =============================================================================
+# Summarize Recipes
+# =============================================================================
+
+# Auto-detect threshold for file-by-file processing
+_diff_line_threshold := "500"
+
+# Summarize changes for teammates (auto-detects large diffs)
+summarize *args:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    
+    # Parse args
+    SAVE=false
+    SMART=false
+    MODEL="{{summarize_model}}"
+    NEXT_IS_MODEL=false
+    
+    for arg in {{args}}; do
+        if [ "$NEXT_IS_MODEL" = true ]; then
+            MODEL="$arg"
+            NEXT_IS_MODEL=false
+        elif [ "$arg" = "--help" ] || [ "$arg" = "-h" ]; then
+            echo "Usage: just summarize [--smart] [--model <model>] [--save]"
+            echo ""
+            echo "Generate a PR description from your changes."
+            echo ""
+            echo "Options:"
+            echo "  --smart       Force file-by-file processing (auto-enabled for large diffs)"
+            echo "  --model MODEL Ollama model to use (default: {{summarize_model}})"
+            echo "  --save        Save output to timestamped markdown file"
+            echo ""
+            echo "Behavior:"
+            echo "  - Small diffs (<{{_diff_line_threshold}} lines): Direct processing (fast)"
+            echo "  - Large diffs (≥{{_diff_line_threshold}} lines): File-by-file processing (accurate)"
+            echo "  - Use --smart to force file-by-file for any size"
+            echo ""
+            echo "Examples:"
+            echo "  just summarize                   # Auto-detect best method"
+            echo "  just summarize --smart           # Force file-by-file processing"
+            echo "  just summarize --save            # Save to summary-YYYY-MM-DD-HHMMSS.md"
+            exit 0
+        elif [ "$arg" = "--model" ]; then
+            NEXT_IS_MODEL=true
+        elif [ "$arg" = "--save" ]; then
+            SAVE=true
+        elif [ "$arg" = "--smart" ]; then
+            SMART=true
+        fi
+    done
+    
+    # Build exclusion patterns from skip-patterns.txt
+    SKIP_PATTERNS_FILE="devtools/code/config/skip-patterns.txt"
+    EXCLUDE_ARGS=""
+    if [ -f "$SKIP_PATTERNS_FILE" ]; then
+        while IFS= read -r pattern || [ -n "$pattern" ]; do
+            [[ -z "$pattern" || "$pattern" =~ ^[[:space:]]*# ]] && continue
+            EXCLUDE_ARGS="$EXCLUDE_ARGS ':!$pattern'"
+        done < "$SKIP_PATTERNS_FILE"
+    fi
+    
+    # Get the full diff
+    FULL_DIFF=$(eval "git diff main..HEAD -- $EXCLUDE_ARGS")
+    
+    if [ -z "$FULL_DIFF" ]; then
+        echo "No changes found between main and HEAD"
+        exit 0
+    fi
+    
+    # Count lines and files
+    LINE_COUNT=$(echo "$FULL_DIFF" | wc -l | tr -d ' ')
+    FILE_COUNT=$(echo "$FULL_DIFF" | grep -c "^diff --git" || true)
+    
+    # Decide processing mode
+    if [ "$SMART" = true ] || [ "$LINE_COUNT" -ge {{_diff_line_threshold}} ]; then
+        # File-by-file processing for large diffs
+        if [ "$SMART" = true ]; then
+            echo "📂 Smart mode: Processing $FILE_COUNT files with model: $MODEL..."
+        else
+            echo "📂 Large diff ($LINE_COUNT lines): Processing $FILE_COUNT files with model: $MODEL..."
+        fi
+        
+        # Create temp directory for file diffs
+        TEMP_DIR=$(mktemp -d)
+        trap "rm -rf $TEMP_DIR" EXIT
+        
+        # Split diff by file using awk
+        echo "$FULL_DIFF" | awk '/^diff --git/{if(f) close(f); f="'"$TEMP_DIR"'/file_"++n".diff"} {print > f}'
+        
+        # Process files in parallel
+        echo "  Processing files in parallel..."
+        PIDS=""
+        
+        for FILE_DIFF in "$TEMP_DIR"/file_*.diff; do
+            [ -f "$FILE_DIFF" ] || continue
+            
+            # Extract file number for output ordering
+            FILE_NUM=$(basename "$FILE_DIFF" .diff | sed 's/file_//')
+            OUTPUT_FILE="$TEMP_DIR/summary_${FILE_NUM}.txt"
+            
+            # Run in background, save output to temp file
+            (
+                dagger -m ./devtools/code call execute-prompts \
+                    --diff-file="$FILE_DIFF" \
+                    --prompts="summarize-code/for-file-changes" \
+                    --model="$MODEL" 2>/dev/null | tail -n +4 > "$OUTPUT_FILE"
+            ) &
+            PIDS="$PIDS $!"
+        done
+        
+        # Wait for all background jobs
+        for PID in $PIDS; do
+            wait $PID 2>/dev/null || true
+        done
+        
+        echo "  ✅ All $FILE_COUNT files processed"
+        
+        # Collect summaries in order
+        SUMMARIES=""
+        for SUMMARY_FILE in "$TEMP_DIR"/summary_*.txt; do
+            [ -f "$SUMMARY_FILE" ] || continue
+            SUMMARIES="$SUMMARIES$(cat "$SUMMARY_FILE")"$'\n'
+        done
+
+        echo ""
+        echo "📝 Generating PR description..."
+
+        # Write summaries to temp file
+        SUMMARIES_FILE="$TEMP_DIR/summaries.txt"
+        echo "$SUMMARIES" > "$SUMMARIES_FILE"
+
+        # Generate final PR description from summaries
+        RESULT=$(dagger -m ./devtools/code call execute-prompts \
+            --diff-file="$SUMMARIES_FILE" \
+            --prompts="summarize-code/for-pr-description" \
+            --model="$MODEL" 2>/dev/null | tail -n +4)
+    else
+        # Direct processing for small diffs
+        echo "📝 Small diff ($LINE_COUNT lines): Direct processing with model: $MODEL..."
+
+        DIFF_FILE=$(mktemp)
+        trap "rm -f $DIFF_FILE" EXIT
+        echo "$FULL_DIFF" > "$DIFF_FILE"
+        
+        RESULT=$(dagger -m ./devtools/code call execute-prompts \
+            --diff-file="$DIFF_FILE" \
+            --prompts="summarize-code/for-pr-description" \
+            --model="$MODEL" 2>/dev/null | tail -n +4)
+    fi
+    
+    # Output results
+    if [ "$SAVE" = true ]; then
+        OUTPUT_FILE="summary-$(date +%Y-%m-%d-%H%M%S).md"
+        echo "$RESULT" > "$OUTPUT_FILE"
+        echo ""
+        echo "✅ Saved to $OUTPUT_FILE"
+    else
+        echo ""
+        echo "$RESULT"
+    fi
+
+# =============================================================================
+# Utility Recipes
+# =============================================================================
+
+# Check if Ollama is running and models are available
+check-ollama *args:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    
+    for arg in {{args}}; do
+        if [ "$arg" = "--help" ] || [ "$arg" = "-h" ]; then
+            echo "Usage: just check-ollama"
+            echo ""
+            echo "Verify Ollama is running and show available models."
+            echo ""
+            echo "Checks:"
+            echo "  - Ollama server connectivity"
+            echo "  - Ollama version"
+            echo "  - All available models with sizes"
+            echo ""
+            echo "Prerequisites:"
+            echo "  OLLAMA_HOST=0.0.0.0:11434 ollama serve"
+            exit 0
+        fi
+    done
+    
+    # Direct curl to avoid Dagger caching (this is a health check)
+    echo "Checking Ollama at localhost:11434..."
+    
+    TAGS_RESPONSE=$(curl -s "http://localhost:11434/api/tags" 2>/dev/null)
+    if [ -z "$TAGS_RESPONSE" ]; then
+        echo "❌ Cannot connect to Ollama"
+        echo ""
+        echo "To fix this, run:"
+        echo "  OLLAMA_HOST=0.0.0.0:11434 ollama serve"
+        exit 1
+    fi
+    
+    VERSION=$(curl -s "http://localhost:11434/api/version" | jq -r '.version // "unknown"')
+    MODEL_COUNT=$(echo "$TAGS_RESPONSE" | jq '.models | length')
+    echo "✅ Ollama v${VERSION} is running (${MODEL_COUNT} models available)"
+    echo ""
+    
+    # List all models with sizes
+    echo "Available models:"
+    echo "$TAGS_RESPONSE" | jq -r '.models[] | "  - \(.name) (\(.size / 1073741824 | . * 10 | floor / 10)GB)"'
+    echo ""
+    echo "🎉 Ready to analyze code!"
+
