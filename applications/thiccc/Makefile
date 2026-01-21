@@ -1,7 +1,7 @@
 # Thiccc iOS App Makefile
 
 # Configurable simulator (can override: make run-sim SIMULATOR='iPhone 17')
-SIMULATOR ?= iPhone 16 Pro
+SIMULATOR ?= iPhone 17
 
 .PHONY: build clean open xcode-build run-sim list-sims test check help close-sims logs logs-all run-sim-all coverage coverage-report coverage-check test-rust verify-agent
 

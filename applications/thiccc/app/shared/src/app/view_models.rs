@@ -26,6 +26,8 @@ pub struct ViewModel {
     pub workout_view: WorkoutViewModel,
     /// ViewModel for the history tab
     pub history_view: HistoryViewModel,
+    /// ViewModel for the history detail view (when viewing a specific workout)
+    pub history_detail_view: Option<HistoryDetailViewModel>,
     /// Current error message to display (if any)
     pub error_message: Option<String>,
     /// Whether a loading operation is in progress

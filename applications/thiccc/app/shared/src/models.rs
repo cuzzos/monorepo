@@ -51,6 +51,17 @@ pub enum WeightUnit {
     Bodyweight,
 }
 
+impl WeightUnit {
+    /// Returns the string representation of the weight unit.
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            WeightUnit::Kg => "kg",
+            WeightUnit::Lb => "lb",
+            WeightUnit::Bodyweight => "",
+        }
+    }
+}
+
 /// Type of set within an exercise.
 ///
 /// Different set types affect how the set is tracked and displayed,
@@ -292,6 +303,22 @@ impl ExerciseSet {
     pub fn complete(&mut self, actual: SetActual) {
         self.actual = actual;
         self.is_completed = true;
+    }
+
+    /// Formats the set data for display (e.g., "225 lb × 10 reps @ 8.0 RPE").
+    pub fn format_set(&self) -> String {
+        let weight = self.actual.weight.unwrap_or(self.suggest.weight.unwrap_or(0.0));
+        let reps = self.actual.reps.unwrap_or(self.suggest.reps.unwrap_or(0));
+        let rpe = self.actual.rpe.unwrap_or(self.suggest.rpe.unwrap_or(0.0));
+
+        // Use weight unit, defaulting to lbs
+        let unit = self.weight_unit.clone().unwrap_or(WeightUnit::Lb);
+
+        if reps > 0 {
+            format!("{} {} × {} reps @ {:.1} RPE", weight, unit.as_str(), reps, rpe)
+        } else {
+            format!("{} {} @ {:.1} RPE", weight, unit.as_str(), rpe)
+        }
     }
 }
 
@@ -740,6 +767,53 @@ mod tests {
         assert_eq!(workout.id, deserialized.id);
         assert_eq!(workout.name, deserialized.name);
         assert_eq!(workout.exercises.len(), deserialized.exercises.len());
+    }
+
+    #[test]
+    fn test_workout_with_exercises_serialization() {
+        let mut workout = Workout::new();
+        workout.name = "Test Workout".to_string();
+
+        // Add an exercise with sets
+        let exercise = workout.add_exercise("Bench Press");
+        let set = exercise.add_set();
+        set.suggest.weight = Some(225.0);
+        set.suggest.reps = Some(5);
+        set.actual.weight = Some(225.0);
+        set.actual.reps = Some(5);
+
+        // Add another exercise
+        let exercise2 = workout.add_exercise("Squat");
+        let set2 = exercise2.add_set();
+        set2.suggest.weight = Some(315.0);
+        set2.suggest.reps = Some(3);
+
+        println!("Original workout has {} exercises", workout.exercises.len());
+        println!("Exercise 1 has {} sets", workout.exercises[0].sets.len());
+        println!("Exercise 2 has {} sets", workout.exercises[1].sets.len());
+
+        let json = serde_json::to_string(&workout).expect("Failed to serialize workout with exercises");
+        println!("Serialized JSON length: {}", json.len());
+
+        let deserialized: Workout =
+            serde_json::from_str(&json).expect("Failed to deserialize workout with exercises");
+
+        println!("Deserialized workout has {} exercises", deserialized.exercises.len());
+        if deserialized.exercises.len() > 0 {
+            println!("Deserialized exercise 1 has {} sets", deserialized.exercises[0].sets.len());
+        }
+        if deserialized.exercises.len() > 1 {
+            println!("Deserialized exercise 2 has {} sets", deserialized.exercises[1].sets.len());
+        }
+
+        assert_eq!(workout.id, deserialized.id);
+        assert_eq!(workout.name, deserialized.name);
+        assert_eq!(workout.exercises.len(), deserialized.exercises.len(), "Exercise count mismatch");
+
+        for (i, (orig, deser)) in workout.exercises.iter().zip(deserialized.exercises.iter()).enumerate() {
+            assert_eq!(orig.name, deser.name, "Exercise {} name mismatch", i);
+            assert_eq!(orig.sets.len(), deser.sets.len(), "Exercise {} set count mismatch", i);
+        }
     }
 
     #[test]

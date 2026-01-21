@@ -24,6 +24,80 @@ fn test_start_workout_flow() {
 }
 
 #[test]
+fn test_workout_deserialization_with_notes_and_body_parts() {
+    let app = Thiccc;
+    let mut model = Model::default();
+
+    // Switch to History tab so database responses populate history_detail_view
+    app.update(Event::ChangeTab { tab: Tab::History }, &mut model, &());
+
+    // Create a workout with the features we fixed (notes and body parts)
+    let mut workout = Workout::new();
+    workout.name = "Test Workout Deserialization".to_string();
+    workout.note = Some("Testing deserialization fixes".to_string());
+
+    // Create an exercise with notes and body parts
+    let mut exercise = Exercise::new("Bench Press".to_string(), workout.id.clone());
+    exercise.pinned_notes = vec!["Keep elbows tucked".to_string(), "Breathe out on press".to_string()];
+    exercise.notes = vec!["Felt strong today".to_string(), "Good form".to_string()];
+    exercise.body_part = Some(BodyPart::with_details(
+        BodyPartMain::Chest,
+        vec!["upper chest".to_string(), "inner chest".to_string()],
+        vec!["pectoralis major".to_string()],
+    ));
+
+    // Add a set
+    let set = ExerciseSet::new_working(
+        exercise.id.clone(),
+        workout.id.clone(),
+        0,
+        SetSuggest::with_weight_and_reps(185.0, 8),
+    );
+    exercise.sets.push(set);
+    workout.exercises.push(exercise);
+
+    // Serialize to JSON (this is what the database would return)
+    let workout_json = serde_json::to_string(&workout).expect("Failed to serialize workout");
+
+    // Simulate database response with workout loaded
+    app.update(
+        Event::DatabaseResponse {
+            result: DatabaseResult::WorkoutLoaded {
+                workout_json: Some(workout_json),
+            },
+        },
+        &mut model,
+        &(),
+    );
+
+    // Verify the workout was loaded into history_detail_view
+    assert!(model.history_detail_view.is_some(), "Workout should be loaded into history_detail_view");
+    let loaded_workout = model.history_detail_view.as_ref().unwrap();
+
+    // Verify basic workout properties
+    assert_eq!(loaded_workout.name, "Test Workout Deserialization");
+    assert_eq!(loaded_workout.exercises.len(), 1);
+
+    // Verify exercise with notes
+    let loaded_exercise = &loaded_workout.exercises[0];
+    assert_eq!(loaded_exercise.name, "Bench Press");
+    assert_eq!(loaded_exercise.pinned_notes, vec!["Keep elbows tucked", "Breathe out on press"]);
+    assert_eq!(loaded_exercise.notes, vec!["Felt strong today", "Good form"]);
+    assert_eq!(loaded_exercise.sets.len(), 1);
+
+    // Verify body part
+    assert!(loaded_exercise.body_part.is_some());
+    let body_part = loaded_exercise.body_part.as_ref().unwrap();
+    assert_eq!(body_part.main, BodyPartMain::Chest);
+    assert_eq!(body_part.detailed.as_ref().unwrap(), &vec!["upper chest", "inner chest"]);
+
+    // This test verifies that the deserialization fixes work:
+    // - pinned_notes and notes arrays are properly parsed
+    // - body_part objects are properly parsed
+    // - The workout loads without "missing field" errors
+}
+
+#[test]
 fn test_add_exercise_flow() {
     let app = Thiccc;
     let mut model = Model::default();
@@ -374,10 +448,10 @@ fn test_change_tab_flow() {
 #[test]
 fn test_error_message_cleared_on_start_workout() {
     let app = Thiccc;
-    let mut model = Model::default();
-
-    // Set an error message
-    model.error_message = Some("Previous error".to_string());
+    let mut model = Model {
+        error_message: Some("Previous error".to_string()),
+        ..Default::default()
+    };
 
     // Start workout (should clear error on success)
     app.update(Event::StartWorkout, &mut model, &());
@@ -446,10 +520,10 @@ fn test_error_message_cleared_on_add_set() {
 #[test]
 fn test_error_message_cleared_on_change_tab() {
     let app = Thiccc;
-    let mut model = Model::default();
-
-    // Set an error message
-    model.error_message = Some("Previous error".to_string());
+    let mut model = Model {
+        error_message: Some("Previous error".to_string()),
+        ..Default::default()
+    };
 
     // Change tab (should clear error)
     app.update(Event::ChangeTab { tab: Tab::History }, &mut model, &());
