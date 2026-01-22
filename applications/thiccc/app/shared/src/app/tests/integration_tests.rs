@@ -98,6 +98,57 @@ fn test_workout_deserialization_with_notes_and_body_parts() {
 }
 
 #[test]
+fn test_history_detail_view_model_includes_workout_id() {
+    let app = Thiccc;
+    let mut model = Model::default();
+
+    // Switch to History tab so database responses populate history_detail_view
+    app.update(Event::ChangeTab { tab: Tab::History }, &mut model, &());
+
+    // Create a workout to test with
+    let mut workout = Workout::new();
+    let workout_id = workout.id.clone();
+    workout.name = "ID Test Workout".to_string();
+
+    // Add an exercise
+    let exercise = workout.add_exercise("Test Exercise");
+    let set = exercise.add_set();
+    set.suggest.weight = Some(100.0);
+    set.suggest.reps = Some(10);
+    set.actual.weight = Some(100.0);
+    set.actual.reps = Some(10);
+
+    // Serialize to JSON (this is what the database would return)
+    let workout_json = serde_json::to_string(&workout).expect("Failed to serialize workout");
+
+    // Simulate database response with workout loaded
+    app.update(
+        Event::DatabaseResponse {
+            result: DatabaseResult::WorkoutLoaded {
+                workout_json: Some(workout_json),
+            },
+        },
+        &mut model,
+        &(),
+    );
+
+    // Build the view model
+    let view = app.view(&model);
+
+    // Verify the HistoryDetailViewModel has the correct workout ID
+    assert!(view.history_detail_view.is_some(), "HistoryDetailViewModel should be populated");
+    let detail_view = view.history_detail_view.as_ref().unwrap();
+
+    // This is the key test: verify the workout ID is included and matches
+    assert_eq!(detail_view.id, workout_id.as_str(), "HistoryDetailViewModel should include the workout ID");
+    assert_eq!(detail_view.workout_name, "ID Test Workout", "Workout name should match");
+    assert_eq!(detail_view.exercises.len(), 1, "Should have one exercise");
+
+    // This test verifies that HistoryDetailViewModel now includes the workout ID field,
+    // which allows Swift UI to validate data freshness and prevent stale data display
+}
+
+#[test]
 fn test_add_exercise_flow() {
     let app = Thiccc;
     let mut model = Model::default();

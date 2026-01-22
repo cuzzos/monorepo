@@ -14,7 +14,7 @@ struct HistoryDetailView: View {
 
     var body: some View {
         ScrollView {
-            if let detail = detailView {
+            if let detail = detailView, detail.id == workoutId {
                 VStack(alignment: .leading, spacing: 0) {
                     // Header
                     headerSection(detail: detail)
@@ -76,7 +76,7 @@ struct HistoryDetailView: View {
     private func exercisesSection(detail: SharedTypes.HistoryDetailViewModel) -> some View {
         VStack(alignment: .leading, spacing: 24) {
             ForEach(0..<detail.exercises.count, id: \.self) { index in
-                exerciseCard(exercise: detail.exercises[Int(index)])
+                exerciseCard(exercise: detail.exercises[index])
             }
         }
         .padding(.horizontal)
@@ -93,7 +93,7 @@ struct HistoryDetailView: View {
             // Sets
             VStack(alignment: .leading, spacing: 8) {
                 ForEach(0..<exercise.sets.count, id: \.self) { index in
-                    let set = exercise.sets[Int(index)]
+                    let set = exercise.sets[index]
                     HStack(alignment: .center) {
                         Text("Set \(set.set_number):")
                             .font(.system(size: 16, weight: .medium))

@@ -169,6 +169,7 @@ impl Thiccc {
             .collect();
 
         HistoryDetailViewModel {
+            id: workout.id.as_str().to_string(),
             workout_name: workout.name.clone(),
             formatted_date,
             duration,
@@ -326,13 +327,10 @@ impl App for Thiccc {
             // Workout Management
             // =================================================================
             Event::StartWorkout => {
-                println!("🔍 DEBUG: Rust - StartWorkout event received");
                 if model.current_workout.is_some() {
                     const WIP_MSG: &str = "A workout is already in progress. Please finish or discard it first.";
-                    println!("🔍 DEBUG: Rust - StartWorkout failed: workout already in progress");
                     model.error_message = Some(WIP_MSG.to_string());
                 } else {
-                    println!("🔍 DEBUG: Rust - StartWorkout: creating new workout");
                     model.current_workout = Some(Workout::new());
                     model.workout_timer_seconds = 0;
                     model.timer_running = true;
@@ -424,14 +422,11 @@ impl App for Thiccc {
                 exercise_type,
                 muscle_group,
             } => {
-                println!("🔍 DEBUG: Rust - AddExercise event received: {} (type: {}, group: {})", name, exercise_type, muscle_group);
                 let workout = model.get_or_create_workout();
-                println!("🔍 DEBUG: Rust - Current workout has {} exercises before adding", workout.exercises.len());
                 // Create GlobalExercise from the provided fields
                 let global_exercise = GlobalExercise::new(name, exercise_type, muscle_group);
                 let new_exercise = Exercise::from_global(&global_exercise, workout.id.clone());
                 workout.exercises.push(new_exercise);
-                println!("🔍 DEBUG: Rust - Current workout now has {} exercises after adding", workout.exercises.len());
                 model.showing_add_exercise = false;
                 model.error_message = None; // Clear any stale errors on successful add
             }
@@ -470,7 +465,6 @@ impl App for Thiccc {
             }
 
             Event::ShowAddExerciseView => {
-                println!("🔍 DEBUG: Rust - ShowAddExerciseView event received");
                 model.showing_add_exercise = true;
             }
 

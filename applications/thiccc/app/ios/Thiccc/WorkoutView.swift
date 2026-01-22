@@ -65,10 +65,8 @@ struct WorkoutView: View {
                 .multilineTextAlignment(.center)
             
             Button("Start Workout") {
-                print("🔍 DEBUG: WorkoutView - Start Workout button tapped")
                 Task {
                     await core.update(.startWorkout)
-                    print("🔍 DEBUG: WorkoutView - Start Workout event sent")
                 }
             }
             .buttonStyle(.borderedProminent)

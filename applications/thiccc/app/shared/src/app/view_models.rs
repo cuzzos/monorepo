@@ -166,6 +166,8 @@ pub struct HistoryItemViewModel {
 /// No meaningful default exists.
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct HistoryDetailViewModel {
+    /// Unique identifier for this workout
+    pub id: String, // UUID as string for easier Swift interop
     /// Workout name
     pub workout_name: String,
     /// Formatted date (e.g., "Nov 26, 2025 at 3:45 PM")

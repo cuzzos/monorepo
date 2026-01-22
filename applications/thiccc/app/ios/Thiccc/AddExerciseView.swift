@@ -13,14 +13,12 @@ struct AddExerciseView: View {
                     Section(header: Text(muscleGroup)) {
                         ForEach(exercises, id: \.name) { exercise in
                             Button {
-                                print("🔍 DEBUG: AddExerciseView - Adding exercise: \(exercise.name)")
                                 Task {
                                     await core.update(.addExercise(
                                         name: exercise.name,
                                         exercise_type: exercise.type,
                                         muscle_group: exercise.muscleGroup
                                     ))
-                                    print("🔍 DEBUG: AddExerciseView - Event sent for: \(exercise.name)")
                                 }
                             } label: {
                                 HStack {

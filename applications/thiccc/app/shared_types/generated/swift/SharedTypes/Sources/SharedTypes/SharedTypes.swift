@@ -600,6 +600,7 @@ public struct ExerciseViewModel: Hashable {
 }
 
 public struct HistoryDetailViewModel: Hashable {
+    @Indirect public var id: String
     @Indirect public var workout_name: String
     @Indirect public var formatted_date: String
     @Indirect public var duration: String?
@@ -608,7 +609,8 @@ public struct HistoryDetailViewModel: Hashable {
     @Indirect public var total_volume: Int32
     @Indirect public var total_sets: UInt64
 
-    public init(workout_name: String, formatted_date: String, duration: String?, exercises: [SharedTypes.ExerciseDetailViewModel], notes: String?, total_volume: Int32, total_sets: UInt64) {
+    public init(id: String, workout_name: String, formatted_date: String, duration: String?, exercises: [SharedTypes.ExerciseDetailViewModel], notes: String?, total_volume: Int32, total_sets: UInt64) {
+        self.id = id
         self.workout_name = workout_name
         self.formatted_date = formatted_date
         self.duration = duration
@@ -620,6 +622,7 @@ public struct HistoryDetailViewModel: Hashable {
 
     public func serialize<S: Serializer>(serializer: S) throws {
         try serializer.increase_container_depth()
+        try serializer.serialize_str(value: self.id)
         try serializer.serialize_str(value: self.workout_name)
         try serializer.serialize_str(value: self.formatted_date)
         try serialize_option_str(value: self.duration, serializer: serializer)
@@ -638,6 +641,7 @@ public struct HistoryDetailViewModel: Hashable {
 
     public static func deserialize<D: Deserializer>(deserializer: D) throws -> HistoryDetailViewModel {
         try deserializer.increase_container_depth()
+        let id = try deserializer.deserialize_str()
         let workout_name = try deserializer.deserialize_str()
         let formatted_date = try deserializer.deserialize_str()
         let duration = try deserialize_option_str(deserializer: deserializer)
@@ -646,7 +650,7 @@ public struct HistoryDetailViewModel: Hashable {
         let total_volume = try deserializer.deserialize_i32()
         let total_sets = try deserializer.deserialize_u64()
         try deserializer.decrease_container_depth()
-        return HistoryDetailViewModel.init(workout_name: workout_name, formatted_date: formatted_date, duration: duration, exercises: exercises, notes: notes, total_volume: total_volume, total_sets: total_sets)
+        return HistoryDetailViewModel.init(id: id, workout_name: workout_name, formatted_date: formatted_date, duration: duration, exercises: exercises, notes: notes, total_volume: total_volume, total_sets: total_sets)
     }
 
     public static func bincodeDeserialize(input: [UInt8]) throws -> HistoryDetailViewModel {

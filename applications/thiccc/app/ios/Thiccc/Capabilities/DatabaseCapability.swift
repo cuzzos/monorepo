@@ -10,6 +10,23 @@ protocol DatabaseCoreProtocol: AnyObject {
 // Make Core conform to the protocol
 extension Core: DatabaseCoreProtocol {}
 
+/// Parse a JSON array from a database row column and add it to a dictionary.
+///
+/// Safely parses JSON strings into [String] arrays, defaulting to empty array on failure.
+/// This is a standalone function to avoid main actor isolation issues.
+private func parseJSONArray(from row: Row, column: String, to dict: inout [String: Any], key: String) {
+    if let jsonString: String = row[column] {
+        if let jsonData = jsonString.data(using: .utf8),
+           let jsonArray = try? JSONSerialization.jsonObject(with: jsonData) as? [String] {
+            dict[key] = jsonArray
+        } else {
+            dict[key] = [String]()
+        }
+    } else {
+        dict[key] = [String]()
+    }
+}
+
 /// Handles database operations for persisting workout data.
 ///
 /// The database stores completed workouts with their exercises and sets using GRDB (SQLite).
@@ -357,7 +374,7 @@ class DatabaseCapability {
     }
     
     // MARK: - Load All Workouts
-    
+
     /// Load all workouts for the history view.
     ///
     /// Returns workouts as JSON strings in reverse chronological order.
@@ -401,29 +418,9 @@ class DatabaseCapability {
 
                     if let supersetId: Int = exerciseRow["supersetId"] { exerciseDict["superset_id"] = supersetId }
 
-                    // Parse pinned notes JSON array
-                    if let pinnedNotesJson: String = exerciseRow["pinnedNotes"] {
-                        if let pinnedNotesData = pinnedNotesJson.data(using: .utf8),
-                           let pinnedNotesArray = try? JSONSerialization.jsonObject(with: pinnedNotesData) as? [String] {
-                            exerciseDict["pinned_notes"] = pinnedNotesArray
-                        } else {
-                            exerciseDict["pinned_notes"] = [String]()
-                        }
-                    } else {
-                        exerciseDict["pinned_notes"] = [String]()
-                    }
-
-                    // Parse notes JSON array
-                    if let notesJson: String = exerciseRow["notes"] {
-                        if let notesData = notesJson.data(using: .utf8),
-                           let notesArray = try? JSONSerialization.jsonObject(with: notesData) as? [String] {
-                            exerciseDict["notes"] = notesArray
-                        } else {
-                            exerciseDict["notes"] = [String]()
-                        }
-                    } else {
-                        exerciseDict["notes"] = [String]()
-                    }
+                    // Parse JSON arrays
+                    parseJSONArray(from: exerciseRow, column: "pinnedNotes", to: &exerciseDict, key: "pinned_notes")
+                    parseJSONArray(from: exerciseRow, column: "notes", to: &exerciseDict, key: "notes")
                         if let duration: Int = exerciseRow["duration"] { exerciseDict["duration"] = duration }
                         if let weightUnit: String = exerciseRow["weightUnit"] { exerciseDict["weight_unit"] = weightUnit }
                         if let defaultWarmUpTime: Int = exerciseRow["defaultWarmUpTime"] { exerciseDict["default_warm_up_time"] = defaultWarmUpTime }
@@ -540,29 +537,9 @@ class DatabaseCapability {
 
                     if let supersetId: Int = exerciseRow["supersetId"] { exerciseDict["superset_id"] = supersetId }
 
-                    // Parse pinned notes JSON array
-                    if let pinnedNotesJson: String = exerciseRow["pinnedNotes"] {
-                        if let pinnedNotesData = pinnedNotesJson.data(using: .utf8),
-                           let pinnedNotesArray = try? JSONSerialization.jsonObject(with: pinnedNotesData) as? [String] {
-                            exerciseDict["pinned_notes"] = pinnedNotesArray
-                        } else {
-                            exerciseDict["pinned_notes"] = [String]()
-                        }
-                    } else {
-                        exerciseDict["pinned_notes"] = [String]()
-                    }
-
-                    // Parse notes JSON array
-                    if let notesJson: String = exerciseRow["notes"] {
-                        if let notesData = notesJson.data(using: .utf8),
-                           let notesArray = try? JSONSerialization.jsonObject(with: notesData) as? [String] {
-                            exerciseDict["notes"] = notesArray
-                        } else {
-                            exerciseDict["notes"] = [String]()
-                        }
-                    } else {
-                        exerciseDict["notes"] = [String]()
-                    }
+                    // Parse JSON arrays
+                    parseJSONArray(from: exerciseRow, column: "pinnedNotes", to: &exerciseDict, key: "pinned_notes")
+                    parseJSONArray(from: exerciseRow, column: "notes", to: &exerciseDict, key: "notes")
                     if let duration: Int = exerciseRow["duration"] { exerciseDict["duration"] = duration }
                     if let weightUnit: String = exerciseRow["weightUnit"] { exerciseDict["weight_unit"] = weightUnit }
                     if let defaultWarmUpTime: Int = exerciseRow["defaultWarmUpTime"] { exerciseDict["default_warm_up_time"] = defaultWarmUpTime }

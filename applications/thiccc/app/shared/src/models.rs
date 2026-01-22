@@ -39,7 +39,7 @@ pub enum ExerciseType {
 /// Unit of weight measurement.
 ///
 /// Used to specify whether weights are in kilograms, pounds, or bodyweight.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, Hash, Default)]
+#[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum WeightUnit {
     /// Kilograms
@@ -312,7 +312,7 @@ impl ExerciseSet {
         let rpe = self.actual.rpe.unwrap_or(self.suggest.rpe.unwrap_or(0.0));
 
         // Use weight unit, defaulting to lbs
-        let unit = self.weight_unit.clone().unwrap_or(WeightUnit::Lb);
+        let unit = self.weight_unit.unwrap_or(WeightUnit::Lb);
 
         if reps > 0 {
             format!("{} {} × {} reps @ {:.1} RPE", weight, unit.as_str(), reps, rpe)
