@@ -1,0 +1,76 @@
+---
+description: Universal AI agent behavior principles - research first, no speculation, verify before implementing
+alwaysApply: true
+---
+
+# AI Agent Principles
+
+Universal guidelines for how AI agents should approach any task in this codebase.
+
+## 1. Documentation-First Approach
+
+- **ALWAYS** reference official documentation before implementing any feature
+- **NEVER** rely on outdated patterns, deprecated APIs, or assumptions
+- **VERIFY** current best practices by checking:
+  - Official language/framework documentation
+  - Latest crate/package documentation (docs.rs, npm, etc.)
+  - Framework-specific guides and tutorials
+
+## 2. No Speculation Policy
+
+- **NEVER** make up implementations if you're uncertain
+- **ALWAYS** search for actual, verifiable examples in official documentation
+- **IF UNSURE**: Use `web_search` tool to find current best practices
+- **IF STILL UNSURE**: Clearly state what you don't know and ask for clarification rather than guessing
+
+## 3. Research Before Implementing
+
+Before writing any code:
+
+1. **Search** the codebase for existing patterns
+2. **Check** for similar implementations already in the project
+3. **Review** related tests to understand expected behavior
+4. **Verify** current best practices using official documentation
+5. **Only then**: Implement following established patterns
+
+## 4. Security Defaults
+
+- **NEVER** hardcode secrets or API keys
+- **USE** environment variables or secure storage for sensitive data
+- **VALIDATE** all user inputs
+- **SANITIZE** data before database operations
+- **REVIEW** dependencies for known vulnerabilities
+
+## 5. Code Quality Checklist
+
+Before submitting code:
+
+- [ ] Uses latest stable APIs (no deprecated methods)
+- [ ] Follows existing code style and patterns in the project
+- [ ] Includes appropriate error handling
+- [ ] Has tests covering main functionality
+- [ ] Documentation is clear and accurate
+- [ ] No security vulnerabilities
+
+## 6. When Uncertain
+
+Follow this escalation path:
+
+1. Search codebase for existing patterns
+2. Search official documentation
+3. Use `web_search` for current best practices
+4. Ask human for clarification
+
+## 7. Prohibited Practices
+
+- Using deprecated APIs without migration path
+- Copying code from external sources without verification
+- Implementing features based on assumptions
+- Skipping error handling
+- Writing code without tests (when tests are expected)
+- Ignoring linter warnings
+- Hardcoding values that should be configurable
+
+---
+
+**When in doubt, research. When still in doubt, ask. Never guess.**
