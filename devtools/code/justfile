@@ -289,7 +289,7 @@ summarize *args:
 # Utility Recipes
 # =============================================================================
 
-# Check if Ollama is running and models are available
+# Check if Ollama is running and models are available (starts Ollama if needed)
 check-ollama *args:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -299,14 +299,12 @@ check-ollama *args:
             echo "Usage: just check-ollama"
             echo ""
             echo "Verify Ollama is running and show available models."
+            echo "Automatically starts Ollama if it's not running."
             echo ""
             echo "Checks:"
-            echo "  - Ollama server connectivity"
+            echo "  - Ollama server connectivity (starts if needed)"
             echo "  - Ollama version"
             echo "  - All available models with sizes"
-            echo ""
-            echo "Prerequisites:"
-            echo "  OLLAMA_HOST=0.0.0.0:11434 ollama serve"
             exit 0
         fi
     done
@@ -314,13 +312,28 @@ check-ollama *args:
     # Direct curl to avoid Dagger caching (this is a health check)
     echo "Checking Ollama at localhost:11434..."
     
-    TAGS_RESPONSE=$(curl -s "http://localhost:11434/api/tags" 2>/dev/null)
+    TAGS_RESPONSE=$(curl -s "http://localhost:11434/api/tags" 2>/dev/null || true)
     if [ -z "$TAGS_RESPONSE" ]; then
-        echo "❌ Cannot connect to Ollama"
-        echo ""
-        echo "To fix this, run:"
-        echo "  OLLAMA_HOST=0.0.0.0:11434 ollama serve"
-        exit 1
+        echo "⚡ Ollama not running, starting it..."
+        OLLAMA_HOST=0.0.0.0:11434 ollama serve &>/dev/null &
+
+        # Wait for Ollama to be ready (up to 10 seconds)
+        for i in {1..20}; do
+            sleep 0.5
+            TAGS_RESPONSE=$(curl -s "http://localhost:11434/api/tags" 2>/dev/null || true)
+            if [ -n "$TAGS_RESPONSE" ]; then
+                break
+            fi
+        done
+
+        if [ -z "$TAGS_RESPONSE" ]; then
+            echo "❌ Failed to start Ollama"
+            echo ""
+            echo "Try starting it manually:"
+            echo "  OLLAMA_HOST=0.0.0.0:11434 ollama serve"
+            exit 1
+        fi
+        echo "✅ Ollama started successfully"
     fi
     
     VERSION=$(curl -s "http://localhost:11434/api/version" | jq -r '.version // "unknown"')
