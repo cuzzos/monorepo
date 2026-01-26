@@ -43,6 +43,9 @@ pub struct Model {
     /// List of completed workouts loaded from the database
     pub workout_history: Vec<Workout>,
 
+    /// Detail view data for currently viewed historical workout
+    pub history_detail_view: Option<Workout>,
+
     // ===== Navigation State =====
     /// Currently selected tab
     pub selected_tab: Tab,
@@ -96,6 +99,7 @@ impl Default for Model {
 
             // History
             workout_history: Vec::new(),
+            history_detail_view: None,
 
             // Navigation - explicitly start on Workout tab
             selected_tab: Tab::Workout,

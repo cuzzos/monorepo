@@ -31,7 +31,7 @@ struct ContentView: View {
 
             // History Tab
             NavigationStack(path: $historyPath) {
-                HistoryPlaceholderView(core: core)
+                HistoryView(core: core)
                     .navigationDestination(for: String.self) { workoutId in
                         HistoryDetailView(core: core, workoutId: workoutId)
                     }
@@ -56,36 +56,5 @@ struct ContentView: View {
 }
 
 
-/// Placeholder for the History view (Phase 7)
-struct HistoryPlaceholderView: View {
-    @Bindable var core: Core
-
-    var body: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "clock.arrow.circlepath")
-                .imageScale(.large)
-                .font(.system(size: 60))
-                .foregroundStyle(Color.accentColor)
-
-            Text("History")
-                .font(.largeTitle)
-                .fontWeight(.bold)
-
-            Text("Workout History")
-                .font(.title3)
-                .foregroundStyle(.secondary)
-
-            Spacer()
-
-            Text("History view will be implemented in Phase 7")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal)
-        }
-        .padding()
-        .navigationTitle("History")
-    }
-}
 
 

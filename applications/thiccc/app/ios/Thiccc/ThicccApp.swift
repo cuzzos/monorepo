@@ -2,6 +2,8 @@ import SwiftUI
 
 @main
 struct ThicccApp: App {
+    @State private var core: Core
+
     init() {
         // Initialize database SYNCHRONOUSLY before anything else
         do {
@@ -10,13 +12,14 @@ struct ThicccApp: App {
             print("❌ [ThicccApp] Database initialization failed: \(error)")
             fatalError("Database initialization failed: \(error)")
         }
+
+        // Create Core once at app startup
+        self._core = State(initialValue: Core())
     }
-    
+
     var body: some Scene {
         WindowGroup {
-            // Create Core INSIDE the view hierarchy, not as @State
-            // This ensures database is set up first
-            ContentView(core: Core())
+            ContentView(core: core)
         }
     }
 }

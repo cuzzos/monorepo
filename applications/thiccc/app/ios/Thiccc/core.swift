@@ -17,18 +17,18 @@ import SharedTypes
 @MainActor
 final class Core {
     var view: SharedTypes.ViewModel
-    
+
     // Capability handlers
     private var databaseCapability: DatabaseCapability?
     private var storageCapability: StorageCapability?
     private var timerCapability: TimerCapability?
-    
+
     init() {
         // Get initial view from Rust core via FFI
         let viewData = Thiccc.view()
         let viewBytes = Array(viewData)
         self.view = try! SharedTypes.ViewModel.bincodeDeserialize(input: viewBytes)
-        
+
         // Initialize capabilities
         // Database capability requires DatabaseManager to be set up first (done in ThicccApp.init)
         if let database = DatabaseManager.shared.database {
@@ -59,18 +59,17 @@ final class Core {
     /// 5. Updates the view
     func update(_ event: SharedTypes.Event) async {
         ConsoleLogger.shared.log("Event: \(String(describing: event))", emoji: "🟢")
-        
+
         // Serialize event to Bincode bytes
         let eventBytes = try! event.bincodeSerialize()
         let eventData = Data(eventBytes)
-        
+
         // Send event to Rust core and get effects
         let effectsData = Thiccc.processEvent(eventData)
         let effectsBytes = Array(effectsData)
-        
+
         // Process effects (requests from core)
         await processEffects(effectsBytes)
-        
         // Update the view
         refreshView()
     }
@@ -160,7 +159,7 @@ final class Core {
         await processEffects(effectsBytes)
         refreshView()
     }
-    
+
     /// Refresh the view from the Rust core.
     private func refreshView() {
         let viewData = Thiccc.view()

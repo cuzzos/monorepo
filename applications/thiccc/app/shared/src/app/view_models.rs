@@ -26,6 +26,8 @@ pub struct ViewModel {
     pub workout_view: WorkoutViewModel,
     /// ViewModel for the history tab
     pub history_view: HistoryViewModel,
+    /// ViewModel for the history detail view (when viewing a specific workout)
+    pub history_detail_view: Option<HistoryDetailViewModel>,
     /// Current error message to display (if any)
     pub error_message: Option<String>,
     /// Whether a loading operation is in progress
@@ -164,6 +166,8 @@ pub struct HistoryItemViewModel {
 /// No meaningful default exists.
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct HistoryDetailViewModel {
+    /// Unique identifier for this workout
+    pub id: String, // UUID as string for easier Swift interop
     /// Workout name
     pub workout_name: String,
     /// Formatted date (e.g., "Nov 26, 2025 at 3:45 PM")

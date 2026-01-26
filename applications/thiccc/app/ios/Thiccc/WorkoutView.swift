@@ -14,7 +14,11 @@ struct WorkoutView: View {
         }
         .sheet(isPresented: .init(
             get: { core.view.workout_view.showing_add_exercise },
-            set: { if !$0 { Task { await core.update(.dismissAddExerciseView) } } }
+            set: {
+                if !$0 {
+                    Task { await core.update(.dismissAddExerciseView) }
+                }
+            }
         )) {
             AddExerciseView(core: core)
         }
@@ -61,7 +65,9 @@ struct WorkoutView: View {
                 .multilineTextAlignment(.center)
             
             Button("Start Workout") {
-                Task { await core.update(.startWorkout) }
+                Task {
+                    await core.update(.startWorkout)
+                }
             }
             .buttonStyle(.borderedProminent)
         }

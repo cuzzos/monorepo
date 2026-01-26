@@ -32,8 +32,10 @@ struct DebugCapabilitiesView: View {
                 // MARK: - Workout Actions
                 Section("Workout Actions") {
                     Button("Start Workout") {
+                        print("🔍 DEBUG: DebugCapabilitiesView - Start Workout button tapped")
                         Task {
                             await core.update(.startWorkout)
+                            print("🔍 DEBUG: DebugCapabilitiesView - Start Workout event sent")
                             testResult = "Started workout"
                         }
                     }
@@ -53,12 +55,14 @@ struct DebugCapabilitiesView: View {
                     }
                     
                     Button("Add Exercise (Bench Press)") {
+                        print("🔍 DEBUG: DebugCapabilitiesView - Adding exercise: Bench Press")
                         Task {
                             await core.update(.addExercise(
                                 name: "Bench Press",
                                 exercise_type: "barbell",
                                 muscle_group: "chest"
                             ))
+                            print("🔍 DEBUG: DebugCapabilitiesView - Event sent for: Bench Press")
                             testResult = "Added exercise"
                         }
                     }

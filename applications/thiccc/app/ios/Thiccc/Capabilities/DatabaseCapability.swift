@@ -2,6 +2,31 @@ import Foundation
 import SharedTypes
 import GRDB
 
+/// Protocol for core communication (allows testing with mocks)
+protocol DatabaseCoreProtocol: AnyObject {
+    func sendDatabaseResponse(requestId: UInt32, result: SharedTypes.DatabaseResult) async
+}
+
+// Make Core conform to the protocol
+extension Core: DatabaseCoreProtocol {}
+
+/// Parse a JSON array from a database row column and add it to a dictionary.
+///
+/// Safely parses JSON strings into [String] arrays, defaulting to empty array on failure.
+/// This is a standalone function to avoid main actor isolation issues.
+private func parseJSONArray(from row: Row, column: String, to dict: inout [String: Any], key: String) {
+    if let jsonString: String = row[column] {
+        if let jsonData = jsonString.data(using: .utf8),
+           let jsonArray = try? JSONSerialization.jsonObject(with: jsonData) as? [String] {
+            dict[key] = jsonArray
+        } else {
+            dict[key] = [String]()
+        }
+    } else {
+        dict[key] = [String]()
+    }
+}
+
 /// Handles database operations for persisting workout data.
 ///
 /// The database stores completed workouts with their exercises and sets using GRDB (SQLite).
@@ -17,7 +42,7 @@ import GRDB
 /// - All business logic remains in Rust (this is just I/O)
 @MainActor
 class DatabaseCapability {
-    private weak var core: Core?
+    private weak var core: (any DatabaseCoreProtocol)?
     private let database: DatabaseWriter
     
     /// Directory for backup files when database save fails.
@@ -30,7 +55,7 @@ class DatabaseCapability {
     /// - Parameters:
     ///   - core: Reference to Core for sending responses
     ///   - database: GRDB DatabaseWriter from DatabaseManager
-    init(core: Core, database: DatabaseWriter) {
+    init(core: any DatabaseCoreProtocol, database: DatabaseWriter) {
         self.core = core
         self.database = database
         
@@ -349,7 +374,7 @@ class DatabaseCapability {
     }
     
     // MARK: - Load All Workouts
-    
+
     /// Load all workouts for the history view.
     ///
     /// Returns workouts as JSON strings in reverse chronological order.
@@ -375,8 +400,85 @@ class DatabaseCapability {
                         dict["end_timestamp"] = ISO8601DateFormatter().string(from: Date(timeIntervalSince1970: endTs))
                     }
                     
-                    dict["exercises"] = []
-                    
+                    // Load exercises for this workout
+                    let exercises = try Row.fetchAll(db, sql: """
+                        SELECT id, workoutId, supersetId, name, pinnedNotes, notes, duration, type, weightUnit, defaultWarmUpTime, defaultRestTime, bodyPart
+                        FROM exercises WHERE workoutId = ?
+                        ORDER BY id
+                    """, arguments: [row["id"] as String])
+
+                    var exercisesArray: [[String: Any]] = []
+                    for exerciseRow in exercises {
+                        var exerciseDict: [String: Any] = [
+                            "id": exerciseRow["id"] as String,
+                            "workout_id": exerciseRow["workoutId"] as String,
+                            "name": exerciseRow["name"] as String,
+                            "type": exerciseRow["type"] as String,
+                        ]
+
+                    if let supersetId: Int = exerciseRow["supersetId"] { exerciseDict["superset_id"] = supersetId }
+
+                    // Parse JSON arrays
+                    parseJSONArray(from: exerciseRow, column: "pinnedNotes", to: &exerciseDict, key: "pinned_notes")
+                    parseJSONArray(from: exerciseRow, column: "notes", to: &exerciseDict, key: "notes")
+                        if let duration: Int = exerciseRow["duration"] { exerciseDict["duration"] = duration }
+                        if let weightUnit: String = exerciseRow["weightUnit"] { exerciseDict["weight_unit"] = weightUnit }
+                        if let defaultWarmUpTime: Int = exerciseRow["defaultWarmUpTime"] { exerciseDict["default_warm_up_time"] = defaultWarmUpTime }
+                    if let defaultRestTime: Int = exerciseRow["defaultRestTime"] { exerciseDict["default_rest_time"] = defaultRestTime }
+
+                    // Parse body part JSON object
+                    if let bodyPartJson: String = exerciseRow["bodyPart"] {
+                        if let bodyPartData = bodyPartJson.data(using: .utf8),
+                           let bodyPartDict = try? JSONSerialization.jsonObject(with: bodyPartData) as? [String: Any] {
+                            exerciseDict["body_part"] = bodyPartDict
+                        }
+                    }
+
+                        // Load sets for this exercise
+                        let sets = try Row.fetchAll(db, sql: """
+                            SELECT id, exerciseId, workoutId, setIndex, type, weightUnit, suggest, actual, isCompleted
+                            FROM exerciseSets WHERE exerciseId = ?
+                            ORDER BY setIndex
+                        """, arguments: [exerciseRow["id"] as String])
+
+                        var setsArray: [[String: Any]] = []
+                        for setRow in sets {
+                            var setDict: [String: Any] = [
+                                "id": setRow["id"] as String,
+                                "exercise_id": setRow["exerciseId"] as String,
+                                "workout_id": setRow["workoutId"] as String,
+                                "set_index": setRow["setIndex"] as Int,
+                                "type": setRow["type"] as String,
+                                "is_completed": (setRow["isCompleted"] as? Int ?? 0) != 0,
+                            ]
+
+                            if let weightUnit: String = setRow["weightUnit"] { setDict["weight_unit"] = weightUnit }
+
+                            // Parse suggest JSON
+                            if let suggestJson: String = setRow["suggest"] {
+                                if let suggestData = suggestJson.data(using: .utf8),
+                                   let suggestDict = try? JSONSerialization.jsonObject(with: suggestData) as? [String: Any] {
+                                    setDict["suggest"] = suggestDict
+                                }
+                            }
+
+                            // Parse actual JSON
+                            if let actualJson: String = setRow["actual"] {
+                                if let actualData = actualJson.data(using: .utf8),
+                                   let actualDict = try? JSONSerialization.jsonObject(with: actualData) as? [String: Any] {
+                                    setDict["actual"] = actualDict
+                                }
+                            }
+
+                            setsArray.append(setDict)
+                        }
+
+                        exerciseDict["sets"] = setsArray
+                        exercisesArray.append(exerciseDict)
+                    }
+
+                    dict["exercises"] = exercisesArray
+
                     let jsonData = try JSONSerialization.data(withJSONObject: dict)
                     return String(data: jsonData, encoding: .utf8)!
                 }
@@ -417,8 +519,85 @@ class DatabaseCapability {
                     dict["end_timestamp"] = ISO8601DateFormatter().string(from: Date(timeIntervalSince1970: endTs))
                 }
                 
-                dict["exercises"] = []
-                
+                // Load exercises for this workout
+                let exercises = try Row.fetchAll(db, sql: """
+                    SELECT id, workoutId, supersetId, name, pinnedNotes, notes, duration, type, weightUnit, defaultWarmUpTime, defaultRestTime, bodyPart
+                    FROM exercises WHERE workoutId = ?
+                    ORDER BY id
+                """, arguments: [id])
+
+                var exercisesArray: [[String: Any]] = []
+                for exerciseRow in exercises {
+                    var exerciseDict: [String: Any] = [
+                        "id": exerciseRow["id"] as String,
+                        "workout_id": exerciseRow["workoutId"] as String,
+                        "name": exerciseRow["name"] as String,
+                        "type": exerciseRow["type"] as String,
+                    ]
+
+                    if let supersetId: Int = exerciseRow["supersetId"] { exerciseDict["superset_id"] = supersetId }
+
+                    // Parse JSON arrays
+                    parseJSONArray(from: exerciseRow, column: "pinnedNotes", to: &exerciseDict, key: "pinned_notes")
+                    parseJSONArray(from: exerciseRow, column: "notes", to: &exerciseDict, key: "notes")
+                    if let duration: Int = exerciseRow["duration"] { exerciseDict["duration"] = duration }
+                    if let weightUnit: String = exerciseRow["weightUnit"] { exerciseDict["weight_unit"] = weightUnit }
+                    if let defaultWarmUpTime: Int = exerciseRow["defaultWarmUpTime"] { exerciseDict["default_warm_up_time"] = defaultWarmUpTime }
+                    if let defaultRestTime: Int = exerciseRow["defaultRestTime"] { exerciseDict["default_rest_time"] = defaultRestTime }
+
+                    // Parse body part JSON object
+                    if let bodyPartJson: String = exerciseRow["bodyPart"] {
+                        if let bodyPartData = bodyPartJson.data(using: .utf8),
+                           let bodyPartDict = try? JSONSerialization.jsonObject(with: bodyPartData) as? [String: Any] {
+                            exerciseDict["body_part"] = bodyPartDict
+                        }
+                    }
+
+                    // Load sets for this exercise
+                    let sets = try Row.fetchAll(db, sql: """
+                        SELECT id, exerciseId, workoutId, setIndex, type, weightUnit, suggest, actual, isCompleted
+                        FROM exerciseSets WHERE exerciseId = ?
+                        ORDER BY setIndex
+                    """, arguments: [exerciseRow["id"] as String])
+
+                    var setsArray: [[String: Any]] = []
+                    for setRow in sets {
+                        var setDict: [String: Any] = [
+                            "id": setRow["id"] as String,
+                            "exercise_id": setRow["exerciseId"] as String,
+                            "workout_id": setRow["workoutId"] as String,
+                            "set_index": setRow["setIndex"] as Int,
+                            "type": setRow["type"] as String,
+                            "is_completed": (setRow["isCompleted"] as? Int ?? 0) != 0,
+                        ]
+
+                        if let weightUnit: String = setRow["weightUnit"] { setDict["weight_unit"] = weightUnit }
+
+                        // Parse suggest JSON
+                        if let suggestJson: String = setRow["suggest"] {
+                            if let suggestData = suggestJson.data(using: .utf8),
+                               let suggestDict = try? JSONSerialization.jsonObject(with: suggestData) as? [String: Any] {
+                                setDict["suggest"] = suggestDict
+                            }
+                        }
+
+                        // Parse actual JSON
+                        if let actualJson: String = setRow["actual"] {
+                            if let actualData = actualJson.data(using: .utf8),
+                               let actualDict = try? JSONSerialization.jsonObject(with: actualData) as? [String: Any] {
+                                setDict["actual"] = actualDict
+                            }
+                        }
+
+                        setsArray.append(setDict)
+                    }
+
+                    exerciseDict["sets"] = setsArray
+                    exercisesArray.append(exerciseDict)
+                }
+
+                dict["exercises"] = exercisesArray
+
                 let jsonData = try JSONSerialization.data(withJSONObject: dict)
                 return String(data: jsonData, encoding: .utf8)
             }
