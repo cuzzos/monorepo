@@ -130,8 +130,6 @@ impl Thiccc {
         let exercise_count = workout.exercises.len();
         let set_count = workout.total_sets();
 
-        println!("DEBUG: Building history item for '{}' - exercises: {}, sets: {}", workout.name, exercise_count, set_count);
-
         HistoryItemViewModel {
             id: workout.id.as_str().to_string(), // Convert Id to String for ViewModel
             name: workout.name.clone(),
@@ -335,6 +333,7 @@ impl App for Thiccc {
                     model.workout_timer_seconds = 0;
                     model.timer_running = true;
                     model.error_message = None; // Clear any stale errors on successful start
+                    model.showing_error = false;
 
                     // Start timer and save current workout to storage
                     // Serialize workout to JSON for storage operation
@@ -361,6 +360,7 @@ impl App for Thiccc {
                     model.workout_timer_seconds = 0;
                     model.timer_running = false;
                     model.error_message = None; // Clear any stale errors on successful finish
+                    model.showing_error = false;
 
                     // Save to database, delete from storage, stop timer
                     // Serialize workout to JSON for database operation
@@ -384,6 +384,7 @@ impl App for Thiccc {
                 model.workout_timer_seconds = 0;
                 model.timer_running = false;
                 model.error_message = None; // Clear any previous error
+                model.showing_error = false;
             }
 
             Event::DiscardWorkout => {
@@ -391,6 +392,7 @@ impl App for Thiccc {
                 model.workout_timer_seconds = 0;
                 model.timer_running = false;
                 model.error_message = None; // Clear any stale errors on discard
+                model.showing_error = false;
 
                 // Delete from storage and stop timer
                 return Command::all([
@@ -429,6 +431,7 @@ impl App for Thiccc {
                 workout.exercises.push(new_exercise);
                 model.showing_add_exercise = false;
                 model.error_message = None; // Clear any stale errors on successful add
+                model.showing_error = false;
             }
 
             Event::DeleteExercise { exercise_id } => {
@@ -482,6 +485,7 @@ impl App for Thiccc {
                         if let Some(exercise) = model.find_exercise_mut(&id) {
                             exercise.add_set();
                             model.error_message = None; // Clear any stale errors on successful add
+                            model.showing_error = false;
                         }
                     }
                     Err(e) => {
@@ -498,23 +502,33 @@ impl App for Thiccc {
                 match Id::from_string(exercise_id) {
                     Ok(id) => {
                         if let Some(exercise) = model.find_exercise_mut(&id) {
-                            if set_index < exercise.sets.len() {
+                            // Prevent deleting the last remaining set
+                            if exercise.sets.len() <= 1 {
+                                model.error_message = Some(
+                                    "Cannot delete the last set. An exercise must have at least one set.".to_string()
+                                );
+                                model.showing_error = true;
+                            } else if set_index < exercise.sets.len() {
                                 exercise.sets.remove(set_index);
                                 // Re-index remaining sets
                                 for (idx, set) in exercise.sets.iter_mut().enumerate() {
                                     set.set_index = idx as i32;
                                 }
+                                model.error_message = None; // Clear any stale errors on successful delete
+                                model.showing_error = false;
                             } else {
                                 model.error_message = Some(format!(
                                     "Cannot delete set: index {} is out of bounds (total sets: {})",
                                     set_index,
                                     exercise.sets.len()
                                 ));
+                                model.showing_error = true;
                             }
                         }
                     }
                     Err(e) => {
                         model.error_message = Some(format!("Invalid exercise ID: {}", e));
+                        model.showing_error = true;
                     }
                 }
             }
@@ -617,6 +631,7 @@ impl App for Thiccc {
                 // Clear navigation stack when changing tabs
                 model.navigation_stack.clear();
                 model.error_message = None; // Clear stale errors when navigating
+                model.showing_error = false;
             }
 
             // =================================================================
@@ -630,14 +645,17 @@ impl App for Thiccc {
                         // during deserialization, so we must validate manually.
                         if let Err(e) = Self::validate_workout_ids(&workout) {
                             model.error_message = Some(format!("Invalid workout data: {}", e));
+                            model.showing_error = true;
                         } else {
                             model.current_workout = Some(workout);
                             model.showing_import = false;
                             model.error_message = None;
+                            model.showing_error = false;
                         }
                     }
                     Err(e) => {
                         model.error_message = Some(format!("Failed to import workout: {}", e));
+                        model.showing_error = true;
                     }
                 }
             }
@@ -818,7 +836,13 @@ impl App for Thiccc {
 
             Event::Error { message } => {
                 model.error_message = Some(message);
+                model.showing_error = true;
                 model.is_loading = false;
+            }
+
+            Event::DismissError => {
+                model.error_message = None;
+                model.showing_error = false;
             }
         }
 
@@ -832,6 +856,7 @@ impl App for Thiccc {
             history_view: self.build_history_view(model),
             history_detail_view: model.history_detail_view.as_ref().map(|workout| self.build_history_detail(workout)),
             error_message: model.error_message.clone(),
+            showing_error: model.showing_error,
             is_loading: model.is_loading,
         }
     }

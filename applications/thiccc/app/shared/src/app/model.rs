@@ -69,6 +69,9 @@ pub struct Model {
     /// Whether plate calculator is shown
     pub showing_plate_calculator: bool,
 
+    /// Whether error alert is shown
+    pub showing_error: bool,
+
     // ===== Plate Calculator State =====
     /// Current plate calculation result
     pub plate_calculation: Option<PlateCalculation>,
@@ -111,6 +114,7 @@ impl Default for Model {
             showing_stopwatch: false,
             showing_rest_timer: None,
             showing_plate_calculator: false,
+            showing_error: false,
 
             // Plate calculator
             plate_calculation: None,
