@@ -13,7 +13,9 @@ extension Core: DatabaseCoreProtocol {}
 /// Parse a JSON array from a database row column and add it to a dictionary.
 ///
 /// Safely parses JSON strings into [String] arrays, defaulting to empty array on failure.
-/// This is a standalone function to avoid main actor isolation issues.
+/// This is a standalone (non-`@MainActor`) function so it can be called from GRDB's background
+/// database queues without hopping to the main actor, avoiding main actor isolation violations
+/// that would occur if this logic lived on the `@MainActor`-isolated `DatabaseCapability` class.
 private func parseJSONArray(from row: Row, column: String, to dict: inout [String: Any], key: String) {
     if let jsonString: String = row[column] {
         if let jsonData = jsonString.data(using: .utf8),
