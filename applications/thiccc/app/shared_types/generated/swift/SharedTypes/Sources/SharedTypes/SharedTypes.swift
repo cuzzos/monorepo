@@ -238,6 +238,7 @@ indirect public enum Event: Hashable {
     case storageResponse(result: SharedTypes.StorageResult)
     case timerResponse(output: SharedTypes.TimerOutput)
     case error(message: String)
+    case dismissError
 
     public func serialize<S: Serializer>(serializer: S) throws {
         try serializer.increase_container_depth()
@@ -345,6 +346,8 @@ indirect public enum Event: Hashable {
         case .error(let message):
             try serializer.serialize_variant_index(value: 38)
             try serializer.serialize_str(value: message)
+        case .dismissError:
+            try serializer.serialize_variant_index(value: 39)
         }
         try serializer.decrease_container_depth()
     }
@@ -501,6 +504,9 @@ indirect public enum Event: Hashable {
             let message = try deserializer.deserialize_str()
             try deserializer.decrease_container_depth()
             return .error(message: message)
+        case 39:
+            try deserializer.decrease_container_depth()
+            return .dismissError
         default: throw DeserializationError.invalidInput(issue: "Unknown variant index for Event: \(index)")
         }
     }
@@ -1250,14 +1256,16 @@ public struct ViewModel: Hashable {
     @Indirect public var history_view: SharedTypes.HistoryViewModel
     @Indirect public var history_detail_view: SharedTypes.HistoryDetailViewModel?
     @Indirect public var error_message: String?
+    @Indirect public var showing_error: Bool
     @Indirect public var is_loading: Bool
 
-    public init(selected_tab: SharedTypes.Tab, workout_view: SharedTypes.WorkoutViewModel, history_view: SharedTypes.HistoryViewModel, history_detail_view: SharedTypes.HistoryDetailViewModel?, error_message: String?, is_loading: Bool) {
+    public init(selected_tab: SharedTypes.Tab, workout_view: SharedTypes.WorkoutViewModel, history_view: SharedTypes.HistoryViewModel, history_detail_view: SharedTypes.HistoryDetailViewModel?, error_message: String?, showing_error: Bool, is_loading: Bool) {
         self.selected_tab = selected_tab
         self.workout_view = workout_view
         self.history_view = history_view
         self.history_detail_view = history_detail_view
         self.error_message = error_message
+        self.showing_error = showing_error
         self.is_loading = is_loading
     }
 
@@ -1268,6 +1276,7 @@ public struct ViewModel: Hashable {
         try self.history_view.serialize(serializer: serializer)
         try serialize_option_HistoryDetailViewModel(value: self.history_detail_view, serializer: serializer)
         try serialize_option_str(value: self.error_message, serializer: serializer)
+        try serializer.serialize_bool(value: self.showing_error)
         try serializer.serialize_bool(value: self.is_loading)
         try serializer.decrease_container_depth()
     }
@@ -1285,9 +1294,10 @@ public struct ViewModel: Hashable {
         let history_view = try SharedTypes.HistoryViewModel.deserialize(deserializer: deserializer)
         let history_detail_view = try deserialize_option_HistoryDetailViewModel(deserializer: deserializer)
         let error_message = try deserialize_option_str(deserializer: deserializer)
+        let showing_error = try deserializer.deserialize_bool()
         let is_loading = try deserializer.deserialize_bool()
         try deserializer.decrease_container_depth()
-        return ViewModel.init(selected_tab: selected_tab, workout_view: workout_view, history_view: history_view, history_detail_view: history_detail_view, error_message: error_message, is_loading: is_loading)
+        return ViewModel.init(selected_tab: selected_tab, workout_view: workout_view, history_view: history_view, history_detail_view: history_detail_view, error_message: error_message, showing_error: showing_error, is_loading: is_loading)
     }
 
     public static func bincodeDeserialize(input: [UInt8]) throws -> ViewModel {

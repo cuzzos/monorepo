@@ -161,6 +161,9 @@ pub enum Event {
 
     /// Error occurred
     Error { message: String },
+    
+    /// Dismiss error message
+    DismissError,
 }
 
 // =============================================================================
