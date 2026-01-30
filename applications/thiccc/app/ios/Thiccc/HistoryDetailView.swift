@@ -32,14 +32,12 @@ struct HistoryDetailView: View {
                     }
                 }
                 .padding(.bottom, 32)
+            } else if let errorMessage = core.view.error_message {
+                // Error state with retry
+                errorStateView(message: errorMessage)
             } else {
-                VStack {
-                    ProgressView()
-                    Text("Loading workout details...")
-                        .foregroundStyle(.secondary)
-                        .padding(.top)
-                }
-                .frame(maxWidth: .infinity, minHeight: 200)
+                // Loading state
+                loadingStateView
             }
         }
         .navigationTitle(detailView?.workout_name ?? "Workout")
@@ -47,6 +45,44 @@ struct HistoryDetailView: View {
         .onAppear {
             Task { await core.update(.viewHistoryItem(workout_id: workoutId)) }
         }
+    }
+
+    private var loadingStateView: some View {
+        VStack {
+            ProgressView()
+            Text("Loading workout details...")
+                .foregroundStyle(.secondary)
+                .padding(.top)
+        }
+        .frame(maxWidth: .infinity, minHeight: 200)
+    }
+
+    private func errorStateView(message: String) -> some View {
+        VStack(spacing: 20) {
+            Image(systemName: "exclamationmark.triangle")
+                .font(.system(size: 48))
+                .foregroundStyle(.orange)
+
+            Text("Failed to Load Workout")
+                .font(.title2)
+                .fontWeight(.semibold)
+
+            Text(message)
+                .font(.body)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal)
+
+            Button {
+                Task { await core.update(.viewHistoryItem(workout_id: workoutId)) }
+            } label: {
+                Label("Retry", systemImage: "arrow.clockwise")
+                    .font(.headline)
+            }
+            .buttonStyle(.borderedProminent)
+        }
+        .padding()
+        .frame(maxWidth: .infinity, minHeight: 300)
     }
 
     private func headerSection(detail: SharedTypes.HistoryDetailViewModel) -> some View {
