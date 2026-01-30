@@ -127,14 +127,56 @@ impl Thiccc {
     /// Builds a HistoryItemViewModel from a Workout.
     fn build_history_item(&self, workout: &Workout) -> HistoryItemViewModel {
         let date = workout.start_timestamp.format("%b %d, %Y").to_string();
+        let exercise_count = workout.exercises.len();
+        let set_count = workout.total_sets();
+
+        println!("DEBUG: Building history item for '{}' - exercises: {}, sets: {}", workout.name, exercise_count, set_count);
 
         HistoryItemViewModel {
             id: workout.id.as_str().to_string(), // Convert Id to String for ViewModel
             name: workout.name.clone(),
             date,
-            exercise_count: workout.exercises.len(),
-            set_count: workout.total_sets(),
+            exercise_count,
+            set_count,
             total_volume: workout.total_volume() as i32,
+        }
+    }
+
+    /// Builds a HistoryDetailViewModel from a Workout.
+    fn build_history_detail(&self, workout: &Workout) -> HistoryDetailViewModel {
+        let formatted_date = if let Some(end_time) = workout.end_timestamp {
+            end_time.format("%b %d, %Y at %-I:%M %p").to_string()
+        } else {
+            workout.start_timestamp.format("%b %d, %Y at %-I:%M %p").to_string()
+        };
+
+        let duration = workout.duration.map(|secs| {
+            let minutes = secs / 60;
+            let seconds = secs % 60;
+            format!("{:02}:{:02}", minutes, seconds)
+        });
+
+        let exercises = workout.exercises.iter()
+            .map(|exercise| ExerciseDetailViewModel {
+                name: exercise.name.clone(),
+                sets: exercise.sets.iter().enumerate()
+                    .map(|(index, set)| SetDetailViewModel {
+                        set_number: (index + 1) as i32,
+                        display_text: set.format_set(),
+                    })
+                    .collect(),
+            })
+            .collect();
+
+        HistoryDetailViewModel {
+            id: workout.id.as_str().to_string(),
+            workout_name: workout.name.clone(),
+            formatted_date,
+            duration,
+            exercises,
+            notes: workout.note.clone(),
+            total_volume: workout.total_volume() as i32,
+            total_sets: workout.total_sets(),
         }
     }
 
@@ -322,10 +364,12 @@ impl App for Thiccc {
 
                     // Save to database, delete from storage, stop timer
                     // Serialize workout to JSON for database operation
+                    println!("DEBUG: Finishing workout '{}' with {} exercises", workout.name, workout.exercises.len());
                     let workout_json = serde_json::to_string(&workout).unwrap_or_else(|e| {
                         eprintln!("ERROR: Failed to serialize workout for database: {}", e);
                         "{}".to_string() // Return valid empty JSON as fallback
                     });
+                    println!("DEBUG: Serialized workout JSON length: {}", workout_json.len());
                     return Command::all([
                         Command::request_from_shell(DatabaseOperation::SaveWorkout(workout_json))
                             .then_send(|result| Event::DatabaseResponse { result }),
@@ -557,11 +601,11 @@ impl App for Thiccc {
             }
 
             Event::ViewHistoryItem { workout_id } => {
-                // String IDs are used directly in navigation - no parsing needed
-                // They'll be parsed when actually loading the workout from database
-                model
-                    .navigation_stack
-                    .push(NavigationDestination::HistoryDetail { workout_id });
+                // Load the specific workout from database for the detail view
+                return Command::request_from_shell(DatabaseOperation::LoadWorkoutById(workout_id.clone()))
+                    .then_send(|result| Event::DatabaseResponse { result });
+                // Note: Navigation is handled by SwiftUI navigationDestination
+                // The ViewHistoryItem event is primarily for loading data
             }
 
             Event::NavigateBack => {
@@ -627,7 +671,7 @@ impl App for Thiccc {
                     model.error_message = Some("Bar weight must be greater than 0".to_string());
                     model.plate_calculation = None;
                 } else if let Some(percentage) = use_percentage {
-                    if percentage < 0.0 || percentage > 100.0 {
+                    if !(0.0..=100.0).contains(&percentage) {
                         model.error_message = Some(format!(
                             "Percentage must be between 0 and 100 (got {})",
                             percentage
@@ -674,17 +718,42 @@ impl App for Thiccc {
                         // Success - workout removed from database
                     }
                     DatabaseResult::HistoryLoaded { workouts_json } => {
+                        println!("DEBUG: Loading {} workouts from database", workouts_json.len());
                         // Deserialize JSON strings to Workout objects
                         let workouts: Vec<Workout> = workouts_json
                             .iter()
-                            .filter_map(|json| serde_json::from_str(json).ok())
+                            .filter_map(|json| {
+                                match serde_json::from_str::<Workout>(json) {
+                                    Ok(workout) => {
+                                        println!("DEBUG: Deserialized workout '{}' with {} exercises", workout.name, workout.exercises.len());
+                                        Some(workout)
+                                    }
+                                    Err(e) => {
+                                        eprintln!("ERROR: Failed to deserialize workout: {}", e);
+                                        None
+                                    }
+                                }
+                            })
                             .collect();
+                        println!("DEBUG: Successfully loaded {} workouts into history", workouts.len());
                         model.workout_history = workouts;
+                        model.is_loading = false;
                     }
                     DatabaseResult::WorkoutLoaded { workout_json } => {
                         // Deserialize JSON string to Workout object
-                        model.current_workout = workout_json
-                            .and_then(|json| serde_json::from_str(&json).ok());
+                        if let Some(workout_json) = workout_json {
+                            if let Ok(workout) = serde_json::from_str::<Workout>(&workout_json) {
+                                // Check if we have a pending history detail request
+                                // For now, populate history_detail_view if we're in history tab
+                                // TODO: This is a temporary solution - should track context better
+                                if model.selected_tab == Tab::History {
+                                    model.history_detail_view = Some(workout);
+                                } else {
+                                    // Load as current workout for resuming
+                                    model.current_workout = Some(workout);
+                                }
+                            }
+                        }
                     }
                     DatabaseResult::Error { message } => {
                         // Database error occurred
@@ -761,6 +830,7 @@ impl App for Thiccc {
             selected_tab: model.selected_tab.clone(),
             workout_view: self.build_workout_view(model),
             history_view: self.build_history_view(model),
+            history_detail_view: model.history_detail_view.as_ref().map(|workout| self.build_history_detail(workout)),
             error_message: model.error_message.clone(),
             is_loading: model.is_loading,
         }

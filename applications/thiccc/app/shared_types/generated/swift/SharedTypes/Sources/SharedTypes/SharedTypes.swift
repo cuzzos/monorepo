@@ -515,6 +515,46 @@ indirect public enum Event: Hashable {
     }
 }
 
+public struct ExerciseDetailViewModel: Hashable {
+    @Indirect public var name: String
+    @Indirect public var sets: [SharedTypes.SetDetailViewModel]
+
+    public init(name: String, sets: [SharedTypes.SetDetailViewModel]) {
+        self.name = name
+        self.sets = sets
+    }
+
+    public func serialize<S: Serializer>(serializer: S) throws {
+        try serializer.increase_container_depth()
+        try serializer.serialize_str(value: self.name)
+        try serialize_vector_SetDetailViewModel(value: self.sets, serializer: serializer)
+        try serializer.decrease_container_depth()
+    }
+
+    public func bincodeSerialize() throws -> [UInt8] {
+        let serializer = BincodeSerializer.init();
+        try self.serialize(serializer: serializer)
+        return serializer.get_bytes()
+    }
+
+    public static func deserialize<D: Deserializer>(deserializer: D) throws -> ExerciseDetailViewModel {
+        try deserializer.increase_container_depth()
+        let name = try deserializer.deserialize_str()
+        let sets = try deserialize_vector_SetDetailViewModel(deserializer: deserializer)
+        try deserializer.decrease_container_depth()
+        return ExerciseDetailViewModel.init(name: name, sets: sets)
+    }
+
+    public static func bincodeDeserialize(input: [UInt8]) throws -> ExerciseDetailViewModel {
+        let deserializer = BincodeDeserializer.init(input: input);
+        let obj = try deserialize(deserializer: deserializer)
+        if deserializer.get_buffer_offset() < input.count {
+            throw DeserializationError.invalidInput(issue: "Some input bytes were not read")
+        }
+        return obj
+    }
+}
+
 public struct ExerciseViewModel: Hashable {
     @Indirect public var id: String
     @Indirect public var name: String
@@ -550,6 +590,70 @@ public struct ExerciseViewModel: Hashable {
     }
 
     public static func bincodeDeserialize(input: [UInt8]) throws -> ExerciseViewModel {
+        let deserializer = BincodeDeserializer.init(input: input);
+        let obj = try deserialize(deserializer: deserializer)
+        if deserializer.get_buffer_offset() < input.count {
+            throw DeserializationError.invalidInput(issue: "Some input bytes were not read")
+        }
+        return obj
+    }
+}
+
+public struct HistoryDetailViewModel: Hashable {
+    @Indirect public var id: String
+    @Indirect public var workout_name: String
+    @Indirect public var formatted_date: String
+    @Indirect public var duration: String?
+    @Indirect public var exercises: [SharedTypes.ExerciseDetailViewModel]
+    @Indirect public var notes: String?
+    @Indirect public var total_volume: Int32
+    @Indirect public var total_sets: UInt64
+
+    public init(id: String, workout_name: String, formatted_date: String, duration: String?, exercises: [SharedTypes.ExerciseDetailViewModel], notes: String?, total_volume: Int32, total_sets: UInt64) {
+        self.id = id
+        self.workout_name = workout_name
+        self.formatted_date = formatted_date
+        self.duration = duration
+        self.exercises = exercises
+        self.notes = notes
+        self.total_volume = total_volume
+        self.total_sets = total_sets
+    }
+
+    public func serialize<S: Serializer>(serializer: S) throws {
+        try serializer.increase_container_depth()
+        try serializer.serialize_str(value: self.id)
+        try serializer.serialize_str(value: self.workout_name)
+        try serializer.serialize_str(value: self.formatted_date)
+        try serialize_option_str(value: self.duration, serializer: serializer)
+        try serialize_vector_ExerciseDetailViewModel(value: self.exercises, serializer: serializer)
+        try serialize_option_str(value: self.notes, serializer: serializer)
+        try serializer.serialize_i32(value: self.total_volume)
+        try serializer.serialize_u64(value: self.total_sets)
+        try serializer.decrease_container_depth()
+    }
+
+    public func bincodeSerialize() throws -> [UInt8] {
+        let serializer = BincodeSerializer.init();
+        try self.serialize(serializer: serializer)
+        return serializer.get_bytes()
+    }
+
+    public static func deserialize<D: Deserializer>(deserializer: D) throws -> HistoryDetailViewModel {
+        try deserializer.increase_container_depth()
+        let id = try deserializer.deserialize_str()
+        let workout_name = try deserializer.deserialize_str()
+        let formatted_date = try deserializer.deserialize_str()
+        let duration = try deserialize_option_str(deserializer: deserializer)
+        let exercises = try deserialize_vector_ExerciseDetailViewModel(deserializer: deserializer)
+        let notes = try deserialize_option_str(deserializer: deserializer)
+        let total_volume = try deserializer.deserialize_i32()
+        let total_sets = try deserializer.deserialize_u64()
+        try deserializer.decrease_container_depth()
+        return HistoryDetailViewModel.init(id: id, workout_name: workout_name, formatted_date: formatted_date, duration: duration, exercises: exercises, notes: notes, total_volume: total_volume, total_sets: total_sets)
+    }
+
+    public static func bincodeDeserialize(input: [UInt8]) throws -> HistoryDetailViewModel {
         let deserializer = BincodeDeserializer.init(input: input);
         let obj = try deserialize(deserializer: deserializer)
         if deserializer.get_buffer_offset() < input.count {
@@ -770,6 +874,46 @@ public struct SetActual: Hashable {
     }
 
     public static func bincodeDeserialize(input: [UInt8]) throws -> SetActual {
+        let deserializer = BincodeDeserializer.init(input: input);
+        let obj = try deserialize(deserializer: deserializer)
+        if deserializer.get_buffer_offset() < input.count {
+            throw DeserializationError.invalidInput(issue: "Some input bytes were not read")
+        }
+        return obj
+    }
+}
+
+public struct SetDetailViewModel: Hashable {
+    @Indirect public var set_number: Int32
+    @Indirect public var display_text: String
+
+    public init(set_number: Int32, display_text: String) {
+        self.set_number = set_number
+        self.display_text = display_text
+    }
+
+    public func serialize<S: Serializer>(serializer: S) throws {
+        try serializer.increase_container_depth()
+        try serializer.serialize_i32(value: self.set_number)
+        try serializer.serialize_str(value: self.display_text)
+        try serializer.decrease_container_depth()
+    }
+
+    public func bincodeSerialize() throws -> [UInt8] {
+        let serializer = BincodeSerializer.init();
+        try self.serialize(serializer: serializer)
+        return serializer.get_bytes()
+    }
+
+    public static func deserialize<D: Deserializer>(deserializer: D) throws -> SetDetailViewModel {
+        try deserializer.increase_container_depth()
+        let set_number = try deserializer.deserialize_i32()
+        let display_text = try deserializer.deserialize_str()
+        try deserializer.decrease_container_depth()
+        return SetDetailViewModel.init(set_number: set_number, display_text: display_text)
+    }
+
+    public static func bincodeDeserialize(input: [UInt8]) throws -> SetDetailViewModel {
         let deserializer = BincodeDeserializer.init(input: input);
         let obj = try deserialize(deserializer: deserializer)
         if deserializer.get_buffer_offset() < input.count {
@@ -1104,13 +1248,15 @@ public struct ViewModel: Hashable {
     @Indirect public var selected_tab: SharedTypes.Tab
     @Indirect public var workout_view: SharedTypes.WorkoutViewModel
     @Indirect public var history_view: SharedTypes.HistoryViewModel
+    @Indirect public var history_detail_view: SharedTypes.HistoryDetailViewModel?
     @Indirect public var error_message: String?
     @Indirect public var is_loading: Bool
 
-    public init(selected_tab: SharedTypes.Tab, workout_view: SharedTypes.WorkoutViewModel, history_view: SharedTypes.HistoryViewModel, error_message: String?, is_loading: Bool) {
+    public init(selected_tab: SharedTypes.Tab, workout_view: SharedTypes.WorkoutViewModel, history_view: SharedTypes.HistoryViewModel, history_detail_view: SharedTypes.HistoryDetailViewModel?, error_message: String?, is_loading: Bool) {
         self.selected_tab = selected_tab
         self.workout_view = workout_view
         self.history_view = history_view
+        self.history_detail_view = history_detail_view
         self.error_message = error_message
         self.is_loading = is_loading
     }
@@ -1120,6 +1266,7 @@ public struct ViewModel: Hashable {
         try self.selected_tab.serialize(serializer: serializer)
         try self.workout_view.serialize(serializer: serializer)
         try self.history_view.serialize(serializer: serializer)
+        try serialize_option_HistoryDetailViewModel(value: self.history_detail_view, serializer: serializer)
         try serialize_option_str(value: self.error_message, serializer: serializer)
         try serializer.serialize_bool(value: self.is_loading)
         try serializer.decrease_container_depth()
@@ -1136,10 +1283,11 @@ public struct ViewModel: Hashable {
         let selected_tab = try SharedTypes.Tab.deserialize(deserializer: deserializer)
         let workout_view = try SharedTypes.WorkoutViewModel.deserialize(deserializer: deserializer)
         let history_view = try SharedTypes.HistoryViewModel.deserialize(deserializer: deserializer)
+        let history_detail_view = try deserialize_option_HistoryDetailViewModel(deserializer: deserializer)
         let error_message = try deserialize_option_str(deserializer: deserializer)
         let is_loading = try deserializer.deserialize_bool()
         try deserializer.decrease_container_depth()
-        return ViewModel.init(selected_tab: selected_tab, workout_view: workout_view, history_view: history_view, error_message: error_message, is_loading: is_loading)
+        return ViewModel.init(selected_tab: selected_tab, workout_view: workout_view, history_view: history_view, history_detail_view: history_detail_view, error_message: error_message, is_loading: is_loading)
     }
 
     public static func bincodeDeserialize(input: [UInt8]) throws -> ViewModel {
@@ -1228,6 +1376,24 @@ public struct WorkoutViewModel: Hashable {
     }
 }
 
+func serialize_option_HistoryDetailViewModel<S: Serializer>(value: SharedTypes.HistoryDetailViewModel?, serializer: S) throws {
+    if let value = value {
+        try serializer.serialize_option_tag(value: true)
+        try value.serialize(serializer: serializer)
+    } else {
+        try serializer.serialize_option_tag(value: false)
+    }
+}
+
+func deserialize_option_HistoryDetailViewModel<D: Deserializer>(deserializer: D) throws -> SharedTypes.HistoryDetailViewModel? {
+    let tag = try deserializer.deserialize_option_tag()
+    if tag {
+        return try SharedTypes.HistoryDetailViewModel.deserialize(deserializer: deserializer)
+    } else {
+        return nil
+    }
+}
+
 func serialize_option_f64<S: Serializer>(value: Double?, serializer: S) throws {
     if let value = value {
         try serializer.serialize_option_tag(value: true)
@@ -1282,6 +1448,22 @@ func deserialize_option_str<D: Deserializer>(deserializer: D) throws -> String? 
     }
 }
 
+func serialize_vector_ExerciseDetailViewModel<S: Serializer>(value: [SharedTypes.ExerciseDetailViewModel], serializer: S) throws {
+    try serializer.serialize_len(value: value.count)
+    for item in value {
+        try item.serialize(serializer: serializer)
+    }
+}
+
+func deserialize_vector_ExerciseDetailViewModel<D: Deserializer>(deserializer: D) throws -> [SharedTypes.ExerciseDetailViewModel] {
+    let length = try deserializer.deserialize_len()
+    var obj : [SharedTypes.ExerciseDetailViewModel] = []
+    for _ in 0..<length {
+        obj.append(try SharedTypes.ExerciseDetailViewModel.deserialize(deserializer: deserializer))
+    }
+    return obj
+}
+
 func serialize_vector_ExerciseViewModel<S: Serializer>(value: [SharedTypes.ExerciseViewModel], serializer: S) throws {
     try serializer.serialize_len(value: value.count)
     for item in value {
@@ -1310,6 +1492,22 @@ func deserialize_vector_HistoryItemViewModel<D: Deserializer>(deserializer: D) t
     var obj : [SharedTypes.HistoryItemViewModel] = []
     for _ in 0..<length {
         obj.append(try SharedTypes.HistoryItemViewModel.deserialize(deserializer: deserializer))
+    }
+    return obj
+}
+
+func serialize_vector_SetDetailViewModel<S: Serializer>(value: [SharedTypes.SetDetailViewModel], serializer: S) throws {
+    try serializer.serialize_len(value: value.count)
+    for item in value {
+        try item.serialize(serializer: serializer)
+    }
+}
+
+func deserialize_vector_SetDetailViewModel<D: Deserializer>(deserializer: D) throws -> [SharedTypes.SetDetailViewModel] {
+    let length = try deserializer.deserialize_len()
+    var obj : [SharedTypes.SetDetailViewModel] = []
+    for _ in 0..<length {
+        obj.append(try SharedTypes.SetDetailViewModel.deserialize(deserializer: deserializer))
     }
     return obj
 }
