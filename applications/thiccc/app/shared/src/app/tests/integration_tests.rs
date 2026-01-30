@@ -46,7 +46,8 @@ fn test_workout_deserialization_with_notes_and_body_parts() {
         vec!["pectoralis major".to_string()],
     ));
 
-    // Add a set
+    // Replace the default set with a working set
+    exercise.sets.clear();
     let set = ExerciseSet::new_working(
         exercise.id.clone(),
         workout.id.clone(),
@@ -181,6 +182,46 @@ fn test_add_exercise_flow() {
 }
 
 #[test]
+fn test_add_exercise_creates_default_set() {
+    let app = Thiccc;
+    let mut model = Model::default();
+
+    // Start workout
+    app.update(Event::StartWorkout, &mut model, &());
+
+    // Add exercise
+    app.update(
+        Event::AddExercise {
+            name: "Deadlift".to_string(),
+            exercise_type: "barbell".to_string(),
+            muscle_group: "back".to_string(),
+        },
+        &mut model,
+        &(),
+    );
+
+    // Verify the exercise was created with one default set
+    let workout = model.current_workout.as_ref().unwrap();
+    assert_eq!(workout.exercises.len(), 1, "Should have one exercise");
+    
+    let exercise = &workout.exercises[0];
+    assert_eq!(exercise.name, "Deadlift");
+    assert_eq!(exercise.sets.len(), 1, "Exercise should have one default set");
+    
+    // Verify the default set has correct initial values
+    let default_set = &exercise.sets[0];
+    assert_eq!(default_set.set_index, 0, "First set should have index 0");
+    assert!(!default_set.is_completed, "Default set should not be completed");
+    assert_eq!(default_set.exercise_id, exercise.id);
+    assert_eq!(default_set.workout_id, workout.id);
+
+    // Verify view state also shows the set
+    let view = app.view(&model);
+    assert_eq!(view.workout_view.exercises.len(), 1);
+    assert_eq!(view.workout_view.exercises[0].sets.len(), 1, "View should show one set");
+}
+
+#[test]
 fn test_add_and_complete_set_flow() {
     let app = Thiccc;
     let mut model = Model::default();
@@ -201,7 +242,11 @@ fn test_add_and_complete_set_flow() {
         .id
         .to_string();
 
-    // Add a set
+    // Verify we have the default set
+    let view = app.view(&model);
+    assert_eq!(view.workout_view.exercises[0].sets.len(), 1, "Should have 1 default set");
+
+    // Add another set
     app.update(
         Event::AddSet {
             exercise_id: exercise_id.clone(),
@@ -210,12 +255,12 @@ fn test_add_and_complete_set_flow() {
         &(),
     );
 
-    // Verify set was added
+    // Verify we now have 2 sets
     let view = app.view(&model);
-    assert_eq!(view.workout_view.exercises[0].sets.len(), 1);
+    assert_eq!(view.workout_view.exercises[0].sets.len(), 2, "Should have 2 sets after adding one");
     assert!(!view.workout_view.exercises[0].sets[0].is_completed);
 
-    // Complete the set
+    // Complete the first set
     let set_id = model.current_workout.as_ref().unwrap().exercises[0].sets[0]
         .id
         .to_string();
@@ -344,11 +389,86 @@ fn test_finish_workout_uses_timer_seconds_not_wall_clock() {
 }
 
 #[test]
+fn test_cannot_delete_last_set() {
+    let app = Thiccc;
+    let mut model = Model::default();
+
+    // Start workout and add exercise (which now has 1 default set)
+    app.update(Event::StartWorkout, &mut model, &());
+    app.update(
+        Event::AddExercise {
+            name: "Deadlift".to_string(),
+            exercise_type: "barbell".to_string(),
+            muscle_group: "back".to_string(),
+        },
+        &mut model,
+        &(),
+    );
+
+    let exercise_id = model.current_workout.as_ref().unwrap().exercises[0]
+        .id
+        .to_string();
+
+    // Verify we have 1 default set
+    assert_eq!(model.current_workout.as_ref().unwrap().exercises[0].sets.len(), 1);
+
+    // Try to delete the only set
+    app.update(
+        Event::DeleteSet {
+            exercise_id: exercise_id.clone(),
+            set_index: 0,
+        },
+        &mut model,
+        &(),
+    );
+
+    // Verify the set was NOT deleted
+    assert_eq!(
+        model.current_workout.as_ref().unwrap().exercises[0].sets.len(), 
+        1,
+        "The last set should not be deleted"
+    );
+
+    // Verify error message was set
+    assert!(model.error_message.is_some(), "Error message should be set");
+    assert!(
+        model.error_message.as_ref().unwrap().contains("Cannot delete the last set"),
+        "Error message should indicate that the last set cannot be deleted"
+    );
+
+    // Now add a second set
+    app.update(
+        Event::AddSet {
+            exercise_id: exercise_id.clone(),
+        },
+        &mut model,
+        &(),
+    );
+
+    // Verify we now have 2 sets
+    assert_eq!(model.current_workout.as_ref().unwrap().exercises[0].sets.len(), 2);
+
+    // Delete one set - this should succeed
+    app.update(
+        Event::DeleteSet {
+            exercise_id: exercise_id.clone(),
+            set_index: 1,
+        },
+        &mut model,
+        &(),
+    );
+
+    // Verify we're back to 1 set
+    assert_eq!(model.current_workout.as_ref().unwrap().exercises[0].sets.len(), 1);
+    assert!(model.error_message.is_none(), "Error should be cleared on successful delete");
+}
+
+#[test]
 fn test_delete_set_with_invalid_index_shows_error() {
     let app = Thiccc;
     let mut model = Model::default();
 
-    // Start workout and add exercise with one set
+    // Start workout and add exercise (which now has 1 default set)
     app.update(Event::StartWorkout, &mut model, &());
     app.update(
         Event::AddExercise {
@@ -372,8 +492,8 @@ fn test_delete_set_with_invalid_index_shows_error() {
         &(),
     );
 
-    // Verify we have 1 set
-    assert_eq!(model.current_workout.as_ref().unwrap().exercises[0].sets.len(), 1);
+    // Verify we have 2 sets (1 default + 1 added)
+    assert_eq!(model.current_workout.as_ref().unwrap().exercises[0].sets.len(), 2);
 
     // Try to delete set at index 5 (out of bounds)
     app.update(
@@ -404,10 +524,10 @@ fn test_delete_set_with_invalid_index_shows_error() {
         "Error should mention out of bounds"
     );
 
-    // Verify the set was NOT deleted
+    // Verify the set was NOT deleted (should still have 2 sets)
     assert_eq!(
         model.current_workout.as_ref().unwrap().exercises[0].sets.len(),
-        1,
+        2,
         "Set should not have been deleted"
     );
 }
