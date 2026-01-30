@@ -30,6 +30,8 @@ pub struct ViewModel {
     pub history_detail_view: Option<HistoryDetailViewModel>,
     /// Current error message to display (if any)
     pub error_message: Option<String>,
+    /// Whether error alert is shown
+    pub showing_error: bool,
     /// Whether a loading operation is in progress
     pub is_loading: bool,
 }
