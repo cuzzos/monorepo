@@ -1,0 +1,79 @@
+# Web Development Stack (local only)
+# Usage: docker compose -f build/docker-compose.web-dev.yaml up
+# Note: Run from thiccc/ root directory
+
+services:
+  # PostgreSQL database
+  db:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    env_file:
+      - build/env/db.env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Database migrations (runs once, then exits)
+  db-migrate:
+    image: rust:1.85-slim
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+      - cargo_cache:/usr/local/cargo/registry
+    env_file:
+      - build/env/db.env
+    command: >
+      sh -c "cargo install sqlx-cli --no-default-features --features postgres &&
+             sqlx migrate run --source db/migrations"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # Web frontend (Next.js)
+  web:
+    image: node:22-slim
+    working_dir: /app
+    volumes:
+      - ./web_frontend:/app
+      - web_node_modules:/app/node_modules
+    ports:
+      - "3000:3000"
+    env_file:
+      - build/env/common.env
+      - build/env/web.env
+    command: sh -c "npm install && npx next dev -H 0.0.0.0"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # API server (Rust)
+  api:
+    image: rust:1.85-slim
+    working_dir: /workspace/api_server
+    volumes:
+      - .:/workspace
+      - cargo_cache:/usr/local/cargo/registry
+      - target_cache:/workspace/target
+    ports:
+      - "8000:8000"
+    env_file:
+      - build/env/common.env
+      - build/env/api.env
+      - build/env/db.env  # DATABASE_URL for container networking
+    command: sh -c "cargo run"
+    depends_on:
+      db:
+        condition: service_healthy
+      db-migrate:
+        condition: service_completed_successfully
+
+volumes:
+  postgres_data:
+  web_node_modules:
+  cargo_cache:
+  target_cache:
