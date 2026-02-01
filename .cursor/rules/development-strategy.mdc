@@ -1,0 +1,52 @@
+---
+description: Outside-in development strategy using Walking Skeleton / Tracer Bullet approach
+alwaysApply: true
+---
+
+# Development Strategy: Outside-In / Walking Skeleton
+
+## Core Principle
+
+Build from the outside (production environment) inward:
+
+1. **Infrastructure** - Deployment, hosting, database connection working first
+2. **Integration** - End-to-end "hello world" through all layers (tracer bullet)
+3. **Auth** - Shapes routing, middleware, and API design
+4. **Features** - Built on working, deployed foundation
+
+## Tracer Bullet
+
+A thin, end-to-end slice through all layers that proves the system works:
+
+```
+User action → Frontend → API → Database → Response → UI update
+```
+
+Even if each layer does almost nothing, you've proven deployment and integration work.
+
+## Walking Skeleton
+
+A tiny implementation that performs a small end-to-end function. No muscle (features) yet, but the bones (architecture) are in place and it can "walk" (deploy and run).
+
+## Why This Order
+
+| Problem | Outside-In Solves It |
+|---------|---------------------|
+| "Works on my machine" | Deployment proven from day 1 |
+| Integration surprises | CORS, env vars, networking solved early |
+| Auth bolted on later | Auth shapes everything; do it early |
+| Deployment panic at launch | Already done, just push features |
+
+## For AI Agents
+
+When starting new features or projects:
+
+1. **Can this deploy right now?** If not, fix infrastructure first.
+2. **Does a tracer bullet exist?** Build thin end-to-end path before adding features.
+3. **Is auth wired up?** Many features depend on knowing the user.
+4. **Only then:** Implement feature logic, working outward-to-inward.
+
+When asked to "build X feature":
+- First verify the deployment pipeline works
+- Then verify you can hit the API from the frontend
+- Then add the feature on this working foundation

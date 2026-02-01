@@ -100,6 +100,13 @@ fn main() -> anyhow::Result<()> {
     // 4. Register the app (auto-discovers Event, ViewModel, Effect and their nested types)
     gen.register_app::<Thiccc>()?;
 
+    // 5. Explicitly register History ViewModels (since they're in Option<T>)
+    gen.register_type::<HistoryViewModel>()?;
+    gen.register_type::<HistoryItemViewModel>()?;
+    gen.register_type::<HistoryDetailViewModel>()?;
+    gen.register_type::<ExerciseDetailViewModel>()?;
+    gen.register_type::<SetDetailViewModel>()?;
+
     // Generate Swift bindings
     let output_root = PathBuf::from("./generated");
     gen.swift("SharedTypes", output_root.join("swift"))?;
