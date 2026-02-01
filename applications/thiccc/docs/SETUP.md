@@ -64,7 +64,7 @@ Run this command to verify everything is installed:
 
 ```bash
 cd /Users/eganm/personal/cuzzo_monorepo/applications/thiccc
-make check
+just thiccc ios check
 ```
 
 **Expected output:**
@@ -84,7 +84,7 @@ make check
 cd /Users/eganm/personal/cuzzo_monorepo/applications/thiccc
 
 # Run tests (should take 2-3 seconds)
-make test-rust
+just thiccc ios test
 
 # If successful, you'll see:
 # ✅ Rust tests passed!
@@ -95,10 +95,10 @@ make test-rust
 Once setup is complete, agents can use:
 
 ```bash
-make test-rust        # Fast validation
-make coverage-check   # Verify 100% coverage
-make verify-agent     # Complete validation
-make run-sim          # Build and run in simulator
+just thiccc ios test      # Fast validation
+just thiccc ios coverage  # Verify 100% coverage
+just thiccc ios verify    # Complete validation
+just thiccc ios run       # Build and run in simulator
 ```
 
 ## Troubleshooting
@@ -216,10 +216,10 @@ Both developers should run this setup on their Macs. This ensures:
 
 After setup is complete:
 
-1. **Read:** `docs/AGENT-QUICK-REF.md` - Quick command reference
-2. **Read:** `docs/AGENT-DEVELOPMENT.md` - Complete agent workflow guide
-3. **Run:** `make help` - See all available commands
-4. **Test:** `make verify-agent` - Ensure everything works
+1. **Read:** `docs/STRUCTURE.md` - Project structure overview
+2. **Read:** `docs/AGENT-QUICK-REF.md` - Quick command reference
+3. **Run:** `just thiccc` - See all available commands
+4. **Test:** `just thiccc ios verify` - Ensure everything works
 
 ---
 

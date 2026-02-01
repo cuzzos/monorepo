@@ -27,16 +27,16 @@ make verify-agent
 
 ### Problems with Traditional Development
 
-1. **Complex command sequences** - Agents have to remember: `cd app/shared && cargo test --all-features && cargo clippy ...`
+1. **Complex command sequences** - Agents have to remember: `cd shared && cargo test --all-features && cargo clippy ...`
 2. **Directory confusion** - Different commands need different working directories
 3. **Missing validation** - Easy to forget coverage checks or type generation
 4. **No clear "done" signal** - Agents don't know when work is truly complete
 
-### How Makefile Solves This
+### How Justfiles Solve This
 
 ```bash
 # Instead of:
-cd /Users/eganm/personal/cuzzo_monorepo/applications/thiccc/app/shared
+cd /Users/eganm/personal/cuzzo_monorepo/applications/thiccc/shared
 cargo test --all-features
 cd ../shared_types
 cargo build
@@ -44,7 +44,7 @@ cd ..
 cargo clippy --all-targets -- -D warnings
 
 # Agents just run:
-make test-rust
+just thiccc ios test
 ```
 
 **Benefits:**
@@ -61,17 +61,17 @@ make test-rust
 # Agent receives task: "Add a new Workout model"
 
 # 1. Agent makes changes to Rust code
-#    (modifies app/shared/src/models.rs)
+#    (modifies shared/src/models.rs)
 
 # 2. Agent runs quick validation
-make test-rust
+just thiccc ios test
 
 # 3. If tests fail, agent fixes and repeats step 2
 
 # 4. Agent adds tests for new model
 
 # 5. Agent verifies coverage
-make coverage-check
+just thiccc ios coverage
 
 # 6. If coverage < 100%, agent adds missing tests
 ```
@@ -80,7 +80,7 @@ make coverage-check
 
 ```bash
 # Agent runs complete validation
-make verify-agent
+just thiccc ios verify
 
 # This command runs:
 # - All Rust tests
@@ -95,7 +95,7 @@ make verify-agent
 
 ```bash
 # For extra confidence, agent can run full verification
-./scripts/verify-rust-core.sh
+build/scripts/verify-rust-core.sh
 
 # This includes clippy lints + formatting checks
 # Takes ~15-20 seconds
@@ -105,12 +105,13 @@ make verify-agent
 
 | Scenario | Command | Time | When to Use |
 |----------|---------|------|-------------|
-| Made Rust changes | `make test-rust` | 2-3s | After every change (use liberally) |
-| Need coverage check | `make coverage-check` | 5-10s | Before completing task |
-| **Agent validation** | `make verify-agent` | 10-15s | **Best "done" check for agents** |
-| Full verification | `./scripts/verify-rust-core.sh` | 15-20s | Extra confidence before handoff |
-| Made Swift changes | `make run-sim` | 30-60s | Testing UI changes |
-| Check environment | `make check` | 1s | Debugging setup issues |
+| Made Rust changes | `just thiccc ios test` | 2-3s | After every change (use liberally) |
+| Need coverage check | `just thiccc ios coverage` | 5-10s | Before completing task |
+| **Agent validation** | `just thiccc ios verify` | 10-15s | **Best "done" check for agents** |
+| Full verification | `build/scripts/verify-rust-core.sh` | 15-20s | Extra confidence before handoff |
+| Made Swift changes | `just thiccc ios run` | 30-60s | Testing UI changes |
+| Made Web changes | `just thiccc web up` | 5-10s | Hot reload dev server |
+| Check environment | `just thiccc ios check` | 1s | Debugging setup issues |
 
 ## Common Agent Scenarios
 
@@ -119,11 +120,11 @@ make verify-agent
 ```bash
 # Agent workflow:
 1. Modify Rust code
-2. make test-rust           # Quick validation
+2. just thiccc ios test           # Quick validation
 3. Add tests
-4. make test-rust           # Verify tests work
-5. make coverage-check      # Ensure 100% coverage
-6. make verify-agent        # Final validation
+4. just thiccc ios test           # Verify tests work
+5. just thiccc ios coverage       # Ensure 100% coverage
+6. just thiccc ios verify         # Final validation
 
 # Agent says: "✅ Feature complete. All tests pass, coverage is 100%."
 ```
@@ -134,11 +135,11 @@ make verify-agent
 # Agent workflow:
 1. Identify bug in code
 2. Write failing test (demonstrates bug)
-3. make test-rust           # Verify test fails
+3. just thiccc ios test           # Verify test fails
 4. Fix the bug
-5. make test-rust           # Verify test passes
-6. make coverage-check      # Ensure still 100%
-7. make verify-agent        # Final validation
+5. just thiccc ios test           # Verify test passes
+6. just thiccc ios coverage       # Ensure still 100%
+7. just thiccc ios verify         # Final validation
 
 # Agent says: "✅ Bug fixed. Added regression test."
 ```
@@ -148,8 +149,8 @@ make verify-agent
 ```bash
 # Agent workflow:
 1. Modify SwiftUI code
-2. make run-sim             # Build and launch simulator
-3. Review logs (automatic after run-sim)
+2. just thiccc ios run            # Build and launch simulator
+3. Review logs (automatic after run)
 4. If errors, check xcodebuild.log
 5. Fix issues, repeat from step 2
 
@@ -161,11 +162,23 @@ make verify-agent
 ```bash
 # Agent workflow:
 1. Make refactoring changes
-2. make test-rust           # Verify tests still pass
-3. make coverage-check      # Verify still 100%
-4. make verify-agent        # Final validation
+2. just thiccc ios test           # Verify tests still pass
+3. just thiccc ios coverage       # Verify still 100%
+4. just thiccc ios verify         # Final validation
 
 # Agent says: "✅ Refactoring complete. No behavior changes."
+```
+
+### Scenario 5: Adding Web Feature
+
+```bash
+# Agent workflow:
+1. Start dev server: just thiccc web up
+2. Modify web_frontend/ or api_server/
+3. Check browser (hot reload)
+4. If API changes, test endpoints with curl
+
+# Agent says: "✅ Web feature complete. Tested in browser."
 ```
 
 ## Error Handling for Agents
@@ -181,7 +194,7 @@ test test_workout_creation ... FAILED
 1. Read the failure message
 2. Identify which test failed
 3. Fix the code
-4. Run: make test-rust again
+4. Run: just thiccc ios test again
 ```
 
 ### Error: Coverage Below 100%
@@ -191,10 +204,10 @@ test test_workout_creation ... FAILED
 error: coverage rate 95.5% < 100%
 
 # Agent should:
-1. Run: make coverage-report  # Opens HTML in browser
+1. Run: just thiccc ios coverage-report  # Opens HTML in browser
 2. Find uncovered lines (shown in red)
 3. Add tests for those lines
-4. Run: make coverage-check again
+4. Run: just thiccc ios coverage again
 ```
 
 ### Error: Swift Types Generation Failed
@@ -210,7 +223,7 @@ error: could not compile `shared_types`
    - Unsupported generic types
    - Circular dependencies
 3. Fix the issue
-4. Run: cd app/shared_types && cargo build
+4. Run: cd shared_types && cargo build
 ```
 
 ## Agent Performance Optimization
@@ -219,13 +232,13 @@ error: could not compile `shared_types`
 
 ```bash
 # ❌ DON'T: Always run full verification
-make verify-agent  # Every time you make a change
+just thiccc ios verify  # Every time you make a change
 
 # ✅ DO: Use fast commands during development
-make test-rust     # Quick iteration
-make test-rust     # Make changes
-make test-rust     # More changes
-make verify-agent  # Final check
+just thiccc ios test     # Quick iteration
+just thiccc ios test     # Make changes
+just thiccc ios test     # More changes
+just thiccc ios verify   # Final check
 ```
 
 ### Parallelize When Possible
@@ -234,25 +247,25 @@ Agents can't actually parallelize (single-threaded), but they can optimize seque
 
 ```bash
 # ❌ SLOW: Run simulator for every change
-edit Swift → make run-sim (30s)
-edit Swift → make run-sim (30s)
-edit Swift → make run-sim (30s)
+edit Swift → just thiccc ios run (30s)
+edit Swift → just thiccc ios run (30s)
+edit Swift → just thiccc ios run (30s)
 
 # ✅ FAST: Batch changes
 edit Swift (change 1)
 edit Swift (change 2)
 edit Swift (change 3)
-make run-sim (30s) # Test all at once
+just thiccc ios run (30s) # Test all at once
 ```
 
-## The `verify-agent` Command Deep Dive
+## The `ios verify` Command Deep Dive
 
 This is **the most important command for AI agents**.
 
 ### What It Does
 
 ```bash
-make verify-agent
+just thiccc ios verify
 
 # Runs:
 # 1. cargo test --all-features (validates logic)
@@ -264,15 +277,15 @@ make verify-agent
 
 ### When to Use It
 
-✅ **DO use `verify-agent`:**
+✅ **DO use `ios verify`:**
 - Before telling user "I'm done"
 - After completing a feature
 - After fixing a bug
 - Before committing changes (if agent has git access)
 
-❌ **DON'T use `verify-agent`:**
+❌ **DON'T use `ios verify`:**
 - After every single change (too slow)
-- During rapid iteration (use `make test-rust` instead)
+- During rapid iteration (use `just thiccc ios test` instead)
 
 ### Example Output
 
@@ -345,20 +358,20 @@ The `.cursor/rules/` directory contains:
 # Agent can check context:
 pwd                    # Where am I?
 git status             # What changed?
-git diff app/shared/   # What exactly changed?
+git diff shared/       # What exactly changed?
 ```
 
 ### Progressive Validation
 
 ```bash
 # Turn 1: Agent adds model
-make test-rust  # ✅ Pass
+just thiccc ios test  # ✅ Pass
 
 # Turn 2: Agent adds tests
-make coverage-check  # ✅ 100%
+just thiccc ios coverage  # ✅ 100%
 
 # Turn 3: Agent asks "Should I validate?"
-make verify-agent  # ✅ Final check
+just thiccc ios verify  # ✅ Final check
 
 # Agent: "All validations passed. Feature is complete."
 ```
@@ -383,11 +396,14 @@ The feature is complete and ready for use."
 ### Issue: "Command not found"
 
 ```bash
-# Error: make: command not found
+# Error: just: command not found
 
-# Solution: Wrong working directory
+# Solution: Install just
+brew install just
+
+# Or wrong working directory
 cd /Users/eganm/personal/cuzzo_monorepo/applications/thiccc
-make test-rust  # Now works
+just thiccc ios test  # Now works
 ```
 
 ### Issue: "Cargo.toml not found"
@@ -395,8 +411,8 @@ make test-rust  # Now works
 ```bash
 # Error: could not find `Cargo.toml`
 
-# Solution: Agent tried to run cargo directly instead of make
-# Use: make test-rust
+# Solution: Agent tried to run cargo directly instead of just
+# Use: just thiccc ios test
 # Not: cargo test
 ```
 
@@ -405,33 +421,34 @@ make test-rust  # Now works
 ```bash
 # Error: cargo-llvm-cov not found
 
-# Solution: Makefile handles this automatically
-make coverage-check  # Will install if needed
+# Solution: Install it
+cargo install cargo-llvm-cov
 ```
 
 ## Best Practices Summary
 
 ### For Rapid Development
-1. Use `make test-rust` liberally (it's fast!)
-2. Only run `make coverage-check` when tests are passing
-3. Save `make verify-agent` for final validation
+1. Use `just thiccc ios test` liberally (it's fast!)
+2. Only run `just thiccc ios coverage` when tests are passing
+3. Save `just thiccc ios verify` for final validation
 
 ### For Reliability
-1. Always run `make verify-agent` before saying "done"
-2. If in doubt, run `./scripts/verify-rust-core.sh`
+1. Always run `just thiccc ios verify` before saying "done"
+2. If in doubt, run `build/scripts/verify-rust-core.sh`
 3. Read error messages carefully - they're helpful
 
 ### For Performance
 1. Batch multiple changes before running simulator
-2. Use `make test-rust` during iteration
+2. Use `just thiccc ios test` during iteration
 3. Don't run full builds unless necessary
 
 ## Resources
 
-- **Quick commands:** `make help`
+- **Quick commands:** `just thiccc`
+- **Project structure:** `docs/STRUCTURE.md`
 - **Detailed workflows:** `.cursor/rules/agent-workflow.mdc`
 - **Architecture:** `docs/SHARED-CRATE-MAP.md`
-- **Verification:** `./scripts/verify-rust-core.sh`
+- **Verification:** `build/scripts/verify-rust-core.sh`
 
 ---
 

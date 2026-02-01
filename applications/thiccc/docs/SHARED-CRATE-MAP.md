@@ -1,12 +1,12 @@
 # Thiccc Shared Crate - Codebase/Method Map
 
-> **Last Updated:** November 2025
+> **Last Updated:** January 2026
 >
-> This document provides a comprehensive map of all structures, methods, and logic in the `app/shared` Rust crate. **Consult this first** before making any modifications to the shared crate.
+> This document provides a comprehensive map of all structures, methods, and logic in the `shared/` Rust crate. **Consult this first** before making any modifications to the shared crate.
 
 ## Overview
 
-The `shared` crate is the **Rust core** of the Thiccc workout tracking application, built using the **Crux framework**. It contains all business logic, data models, and state management, following a strict architecture where the Rust core handles all logic while the iOS shell (SwiftUI) is a thin UI layer.
+The `shared` crate is the **Rust core** of the Thiccc workout tracking application, built using the **Crux framework**. It contains all business logic, data models, and state management, following a strict architecture where the Rust core handles all logic while the iOS shell (SwiftUI) and web frontend are thin UI layers.
 
 ---
 
@@ -48,11 +48,11 @@ The `shared` crate is the **Rust core** of the Thiccc workout tracking applicati
 
 | File | Lines | Logic Type | Responsibility |
 |------|-------|------------|----------------|
-| `src/lib.rs` | 66 | **Infrastructure** | FFI bridge, serialization, singleton core |
-| `src/app.rs` | 1723 | **Application** | State machine, event handling, view transformation |
-| `src/models.rs` | 1020 | **Domain** | Business entities, data structures, business rules |
-| `src/shared.udl` | 6 | **Interface** | FFI contract definition for UniFFI |
-| `src/bin/uniffi-bindgen.rs` | 4 | **Build** | Code generation tool for Swift bindings |
+| `shared/src/lib.rs` | ~66 | **Infrastructure** | FFI bridge, serialization, singleton core |
+| `shared/src/app/mod.rs` | ~1700 | **Application** | State machine, event handling, view transformation |
+| `shared/src/models.rs` | ~1000 | **Domain** | Business entities, data structures, business rules |
+| `shared/src/shared.udl` | 6 | **Interface** | FFI contract definition for UniFFI |
+| `shared/src/bin/uniffi-bindgen.rs` | 4 | **Build** | Code generation tool for Swift bindings |
 
 ---
 
@@ -481,15 +481,18 @@ fn main() {
 
 ## Testing
 
-All tests are located in `#[cfg(test)]` modules at the bottom of each file:
+All tests are located in `shared/src/app/tests/`:
 
-- **`app.rs` tests:** Event serialization, Model methods, ViewModel defaults, integration tests (update + view cycle)
-- **`models.rs` tests:** Serialization, constructors, business logic (volume calculation, completion checks)
+- **Event tests:** Event serialization, event handling
+- **Model tests:** Model methods, state transitions
+- **ViewModel tests:** ViewModel defaults, view transformation
+- **Integration tests:** Full update + view cycle
 
 Run tests with:
 ```bash
-cd app/shared
-cargo test
+just thiccc ios test
+# Or directly:
+cd shared && cargo test
 ```
 
 ---
