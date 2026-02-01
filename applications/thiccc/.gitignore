@@ -4,6 +4,7 @@ shared/build/
 *.rs.bk
 
 # iOS / Xcode
+xcodebuild.log
 ios/build/
 ios/DerivedData/
 ios/*.pbxuser
@@ -20,4 +21,3 @@ ios/*.xcworkspace/xcuserdata/
 
 # macOS
 .DS_Store
-
