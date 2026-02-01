@@ -145,46 +145,120 @@ CLERK_SECRET_KEY=sk_test_xxxxx
 
 **🚨 Human action required:** Create Railway account and project
 
-**Instructions:**
+#### Step 1: Create Railway Account & PostgreSQL
 
 1. Go to https://railway.app
-2. Sign up with GitHub account
-3. Click "New Project" → "Deploy PostgreSQL"
-4. Once created, click "Add Service" → "GitHub Repo"
-5. Select `cuzzo_monorepo` repository
-6. Configure the service:
-   - **Root Directory:** `applications/thiccc`
-   - **Build Command:** `cargo build --release -p thiccc-api`
-   - **Start Command:** `./target/release/thiccc-api`
+2. Sign up (GitHub or email)
+3. Click **"New Project"** → **"Deploy PostgreSQL"**
+4. Wait for PostgreSQL to deploy (shows "Online")
+5. Click on Postgres → **Variables** tab → Copy `DATABASE_URL`
 
-**Configure Environment Variables (in Railway dashboard):**
+---
 
-For the **API service:**
+#### Step 2: Deploy API Server
 
-```
-PORT=8000
-RUST_LOG=info
-DATABASE_URL=<auto-linked from PostgreSQL service>
-CLERK_SECRET_KEY=<from Clerk dashboard>
-```
+Choose **Option A (CLI)** or **Option B (GitHub)**:
 
-For the **PostgreSQL service:**
+##### Option A: Railway CLI (Recommended for Monorepos)
 
-- Railway auto-configures this, just note the `DATABASE_URL`
-
-**Run migrations:**
+**1. Install Railway CLI:**
 
 ```bash
-# Get the production DATABASE_URL from Railway dashboard
-DATABASE_URL=<railway-url> just thiccc db migrate
+brew install railway
 ```
+
+**2. Login and link project:**
+
+```bash
+railway login
+
+# From api_server directory
+cd applications/thiccc/api_server
+railway link
+# Select your project (e.g., "astonishing-miracle")
+# Select "Create new service" when prompted
+```
+
+**3. Set environment variables:**
+
+```bash
+railway variables set PORT=8000
+railway variables set RUST_LOG=info
+railway variables set CLERK_SECRET_KEY=sk_test_xxxxx
+railway variables set DATABASE_URL="<paste-postgres-url>"
+```
+
+**4. Deploy:**
+
+```bash
+railway up
+```
+
+**Future deploys:**
+
+```bash
+cd applications/thiccc/api_server
+railway up
+```
+
+---
+
+##### Option B: Connect GitHub Repo
+
+1. In Railway dashboard, click **"+ New"** → **"GitHub Repo"**
+2. Select `cuzzo_monorepo` repository
+3. Configure the service:
+   - **Root Directory:** `applications/thiccc/api_server`
+   - Railway will auto-detect Rust and use `railway.toml`
+4. Add environment variables in **Variables** tab:
+   ```
+   PORT=8000
+   RUST_LOG=info
+   CLERK_SECRET_KEY=sk_test_xxxxx
+   ```
+5. For `DATABASE_URL`, click **"Add Reference"** → Select Postgres service
+
+---
+
+#### Step 3: Run Migrations
+
+```bash
+# From applications/thiccc directory
+DATABASE_URL="<railway-postgres-url>" just thiccc db migrate
+```
+
+Or if you don't have the `db migrate` recipe:
+
+```bash
+cd applications/thiccc
+DATABASE_URL="<railway-postgres-url>" sqlx migrate run --source db/migrations
+```
+
+---
+
+#### Step 4: Verify Deployment
+
+Once deployed, test the health endpoint:
+
+```bash
+curl https://<your-railway-url>/health
+# Should return: OK
+
+curl https://<your-railway-url>/api/health
+# Should return: {"status":"healthy","database":"connected"}
+```
+
+Find your Railway URL in the dashboard under your API service → **Settings** → **Networking** → **Public Domain**.
+
+---
 
 **🚨 Human checkpoint:**
 
 - Railway project created
-- PostgreSQL service running
-- API service configured (may not deploy yet - that's ok)
-- Migrations run against production DB
+- PostgreSQL service running (shows "Online")
+- API service deployed (check logs for errors)
+- Health endpoints respond
+- Migrations run successfully
 
 ---
 
@@ -286,14 +360,17 @@ If you prefer automatic deploys on push:
 - [ ] Local stack works (`just thiccc web up`)
 - [ ] Clerk account created with API keys
 - [ ] Keys added to `build/env/common.env`
+- [ ] Railway CLI installed (`brew install railway`)
 - [ ] Railway project created
 - [ ] Railway PostgreSQL service running
-- [ ] Railway API service configured
+- [ ] Railway API service deployed
+- [ ] Railway environment variables set
 - [ ] Production migrations run
 - [ ] Vercel CLI installed (`brew install vercel-cli`)
 - [ ] Vercel project created and deployed
 - [ ] Vercel environment variables set
 - [ ] Both services deploy successfully
+- [ ] Health endpoints respond
 
 ---
 
@@ -327,9 +404,33 @@ kill -9 <PID>
 
 ### Issue: Railway build fails
 
-**Symptom:** Cargo can't find workspace
+**Symptom:** Cargo can't find workspace or dependencies
 
-**Solution:** Ensure Root Directory is set to `applications/thiccc` (not `applications/thiccc/api_server`)
+**Solution:**
+
+1. If using CLI, ensure you're in `api_server/` directory when running `railway up`
+2. If using GitHub, ensure Root Directory is `applications/thiccc/api_server`
+3. Check that `railway.toml` exists in `api_server/`
+
+### Issue: Railway CLI not found
+
+**Symptom:** `railway: command not found`
+
+**Solution:**
+
+```bash
+brew install railway
+```
+
+### Issue: Railway deploy times out
+
+**Symptom:** Build takes too long and fails
+
+**Solution:** Rust builds can be slow. Railway's free tier has build time limits. If this happens:
+
+1. Try deploying during off-peak hours
+2. Consider upgrading to a paid plan
+3. Use GitHub integration (builds may be faster)
 
 ### Issue: Vercel build fails
 
