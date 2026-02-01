@@ -46,7 +46,7 @@ Read these files first:
 
 **Success criteria:**
 
-- ✅ Local stack works (`just thiccc web up`)
+- ✅ Local stack works (`just run-dev up`)
 - ✅ Clerk account created with API keys
 - ✅ Railway project created with PostgreSQL
 - ✅ Vercel project created
@@ -87,10 +87,10 @@ docker ps
 
 ```bash
 # Start everything (db + migrations + api + web)
-just thiccc web up
+just run-dev up
 
 # Check services
-just thiccc web logs
+just run-dev logs
 
 # Test endpoints
 curl http://localhost:8000/health   # API
@@ -106,7 +106,7 @@ open http://localhost:3000          # Frontend
 **Stop stack when done:**
 
 ```bash
-just thiccc web down
+just run-dev down
 ```
 
 ---
@@ -157,26 +157,26 @@ CLERK_SECRET_KEY=sk_test_xxxxx
 
 #### Step 2: Deploy API Server
 
-Choose **Option A (CLI)** or **Option B (GitHub)**:
-
-##### Option A: Railway CLI (Recommended for Monorepos)
-
 **1. Install Railway CLI:**
 
 ```bash
 brew install railway
 ```
 
-**2. Login and link project:**
+**2. Initialize and link project:**
 
 ```bash
-railway login
+cd applications/thiccc
 
-# From api_server directory
-cd applications/thiccc/api_server
-railway link
-# Select your project (e.g., "astonishing-miracle")
-# Select "Create new service" when prompted
+# Create new Railway project
+railway init
+# Name it: thiccc-api
+
+# Deploy (auto-creates service from Dockerfile)
+railway up
+
+# Link to the created service
+railway service link thiccc-api
 ```
 
 **3. Set environment variables:**
@@ -184,71 +184,43 @@ railway link
 ```bash
 railway variables set PORT=8000
 railway variables set RUST_LOG=info
-railway variables set CLERK_SECRET_KEY=sk_test_xxxxx
 railway variables set DATABASE_URL="<paste-postgres-url>"
 ```
 
-**4. Deploy:**
+**4. Generate public domain:**
 
 ```bash
-railway up
+railway domain
 ```
 
-**Future deploys:**
+**5. Future deploys:**
 
 ```bash
-cd applications/thiccc/api_server
-railway up
+just deploy api
 ```
-
----
-
-##### Option B: Connect GitHub Repo
-
-1. In Railway dashboard, click **"+ New"** → **"GitHub Repo"**
-2. Select `cuzzo_monorepo` repository
-3. Configure the service:
-   - **Root Directory:** `applications/thiccc/api_server`
-   - Railway will auto-detect Rust and use `railway.toml`
-4. Add environment variables in **Variables** tab:
-   ```
-   PORT=8000
-   RUST_LOG=info
-   CLERK_SECRET_KEY=sk_test_xxxxx
-   ```
-5. For `DATABASE_URL`, click **"Add Reference"** → Select Postgres service
 
 ---
 
 #### Step 3: Run Migrations
 
 ```bash
-# From applications/thiccc directory
-DATABASE_URL="<railway-postgres-url>" just thiccc db migrate
-```
-
-Or if you don't have the `db migrate` recipe:
-
-```bash
-cd applications/thiccc
-DATABASE_URL="<railway-postgres-url>" sqlx migrate run --source db/migrations
+# Requires sqlx-cli: cargo install sqlx-cli --no-default-features --features native-tls,postgres
+just deploy db
 ```
 
 ---
 
 #### Step 4: Verify Deployment
 
-Once deployed, test the health endpoint:
+Test the health endpoints:
 
 ```bash
-curl https://<your-railway-url>/health
+curl https://thiccc-api-production.up.railway.app/health
 # Should return: OK
 
-curl https://<your-railway-url>/api/health
+curl https://thiccc-api-production.up.railway.app/api/health
 # Should return: {"status":"healthy","database":"connected"}
 ```
-
-Find your Railway URL in the dashboard under your API service → **Settings** → **Networking** → **Public Domain**.
 
 ---
 
@@ -267,10 +239,6 @@ Find your Railway URL in the dashboard under your API service → **Settings** �
 **Goal:** Create Vercel project for frontend hosting
 
 **🚨 Human action required:** Create Vercel account and deploy
-
-#### Option A: Vercel CLI (Recommended for Monorepos)
-
-Deploy directly without connecting your entire repo to Vercel.
 
 **1. Install Vercel CLI:**
 
@@ -296,7 +264,7 @@ vercel
 # - Set up and deploy? Y
 # - Which scope? (select your account)
 # - Link to existing project? N
-# - Project name? thiccc-web
+# - Project name? thiccc
 # - Directory with code? ./
 # - Override settings? N
 ```
@@ -304,7 +272,6 @@ vercel
 **4. Set environment variables:**
 
 ```bash
-# Add each environment variable
 vercel env add NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 vercel env add CLERK_SECRET_KEY
 vercel env add NEXT_PUBLIC_API_URL
@@ -313,36 +280,8 @@ vercel env add NEXT_PUBLIC_API_URL
 **5. Deploy to production:**
 
 ```bash
-vercel --prod
+just deploy web prod
 ```
-
-**Future deploys:**
-
-```bash
-cd applications/thiccc/web_frontend
-vercel --prod
-```
-
----
-
-#### Option B: Connect GitHub Repo
-
-If you prefer automatic deploys on push:
-
-1. Go to https://vercel.com
-2. Sign up with GitHub account
-3. Click "Add New Project"
-4. Import `cuzzo_monorepo` repo
-5. Configure:
-   - **Framework Preset:** Next.js
-   - **Root Directory:** `applications/thiccc/web_frontend`
-6. Add Environment Variables:
-   ```
-   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_xxxxx
-   CLERK_SECRET_KEY=sk_test_xxxxx
-   NEXT_PUBLIC_API_URL=https://<your-railway-api-url>
-   ```
-7. Click "Deploy"
 
 ---
 
@@ -350,27 +289,30 @@ If you prefer automatic deploys on push:
 
 - Vercel project created
 - Environment variables configured
-- Deployment succeeds (or shows what's missing)
+- Deployment succeeds
 
 ---
 
 ## ✅ Phase Completion Checklist
 
-- [ ] Docker running
-- [ ] Local stack works (`just thiccc web up`)
-- [ ] Clerk account created with API keys
-- [ ] Keys added to `build/env/common.env`
-- [ ] Railway CLI installed (`brew install railway`)
-- [ ] Railway project created
-- [ ] Railway PostgreSQL service running
-- [ ] Railway API service deployed
-- [ ] Railway environment variables set
-- [ ] Production migrations run
-- [ ] Vercel CLI installed (`brew install vercel-cli`)
-- [ ] Vercel project created and deployed
-- [ ] Vercel environment variables set
-- [ ] Both services deploy successfully
-- [ ] Health endpoints respond
+- [x] Docker running
+- [x] Local stack works (`just run-dev up`)
+- [x] Clerk account created with API keys
+- [x] Keys added to `build/env/common.env`
+- [x] Railway CLI installed (`brew install railway`)
+- [x] Railway project created
+- [x] Railway PostgreSQL service running
+- [x] Railway API service deployed
+- [x] Railway environment variables set
+- [x] Production migrations run (`just deploy db`)
+- [x] Vercel CLI installed (`brew install vercel-cli`)
+- [x] Vercel project created and deployed
+- [x] Vercel environment variables set
+- [x] Both services deploy successfully
+- [x] Health endpoints respond
+
+**API URL:** https://thiccc-api-production.up.railway.app
+**Web URL:** https://thiccc.vercel.app
 
 ---
 
@@ -395,7 +337,7 @@ open -a Docker
 
 ```bash
 # Stop any existing stack
-just thiccc web down
+just run-dev down
 
 # Or find and kill process
 lsof -i :8000
@@ -408,9 +350,9 @@ kill -9 <PID>
 
 **Solution:**
 
-1. If using CLI, ensure you're in `api_server/` directory when running `railway up`
-2. If using GitHub, ensure Root Directory is `applications/thiccc/api_server`
-3. Check that `railway.toml` exists in `api_server/`
+1. Ensure you're in `applications/thiccc/` directory when running `railway up`
+2. Check that `railway.toml` and `api_server/Dockerfile` exist
+3. Verify Rust version in Dockerfile matches your local version
 
 ### Issue: Railway CLI not found
 
@@ -430,7 +372,7 @@ brew install railway
 
 1. Try deploying during off-peak hours
 2. Consider upgrading to a paid plan
-3. Use GitHub integration (builds may be faster)
+3. Subsequent builds are faster due to caching
 
 ### Issue: Vercel build fails
 
@@ -439,8 +381,8 @@ brew install railway
 **Solution:**
 
 1. Check environment variables are set: `vercel env ls`
-2. If using CLI, ensure you're in the `web_frontend` directory
-3. If using repo connection, ensure Root Directory is `applications/thiccc/web_frontend`
+2. Ensure you're in the `web_frontend` directory
+3. Check for missing Clerk keys
 
 ### Issue: Vercel CLI not found
 
@@ -452,17 +394,27 @@ brew install railway
 brew install vercel-cli
 ```
 
+### Issue: sqlx-cli not found
+
+**Symptom:** `sqlx: command not found` when running migrations
+
+**Solution:**
+
+```bash
+cargo install sqlx-cli --no-default-features --features native-tls,postgres
+```
+
 ---
 
 ## 📊 Progress Tracking
 
-| Task                | Status | Type      | Notes                     |
-| ------------------- | ------ | --------- | ------------------------- |
-| 1. Verify Docker    | ⬜     | Human     | Start Docker Desktop      |
-| 2. Test Local Stack | ⬜     | AI can do | Run just commands         |
-| 3. Clerk Account    | ⬜     | Human     | Create account, get keys  |
-| 4. Railway Project  | ⬜     | Human     | Create project, configure |
-| 5. Vercel Project   | ⬜     | Human     | Install CLI, deploy       |
+| Task                | Status | Type      | Notes                   |
+| ------------------- | ------ | --------- | ----------------------- |
+| 1. Verify Docker    | ✅     | Human     | Docker Desktop running  |
+| 2. Test Local Stack | ✅     | AI can do | `just run-dev up` works |
+| 3. Clerk Account    | ✅     | Human     | Keys in common.env      |
+| 4. Railway Project  | ✅     | Human     | API + DB deployed       |
+| 5. Vercel Project   | ✅     | Human     | Frontend deployed       |
 
 **Legend:** ⬜ Not started | ⏳ In progress | ✅ Done | ❌ Blocked
 
@@ -470,5 +422,25 @@ brew install vercel-cli
 
 ## Next Phase
 
-Once this phase is complete, proceed to:
-**Phase 2: Authentication** (`02-PHASE-2-AUTH.md`)
+**Phase 1 is complete!** 🎉
+
+Proceed to: **Phase 2: Authentication** (`02-PHASE-2-AUTH.md`)
+
+### Quick Reference - Deployment Commands
+
+```bash
+# Production deployment
+just deploy api          # Deploy API to Railway
+just deploy web          # Deploy web to Vercel (preview)
+just deploy web prod     # Deploy web to Vercel (production)
+just deploy db           # Run migrations on Railway
+
+# Local development
+just run-dev up          # Start local stack
+just run-dev down        # Stop local stack
+just run-dev logs        # View logs
+just run-dev reset       # Reset (wipes database)
+
+# Cleanup
+just clean               # Clean build artifacts
+```
