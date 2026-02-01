@@ -1,0 +1,324 @@
+# Rust Devtool - Justfile
+#
+# Containerized Rust toolchain via Dagger.
+# Imported by root justfile - run from repo root with `just <recipe>`.
+#
+# Getting Help:
+#   just --list              # List all available recipes
+#   just <recipe> --help     # Show detailed usage for a specific recipe
+#
+# No local Rust installation required! All tools run in containers.
+
+# Default source directory for workspace operations
+default_source := "applications/thiccc"
+
+# Dagger flags (functions return output directly, no special flags needed)
+dagger_flags := ""
+
+# =============================================================================
+# Workspace Operations (run on all crates)
+# =============================================================================
+
+# Run cargo check on all workspace crates
+rust-check *args:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    
+    SOURCE="{{default_source}}"
+    NEXT_IS_SOURCE=false
+    
+    for arg in {{args}}; do
+        if [ "$NEXT_IS_SOURCE" = true ]; then
+            SOURCE="$arg"
+            NEXT_IS_SOURCE=false
+        elif [ "$arg" = "--help" ] || [ "$arg" = "-h" ]; then
+            echo "Usage: just rust-check [--source <path>]"
+            echo ""
+            echo "Run cargo check on all workspace crates."
+            echo ""
+            echo "Options:"
+            echo "  --source PATH  Path to Rust workspace (default: {{default_source}})"
+            echo ""
+            echo "Examples:"
+            echo "  just rust-check                              # Check thiccc workspace"
+            echo "  just rust-check --source applications/other  # Check different workspace"
+            exit 0
+        elif [ "$arg" = "--source" ]; then
+            NEXT_IS_SOURCE=true
+        fi
+    done
+    
+    echo "🔍 Checking Rust workspace: $SOURCE..."
+    dagger {{dagger_flags}} -m ./devtools/rust call check-workspace --source="./$SOURCE"
+    echo "✅ Rust check passed"
+
+# Run cargo test on all workspace crates
+rust-test *args:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    
+    SOURCE="{{default_source}}"
+    NEXT_IS_SOURCE=false
+    
+    for arg in {{args}}; do
+        if [ "$NEXT_IS_SOURCE" = true ]; then
+            SOURCE="$arg"
+            NEXT_IS_SOURCE=false
+        elif [ "$arg" = "--help" ] || [ "$arg" = "-h" ]; then
+            echo "Usage: just rust-test [--source <path>]"
+            echo ""
+            echo "Run cargo test on all workspace crates."
+            echo ""
+            echo "Options:"
+            echo "  --source PATH  Path to Rust workspace (default: {{default_source}})"
+            echo ""
+            echo "Examples:"
+            echo "  just rust-test                              # Test thiccc workspace"
+            echo "  just rust-test --source applications/other  # Test different workspace"
+            exit 0
+        elif [ "$arg" = "--source" ]; then
+            NEXT_IS_SOURCE=true
+        fi
+    done
+    
+    echo "🧪 Testing Rust workspace: $SOURCE..."
+    dagger {{dagger_flags}} -m ./devtools/rust call test-workspace --source="./$SOURCE"
+    echo "✅ All tests passed"
+
+# Run clippy linter on all workspace crates
+rust-clippy *args:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    
+    SOURCE="{{default_source}}"
+    NEXT_IS_SOURCE=false
+    
+    for arg in {{args}}; do
+        if [ "$NEXT_IS_SOURCE" = true ]; then
+            SOURCE="$arg"
+            NEXT_IS_SOURCE=false
+        elif [ "$arg" = "--help" ] || [ "$arg" = "-h" ]; then
+            echo "Usage: just rust-clippy [--source <path>]"
+            echo ""
+            echo "Run clippy linter on all workspace crates (warnings are errors)."
+            echo ""
+            echo "Options:"
+            echo "  --source PATH  Path to Rust workspace (default: {{default_source}})"
+            echo ""
+            echo "Examples:"
+            echo "  just rust-clippy                              # Lint thiccc workspace"
+            echo "  just rust-clippy --source applications/other  # Lint different workspace"
+            exit 0
+        elif [ "$arg" = "--source" ]; then
+            NEXT_IS_SOURCE=true
+        fi
+    done
+    
+    echo "📎 Running clippy on: $SOURCE..."
+    dagger {{dagger_flags}} -m ./devtools/rust call run-clippy --source="./$SOURCE"
+    echo "✅ Clippy passed (no warnings)"
+
+# Check code formatting
+rust-fmt *args:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    
+    SOURCE="{{default_source}}"
+    NEXT_IS_SOURCE=false
+    
+    for arg in {{args}}; do
+        if [ "$NEXT_IS_SOURCE" = true ]; then
+            SOURCE="$arg"
+            NEXT_IS_SOURCE=false
+        elif [ "$arg" = "--help" ] || [ "$arg" = "-h" ]; then
+            echo "Usage: just rust-fmt [--source <path>]"
+            echo ""
+            echo "Check if Rust code is formatted correctly (fails if not)."
+            echo ""
+            echo "Options:"
+            echo "  --source PATH  Path to Rust workspace (default: {{default_source}})"
+            echo ""
+            echo "Examples:"
+            echo "  just rust-fmt                              # Check thiccc formatting"
+            echo "  just rust-fmt --source applications/other  # Check different workspace"
+            exit 0
+        elif [ "$arg" = "--source" ]; then
+            NEXT_IS_SOURCE=true
+        fi
+    done
+    
+    echo "📝 Checking format: $SOURCE..."
+    dagger {{dagger_flags}} -m ./devtools/rust call check-format --source="./$SOURCE"
+    echo "✅ Code is formatted correctly"
+
+# =============================================================================
+# Combined Operations
+# =============================================================================
+
+# Run all checks (check + clippy + fmt + test)
+rust-verify *args:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    
+    SOURCE="{{default_source}}"
+    NEXT_IS_SOURCE=false
+    
+    for arg in {{args}}; do
+        if [ "$NEXT_IS_SOURCE" = true ]; then
+            SOURCE="$arg"
+            NEXT_IS_SOURCE=false
+        elif [ "$arg" = "--help" ] || [ "$arg" = "-h" ]; then
+            echo "Usage: just rust-verify [--source <path>]"
+            echo ""
+            echo "Run all Rust checks: check, clippy, format, and tests."
+            echo ""
+            echo "Options:"
+            echo "  --source PATH  Path to Rust workspace (default: {{default_source}})"
+            echo ""
+            echo "This runs (in order):"
+            echo "  1. cargo check --workspace"
+            echo "  2. cargo clippy --workspace"
+            echo "  3. cargo fmt --check"
+            echo "  4. cargo test --workspace"
+            echo ""
+            echo "Examples:"
+            echo "  just rust-verify                              # Verify thiccc workspace"
+            echo "  just rust-verify --source applications/other  # Verify different workspace"
+            exit 0
+        elif [ "$arg" = "--source" ]; then
+            NEXT_IS_SOURCE=true
+        fi
+    done
+    
+    echo "🔍 Verifying Rust workspace: $SOURCE"
+    echo ""
+    
+    echo "1/4 Running cargo check..."
+    dagger {{dagger_flags}} -m ./devtools/rust call check-workspace --source="./$SOURCE"
+    echo "✅ Check passed"
+    echo ""
+    
+    echo "2/4 Running clippy..."
+    dagger {{dagger_flags}} -m ./devtools/rust call run-clippy --source="./$SOURCE"
+    echo "✅ Clippy passed"
+    echo ""
+    
+    echo "3/4 Checking format..."
+    dagger {{dagger_flags}} -m ./devtools/rust call check-format --source="./$SOURCE"
+    echo "✅ Format OK"
+    echo ""
+    
+    echo "4/4 Running tests..."
+    dagger {{dagger_flags}} -m ./devtools/rust call test-workspace --source="./$SOURCE"
+    echo "✅ Tests passed"
+    echo ""
+    
+    echo "🎉 All Rust checks passed!"
+
+# =============================================================================
+# Single Crate Operations
+# =============================================================================
+
+# Build a single Rust crate
+rust-build *args:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    
+    SOURCE=""
+    RELEASE=false
+    NEXT_IS_SOURCE=false
+    
+    for arg in {{args}}; do
+        if [ "$NEXT_IS_SOURCE" = true ]; then
+            SOURCE="$arg"
+            NEXT_IS_SOURCE=false
+        elif [ "$arg" = "--help" ] || [ "$arg" = "-h" ]; then
+            echo "Usage: just rust-build --source <path> [--release]"
+            echo ""
+            echo "Build a single Rust crate."
+            echo ""
+            echo "Options:"
+            echo "  --source PATH  Path to crate directory (required)"
+            echo "  --release      Build in release mode (optimized)"
+            echo ""
+            echo "Examples:"
+            echo "  just rust-build --source applications/thiccc/api_server"
+            echo "  just rust-build --source applications/thiccc/api_server --release"
+            exit 0
+        elif [ "$arg" = "--source" ]; then
+            NEXT_IS_SOURCE=true
+        elif [ "$arg" = "--release" ]; then
+            RELEASE=true
+        fi
+    done
+    
+    if [ -z "$SOURCE" ]; then
+        echo "Error: --source is required"
+        echo "Run 'just rust-build --help' for usage"
+        exit 1
+    fi
+    
+    if [ "$RELEASE" = true ]; then
+        echo "🔨 Building (release): $SOURCE..."
+        dagger {{dagger_flags}} -m ./devtools/rust call build-binary --source="./$SOURCE" --release
+    else
+        echo "🔨 Building (debug): $SOURCE..."
+        dagger {{dagger_flags}} -m ./devtools/rust call build-binary --source="./$SOURCE"
+    fi
+    echo "✅ Build complete"
+
+# Run a Rust API server
+rust-serve *args:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    
+    SOURCE=""
+    PORT="8000"
+    RELEASE=false
+    NEXT_IS_SOURCE=false
+    NEXT_IS_PORT=false
+    
+    for arg in {{args}}; do
+        if [ "$NEXT_IS_SOURCE" = true ]; then
+            SOURCE="$arg"
+            NEXT_IS_SOURCE=false
+        elif [ "$NEXT_IS_PORT" = true ]; then
+            PORT="$arg"
+            NEXT_IS_PORT=false
+        elif [ "$arg" = "--help" ] || [ "$arg" = "-h" ]; then
+            echo "Usage: just rust-serve --source <path> [--port <port>] [--release]"
+            echo ""
+            echo "Run a Rust API server as a background service."
+            echo ""
+            echo "Options:"
+            echo "  --source PATH  Path to crate directory (required)"
+            echo "  --port PORT    Port to expose (default: 8000)"
+            echo "  --release      Run in release mode (optimized)"
+            echo ""
+            echo "Examples:"
+            echo "  just rust-serve --source applications/thiccc/api_server"
+            echo "  just rust-serve --source applications/thiccc/api_server --port 3000"
+            echo "  just rust-serve --source applications/thiccc/api_server --release"
+            exit 0
+        elif [ "$arg" = "--source" ]; then
+            NEXT_IS_SOURCE=true
+        elif [ "$arg" = "--port" ]; then
+            NEXT_IS_PORT=true
+        elif [ "$arg" = "--release" ]; then
+            RELEASE=true
+        fi
+    done
+    
+    if [ -z "$SOURCE" ]; then
+        echo "Error: --source is required"
+        echo "Run 'just rust-serve --help' for usage"
+        exit 1
+    fi
+    
+    if [ "$RELEASE" = true ]; then
+        echo "🚀 Starting server (release) on port $PORT: $SOURCE..."
+        dagger {{dagger_flags}} -m ./devtools/rust call serve-api --source="./$SOURCE" --port="$PORT" --release up
+    else
+        echo "🚀 Starting server (debug) on port $PORT: $SOURCE..."
+        dagger {{dagger_flags}} -m ./devtools/rust call serve-api --source="./$SOURCE" --port="$PORT" up
+    fi

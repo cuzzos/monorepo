@@ -1,0 +1,168 @@
+# Node.js/Next.js Devtool - Justfile
+#
+# Containerized Node.js toolchain for frontend development.
+# Imported by root justfile - run from repo root with `just <recipe>`.
+#
+# Getting Help:
+#   just --list              # List all available recipes
+#   just <recipe> --help     # Show detailed usage for a specific recipe
+#
+# Quick Start:
+#   just node-dev            # Start dev server (Docker Compose)
+#   just node-build          # Create production build (Dagger)
+#   just node-sync           # Export node_modules for IDE IntelliSense (Dagger)
+#
+# =============================================================================
+# FUTURE IMPROVEMENT: Interactive Project Selection
+# =============================================================================
+# Replace hardcoded defaults with fzf-based selection:
+#
+#   1. Find all directories containing package.json:
+#      find applications -name "package.json" -not -path "*/node_modules/*"
+#
+#   2. Pipe to fzf for interactive selection:
+#      PROJECT=$(find ... | xargs -I{} dirname {} | fzf --prompt="Select project: ")
+#
+#   3. Auto-detect .env.local in selected project
+#
+# This would allow `just node-dev` to interactively pick from available
+# frontends when no --source is provided, making the toolchain work
+# seamlessly across a growing monorepo.
+# =============================================================================
+
+# Default source directory for thiccc web frontend
+_default_source := "applications/thiccc/web_frontend"
+_default_env := "applications/thiccc/web_frontend/.env.local"
+
+# =============================================================================
+# Development Recipes
+# =============================================================================
+
+# Start Next.js development server (Docker Compose)
+node-dev *args:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    
+    SOURCE="{{_default_source}}"
+    NEXT_IS_SOURCE=false
+    
+    for arg in {{args}}; do
+        if [ "$NEXT_IS_SOURCE" = true ]; then
+            SOURCE="$arg"
+            NEXT_IS_SOURCE=false
+        elif [ "$arg" = "--help" ] || [ "$arg" = "-h" ]; then
+            echo "Usage: just node-dev [--source <path>]"
+            echo ""
+            echo "Start a Next.js development server using Docker Compose."
+            echo "No local Node.js/npm required - everything runs in the container."
+            echo ""
+            echo "Options:"
+            echo "  --source PATH  Project directory (default: {{_default_source}})"
+            echo ""
+            echo "Once running:"
+            echo "  - Open http://localhost:3000 in your browser"
+            echo "  - Press Ctrl+C to stop"
+            exit 0
+        elif [ "$arg" = "--source" ]; then
+            NEXT_IS_SOURCE=true
+        fi
+    done
+    
+    echo "🐳 Starting Next.js dev server..."
+    echo "   Source: $SOURCE"
+    echo "   URL:    http://localhost:3000"
+    echo ""
+    
+    cd "$SOURCE" && docker compose up
+
+# =============================================================================
+# Build Recipes
+# =============================================================================
+
+# Create optimized production build (Dagger)
+node-build *args:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    
+    SOURCE="{{_default_source}}"
+    ENV_FILE="{{_default_env}}"
+    NEXT_IS_SOURCE=false
+    NEXT_IS_ENV=false
+    
+    for arg in {{args}}; do
+        if [ "$NEXT_IS_SOURCE" = true ]; then
+            SOURCE="$arg"
+            NEXT_IS_SOURCE=false
+        elif [ "$NEXT_IS_ENV" = true ]; then
+            ENV_FILE="$arg"
+            NEXT_IS_ENV=false
+        elif [ "$arg" = "--help" ] || [ "$arg" = "-h" ]; then
+            echo "Usage: just node-build [--source <path>] [--env <path>]"
+            echo ""
+            echo "Create an optimized production build using Dagger."
+            echo ""
+            echo "Options:"
+            echo "  --source PATH  Project directory (default: {{_default_source}})"
+            echo "  --env PATH     Environment file (default: {{_default_env}})"
+            echo ""
+            echo "Output: .next directory exported to the source project"
+            exit 0
+        elif [ "$arg" = "--source" ]; then
+            NEXT_IS_SOURCE=true
+        elif [ "$arg" = "--env" ]; then
+            NEXT_IS_ENV=true
+        fi
+    done
+    
+    echo "📦 Building production bundle..."
+    
+    if [ -f "$ENV_FILE" ]; then
+        dagger -m ./devtools/node call build-frontend \
+            --source="./$SOURCE" \
+            --env-file="./$ENV_FILE" \
+            export --path="./$SOURCE/.next"
+    else
+        dagger -m ./devtools/node call build-frontend \
+            --source="./$SOURCE" \
+            export --path="./$SOURCE/.next"
+    fi
+    
+    echo "✅ Build exported to $SOURCE/.next"
+
+# =============================================================================
+# Utility Recipes
+# =============================================================================
+
+# Sync node_modules for IDE IntelliSense (Dagger)
+node-sync *args:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    
+    SOURCE="{{_default_source}}"
+    NEXT_IS_SOURCE=false
+    
+    for arg in {{args}}; do
+        if [ "$NEXT_IS_SOURCE" = true ]; then
+            SOURCE="$arg"
+            NEXT_IS_SOURCE=false
+        elif [ "$arg" = "--help" ] || [ "$arg" = "-h" ]; then
+            echo "Usage: just node-sync [--source <path>]"
+            echo ""
+            echo "Install npm dependencies and export node_modules for IDE support."
+            echo "This gives you full IntelliSense without needing npm installed locally."
+            echo ""
+            echo "Options:"
+            echo "  --source PATH  Project directory (default: {{_default_source}})"
+            exit 0
+        elif [ "$arg" = "--source" ]; then
+            NEXT_IS_SOURCE=true
+        fi
+    done
+    
+    echo "📦 Syncing node_modules..."
+    
+    dagger -m ./devtools/node call sync-deps \
+        --source="./$SOURCE" \
+        export --path="./$SOURCE/node_modules"
+    
+    echo "✅ node_modules synced to $SOURCE/node_modules"
