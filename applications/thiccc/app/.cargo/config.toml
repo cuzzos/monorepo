@@ -1,2 +1,0 @@
-[alias]
-xcode = ["bin", "cargo-xcode"]
