@@ -11,6 +11,24 @@ mod db 'build/db.justfile'
 default:
     @just --list
 
+# =============================================================================
+# Deployment Commands
+# =============================================================================
+
+# Deploy API to Railway (add "prod" for production)
+deploy-api env="preview":
+    @echo "🚀 Deploying API to Railway ({{ env }})..."
+    railway up
+
+# Deploy web to Vercel (add "prod" for production)
+deploy-web env="preview":
+    @echo "🚀 Deploying web to Vercel ({{ env }})..."
+    @cd web_frontend && if [ "{{ env }}" = "prod" ]; then vercel --prod; else vercel; fi
+
+# =============================================================================
+# Cleanup Commands
+# =============================================================================
+
 # Clean all build artifacts
 clean:
     @echo "🧹 Cleaning build artifacts..."
