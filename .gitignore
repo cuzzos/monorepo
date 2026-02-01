@@ -67,6 +67,14 @@ Goonlytics/Goonlytics.xcworkspace
 applications/thiccc/app/.bin
 target/
 .bin/
+
+# Environment files with secrets
+.env.local
+.env*.local
+**/.env.local
+**/.env*.local
+**/env/common.env
+**/build/env/common.env
 **/xcodebuild.log
 
 # Cursor IDE
@@ -74,4 +82,5 @@ target/
 .cursor/rules/
 **/.cursor/rules/
 **/.cursor/*
+**/.cursor/mcp.json
 !**/.cursor/rules/
