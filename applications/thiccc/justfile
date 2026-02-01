@@ -15,15 +15,18 @@ default:
 # Deployment Commands
 # =============================================================================
 
-# Deploy API to Railway (add "prod" for production)
-deploy-api env="preview":
-    @echo "🚀 Deploying API to Railway ({{ env }})..."
-    railway up
-
-# Deploy web to Vercel (add "prod" for production)
-deploy-web env="preview":
-    @echo "🚀 Deploying web to Vercel ({{ env }})..."
-    @cd web_frontend && if [ "{{ env }}" = "prod" ]; then vercel --prod; else vercel; fi
+# Usage: just thiccc deploy <api|web> [preview|prod]
+deploy target env="preview":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [[ "{{ target }}" == "api" ]]; then
+        echo "🚀 Deploying API to Railway ({{ env }})..."
+        railway up
+    elif [[ "{{ target }}" == "web" ]]; then
+        echo "🚀 Deploying web to Vercel ({{ env }})..."
+        cd web_frontend
+        if [[ "{{ env }}" == "prod" ]]; then vercel --prod; else vercel; fi
+    fi
 
 # =============================================================================
 # Cleanup Commands
