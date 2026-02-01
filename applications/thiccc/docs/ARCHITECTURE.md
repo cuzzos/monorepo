@@ -53,7 +53,7 @@ We use **UniFFI** - Mozilla's tool that **automatically generates** the "transla
 
 ### 1️⃣ **Write Rust Code**
 
-**File:** `app/shared/src/lib.rs`
+**File:** `shared/src/lib.rs`
 
 This contains ALL your business logic:
 - Workout creation and management
@@ -87,7 +87,7 @@ pub fn process_event(msg: &[u8]) -> Result<Vec<u8>, CoreError> {
 
 ### 2️⃣ **Define the Interface (shared.udl)**
 
-**File:** `app/shared/src/shared.udl`
+**File:** `shared/src/shared.udl`
 
 This is like a "menu" of functions Swift can call:
 
@@ -120,7 +120,7 @@ When you build:
    - `sharedFFI.h` - C header (FFI uses C ABI)
    - `sharedFFI.modulemap` - Makes it importable as module
 
-**Output location:** `app/ios/thiccc/Thiccc/Generated/`
+**Output location:** `ios/generated/`
 
 **Swift imports this as:** `import SharedCore`
 
@@ -135,9 +135,9 @@ public func processEvent(msg: [UInt8]) throws -> [UInt8] {
 
 ---
 
-### 4️⃣ **CoreUniffi.swift Uses Those Generated Functions**
+### 4️⃣ **core.swift Uses Those Generated Functions**
 
-**File:** `app/ios/thiccc/Thiccc/CoreUniffi.swift`
+**File:** `ios/Thiccc/core.swift`
 
 This is YOUR code that uses the generated functions:
 
@@ -168,7 +168,7 @@ class RustCoreUniffi: ObservableObject {
 
 ## The Bridge Metaphor
 
-Think of `CoreUniffi.swift` as a **translator at the United Nations**:
+Think of `core.swift` as a **translator at the United Nations**:
 
 ```
 Swift (English) ◄──► CoreUniffi.swift (Translator) ◄──► Rust (French)
@@ -277,12 +277,15 @@ fi
 ## File Structure
 
 ```
-app/
+thiccc/
 ├── shared/                           # Rust Core (Business Logic)
 │   ├── src/
 │   │   ├── lib.rs                    # Main Rust code + Crux app
 │   │   ├── models.rs                 # Data models (Workout, Exercise, etc.)
-│   │   ├── database.rs               # SQLite operations
+│   │   ├── app/                      # Crux app logic
+│   │   │   ├── mod.rs                # Events, Model, update()
+│   │   │   ├── effects.rs            # Side effects
+│   │   │   └── view_models.rs        # ViewModels for UI
 │   │   ├── shared.udl                # ⭐ UniFFI interface definition
 │   │   └── bin/
 │   │       └── uniffi-bindgen.rs     # CLI tool for binding generation
@@ -290,23 +293,24 @@ app/
 │   ├── uniffi.toml                   # UniFFI configuration
 │   └── Cargo.toml                    # Rust dependencies
 │
-└── ios/                              # Swift Shell (UI Only)
-    ├── project.yml                   # XcodeGen spec (generates .xcodeproj)
-    ├── ARCHITECTURE.md               # ⭐ This file
-    ├── README.md                     # Setup instructions
-    └── thiccc/Thiccc/
-        ├── ThicccApp.swift           # App entry point
-        ├── CoreUniffi.swift          # ⭐ Swift ↔ Rust bridge
-        ├── Views/                    # SwiftUI views
-        │   ├── WorkoutView.swift
-        │   ├── HistoryView.swift
-        │   └── ...
-        ├── Models/                   # Swift models (mirror Rust)
-        ├── Assets.xcassets/          # App icon, colors
-        └── Generated/                # ⭐ Auto-generated (don't edit!)
-            ├── shared.swift          # Generated Swift API
-            ├── sharedFFI.h           # Generated C header
-            └── sharedFFI.modulemap   # Module definition
+├── ios/                              # Swift Shell (UI Only)
+│   ├── project.yml                   # XcodeGen spec (generates .xcodeproj)
+│   ├── Thiccc/
+│   │   ├── ThicccApp.swift           # App entry point
+│   │   ├── core.swift                # ⭐ Swift ↔ Rust bridge
+│   │   ├── WorkoutView.swift         # SwiftUI views
+│   │   ├── Capabilities/             # Platform capabilities
+│   │   └── Database/                 # Local database
+│   └── generated/                    # ⭐ Auto-generated (don't edit!)
+│       ├── shared.swift              # Generated Swift API
+│       ├── sharedFFI.h               # Generated C header
+│       └── sharedFFI.modulemap       # Module definition
+│
+├── web_frontend/                     # Web Client (Next.js)
+│   └── app/                          # App Router pages
+│
+└── api_server/                       # Web API (Rust + Axum)
+    └── src/main.rs                   # API endpoints
 ```
 
 ---
@@ -333,12 +337,12 @@ namespace shared {
 
 ---
 
-### `CoreUniffi.swift` - The Bridge
+### `core.swift` - The Bridge
 
 **Responsibilities:**
 1. **Import generated module:** `import SharedCore`
 2. **Wrap Rust calls** in Swift-friendly API
-3. **Manage `@Published` state** for SwiftUI
+3. **Manage `@Observable` state** for SwiftUI
 4. **Handle side effects** (database, timers)
 
 **What it does NOT do:**
@@ -368,7 +372,7 @@ This creates the Rust side of the FFI boundary.
 
 ---
 
-### `Generated/` - Auto-Generated Files
+### `ios/generated/` - Auto-Generated Files
 
 **⚠️ NEVER EDIT THESE FILES MANUALLY**
 
@@ -480,7 +484,7 @@ For comparison, **16ms = 60 FPS**. One call is **0.0013ms**. You can make thousa
 ### Rust Tests (Majority)
 
 ```bash
-cd app/shared
+cd shared
 cargo test
 ```
 
@@ -555,7 +559,7 @@ pub fn process_event(msg: &[u8]) -> Result<Vec<u8>, CoreError> {
 
 **Cause:** UniFFI bindings not generated yet.
 
-**Fix:** Run `./scripts/setup-mac.sh` or build in Xcode (⌘B)
+**Fix:** Run `build/scripts/setup-mac.sh` or build in Xcode (⌘B)
 
 ---
 
@@ -565,7 +569,7 @@ pub fn process_event(msg: &[u8]) -> Result<Vec<u8>, CoreError> {
 
 **Fix:**
 ```bash
-cd app/shared
+cd shared
 ./build-ios.sh
 ```
 
@@ -655,11 +659,11 @@ Swift → import SharedCore → Auto-generated → uniffi::include_scaffolding!(
 
 ### Initial Setup (One-Time)
 
-The `./scripts/setup-mac.sh` script at project root does everything:
+The `build/scripts/setup-mac.sh` script does everything:
 
 ```bash
 cd /path/to/thiccc
-./scripts/setup-mac.sh
+build/scripts/setup-mac.sh
 ```
 
 **What it installs:**
@@ -672,8 +676,7 @@ cd /path/to/thiccc
 
 **Then run:**
 ```bash
-cd app/ios
-open thiccc/Thiccc.xcodeproj
+open ios/Thiccc.xcodeproj
 # Hit ⌘R - everything works!
 ```
 
@@ -706,18 +709,18 @@ rustup target add aarch64-apple-ios aarch64-apple-ios-sim
 #### 3. Build Rust Libraries
 
 ```bash
-cd app/shared
+cd shared
 ./build-ios.sh
 ```
 
 This generates:
 - Static libraries for iOS device and simulator
-- UniFFI Swift bindings in `app/ios/thiccc/Thiccc/Generated/`
+- UniFFI Swift bindings in `ios/generated/`
 
 #### 4. Generate Xcode Project
 
 ```bash
-cd ../ios
+cd ios
 mint run xcodegen xcodegen generate
 ```
 
@@ -729,7 +732,7 @@ This creates `Thiccc.xcodeproj` with:
 #### 5. Open & Build
 
 ```bash
-open thiccc/Thiccc.xcodeproj
+open Thiccc.xcodeproj
 # Hit ⌘B to build or ⌘R to run
 ```
 
@@ -751,11 +754,11 @@ open thiccc/Thiccc.xcodeproj
 
 | Issue | Solution |
 |-------|----------|
-| "XcodeGen not found" or "Mint not found" | Run `./scripts/setup-mac.sh` |
+| "XcodeGen not found" or "Mint not found" | Run `build/scripts/setup-mac.sh` |
 | "No such module 'SharedCore'" | Hit ⌘B to build (generates module) |
 | Pre-build script fails | Check Rust installed: `rustup show` |
-| Wrong XcodeGen version | `mint bootstrap` (reinstalls from Mintfile) |
-| Files appear red in Xcode | Regenerate: `mint run xcodegen xcodegen generate` |
+| Wrong XcodeGen version | `cd ios && mint bootstrap` (reinstalls from Mintfile) |
+| Files appear red in Xcode | Regenerate: `cd ios && mint run xcodegen xcodegen generate` |
 
 ---
 

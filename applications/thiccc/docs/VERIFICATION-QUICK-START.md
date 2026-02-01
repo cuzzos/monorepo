@@ -3,7 +3,7 @@
 **TL;DR**: Run this before pushing code to iOS engineer:
 
 ```bash
-./verify-rust-core.sh
+build/scripts/verify-rust-core.sh
 ```
 
 ---
@@ -21,27 +21,29 @@
 
 ## Two-Stage Process
 
-### Stage 1: Linux/Devcontainer (You)
+### Stage 1: Verify Rust Core
 
 **What**: Verify Rust core is solid  
-**Where**: This devcontainer  
-**How**: `./verify-rust-core.sh`  
+**Where**: Your machine  
+**How**: `build/scripts/verify-rust-core.sh`  
 **Time**: ~30 seconds
 
 **Checks**:
+
 - Rust compiles ✓
 - No Clippy warnings ✓
 - All tests pass ✓
 - Swift bindings generate ✓
 
-### Stage 2: macOS (Optional but Recommended)
+### Stage 2: Verify iOS Build (Optional but Recommended)
 
 **What**: Verify iOS app builds  
 **Where**: Mac with Xcode  
-**How**: `./verify-ios-build.sh`  
+**How**: `build/scripts/verify-ios-build.sh`  
 **Time**: ~2 minutes
 
 **Checks**:
+
 - Builds for iOS targets ✓
 - Xcode project compiles ✓
 - App runs in simulator ✓
@@ -50,13 +52,13 @@
 
 ## When to Run Each Stage
 
-| Scenario | Stage 1 | Stage 2 |
-|----------|---------|---------|
-| Agent modified Rust only | ✅ Always | ⚠️ Recommended |
-| Agent modified Event enum | ✅ Always | ✅ Required |
-| Agent modified ViewModel | ✅ Always | ✅ Required |
-| Before every commit | ✅ Always | ⚠️ Good practice |
-| Before iOS engineer pulls | ✅ Always | ✅ Required |
+| Scenario                  | Stage 1   | Stage 2          |
+| ------------------------- | --------- | ---------------- |
+| Agent modified Rust only  | ✅ Always | ⚠️ Recommended   |
+| Agent modified Event enum | ✅ Always | ✅ Required      |
+| Agent modified ViewModel  | ✅ Always | ✅ Required      |
+| Before every commit       | ✅ Always | ⚠️ Good practice |
+| Before iOS engineer pulls | ✅ Always | ✅ Required      |
 
 ---
 
@@ -75,26 +77,33 @@
 ## What Failure Looks Like
 
 ### Rust Won't Compile
+
 ```
 ❌ FAILED: Rust compilation errors
 ```
+
 **Fix**: Check error messages, fix Rust code
 
 ### Tests Fail
+
 ```
 ❌ FAILED: Tests failed
 ```
+
 **Fix**: Fix the broken tests, don't skip them!
 
 ### Swift Bindings Fail (CRITICAL)
+
 ```
 ❌ FAILED: Swift type generation failed
 
 ⚠️  CRITICAL ERROR: iOS app will crash!
 ```
+
 **Fix**: See docs/PRE-HANDOFF-VERIFICATION.md for type tracing fixes
 
 ### Breaking Changes Detected
+
 ```
 ⚠️  Event enum was modified
    → Swift code using core.update(.event) may need updates
@@ -102,6 +111,7 @@
 ⚠️  ViewModel was modified
    → Swift code accessing core.view.X may need updates
 ```
+
 **Action**: Run Stage 2 on macOS to verify iOS still builds
 
 ---
@@ -110,7 +120,7 @@
 
 If you're an AI agent working on this codebase:
 
-1. ✅ Run `./verify-rust-core.sh`
+1. ✅ Run `build/scripts/verify-rust-core.sh`
 2. ✅ Fill out verification report (see docs/AI-AGENT-HANDOFF-PROTOCOL.md)
 3. ✅ Document any breaking changes
 4. ✅ Report results before marking task complete
@@ -121,12 +131,12 @@ If you're an AI agent working on this codebase:
 
 ## Files Created for You
 
-| File | Purpose |
-|------|---------|
-| `verify-rust-core.sh` | Automated verification (Linux) |
-| `verify-ios-build.sh` | Automated verification (macOS) |
-| `docs/PRE-HANDOFF-VERIFICATION.md` | Detailed guide |
-| `docs/AI-AGENT-HANDOFF-PROTOCOL.md` | Instructions for AI agents |
+| File                                | Purpose                        |
+| ----------------------------------- | ------------------------------ |
+| `build/scripts/verify-rust-core.sh` | Automated verification (Rust)  |
+| `build/scripts/verify-ios-build.sh` | Automated verification (macOS) |
+| `docs/PRE-HANDOFF-VERIFICATION.md`  | Detailed guide                 |
+| `docs/AI-AGENT-HANDOFF-PROTOCOL.md` | Instructions for AI agents     |
 
 ---
 
@@ -134,14 +144,14 @@ If you're an AI agent working on this codebase:
 
 ### For You (Human Developer)
 
-1. After AI makes changes: Run `./verify-rust-core.sh`
-2. If breaking changes: Test on macOS with `./verify-ios-build.sh`
+1. After AI makes changes: Run `build/scripts/verify-rust-core.sh`
+2. If breaking changes: Test on macOS with `build/scripts/verify-ios-build.sh`
 3. If all clear: Notify iOS engineer to pull code
 
 ### For iOS Engineer
 
 1. Pull latest code
-2. Open `app/ios/Thiccc.xcodeproj`
+2. Open `ios/Thiccc.xcodeproj`
 3. Press ⌘R to build and run
 4. Should work immediately (if verification passed)
 
@@ -177,26 +187,32 @@ A: Yes! Add to git pre-commit hook or CI/CD. See docs.
 ## Pro Tips
 
 ### Tip 1: Auto-format before committing
+
 ```bash
-cd app/shared && cargo fmt
+cd shared && cargo fmt
 ```
 
 ### Tip 2: Fix Clippy warnings automatically
+
 ```bash
-cd app/shared && cargo clippy --fix --allow-dirty
+cd shared && cargo clippy --fix --allow-dirty
 ```
 
 ### Tip 3: Run just the critical check
+
 ```bash
-cd app/shared_types && cargo build
+cd shared_types && cargo build
 ```
+
 If this passes, Swift bindings are valid.
 
-### Tip 4: Add alias to your shell
+### Tip 4: Use just commands
+
 ```bash
-alias verify='cd /workspaces/cuzzo_monorepo/applications/thiccc && ./verify-rust-core.sh'
+just thiccc ios verify
 ```
-Then just run: `verify`
+
+This runs all verification in one command.
 
 ---
 
@@ -209,4 +225,3 @@ Then just run: `verify`
 **Result**: No wasted time debugging preventable issues
 
 **Key**: Swift type generation MUST succeed or app crashes at runtime
-

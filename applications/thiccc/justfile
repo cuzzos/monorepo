@@ -1,0 +1,63 @@
+# Thiccc Application - Justfile
+#
+# From repo root: just thiccc <recipe>
+# From this dir:  just <recipe>
+
+mod ios 'build/ios.justfile'
+mod run-dev 'build/run-dev.justfile'
+
+# Show available commands
+default:
+    @just --list
+
+# =============================================================================
+# Production Deployment
+# =============================================================================
+
+# Deploy to production: just deploy <api|web|db> [preview|prod]
+deploy target env="preview":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [[ "{{ target }}" == "api" ]]; then
+        echo "🚀 Deploying API to Railway ({{ env }})..."
+        railway up
+    elif [[ "{{ target }}" == "web" ]]; then
+        echo "🚀 Deploying web to Vercel ({{ env }})..."
+        cd web_frontend
+        if [[ "{{ env }}" == "prod" ]]; then vercel --prod; else vercel; fi
+    elif [[ "{{ target }}" == "db" ]]; then
+        echo "🚀 Running migrations on Railway..."
+        railway run sqlx migrate run --source db/migrations
+        echo "✅ Migrations complete"
+    else
+        echo "❌ Unknown target: {{ target }}"
+        echo "Usage: just deploy <api|web|db> [preview|prod]"
+        exit 1
+    fi
+
+# =============================================================================
+# Cleanup
+# =============================================================================
+
+# Clean all build artifacts
+clean:
+    @echo "🧹 Cleaning build artifacts..."
+    @echo ""
+    @echo "  Stopping Docker containers..."
+    @docker compose -f build/docker-compose.web-dev.yaml --project-directory . down 2>/dev/null || true
+    @echo "  Removing target/..."
+    @rm -rf target/ 2>/dev/null || true
+    @echo "  Removing local Rust targets..."
+    @rm -rf shared/target/ 2>/dev/null || true
+    @echo "  Removing node_modules & .next/..."
+    @rm -rf web_frontend/node_modules/ 2>/dev/null || true
+    @rm -rf web_frontend/.next/ 2>/dev/null || true
+    @echo "  Removing build logs..."
+    @rm -f xcodebuild.log 2>/dev/null || true
+    @echo "  Removing Xcode DerivedData..."
+    @rm -rf ~/Library/Developer/Xcode/DerivedData/Thiccc-* 2>/dev/null || true
+    @echo ""
+    @echo "✅ Clean complete!"
+    @echo ""
+    @echo "Note: Docker volumes preserved. To also reset:"
+    @echo "  just run-dev reset"

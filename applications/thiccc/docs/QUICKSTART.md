@@ -3,7 +3,7 @@
 ## Prerequisites
 
 - macOS (required for iOS development)
-- Docker Desktop (for devcontainer)
+- Docker Desktop (for local web development)
 
 ## Setup (One-Time, ~5 minutes)
 
@@ -11,7 +11,7 @@
 
 ```bash
 cd /path/to/thiccc
-./scripts/setup-mac.sh
+build/scripts/setup-mac.sh
 ```
 
 **This MUST be run before opening Xcode!** It:
@@ -25,17 +25,14 @@ cd /path/to/thiccc
 
 ## Daily Workflow
 
-### 1. Develop Rust (Devcontainer)
+### 1. Develop Rust
 
 ```bash
-# Open VSCode in devcontainer
-code .
-
-# Edit Rust code with rust-analyzer
-vim app/shared/src/lib.rs
+# Edit Rust code
+vim shared/src/lib.rs
 
 # Run tests
-cargo test
+cd shared && cargo test
 
 # Check compilation
 cargo check
@@ -45,7 +42,7 @@ cargo check
 
 ```bash
 # On your Mac
-open app/ios/thiccc/Thiccc.xcodeproj
+open ios/Thiccc.xcodeproj
 
 # Hit ⌘R - That's it!
 # Xcode automatically:
@@ -55,11 +52,29 @@ open app/ios/thiccc/Thiccc.xcodeproj
 #   - Builds iOS app
 ```
 
+### 3. Web Development
+
+```bash
+# Start local stack (DB + API + Frontend)
+just thiccc web up
+
+# View logs
+just thiccc web logs
+
+# Stop stack
+just thiccc web down
+```
+
 ## That's It!
 
-**Workflow:**
-1. Code Rust in devcontainer (fast, rust-analyzer)
+**iOS Workflow:**
+1. Edit Rust code in `shared/`
 2. Hit ⌘R in Xcode (automatic iOS build)
+3. Done!
+
+**Web Workflow:**
+1. Run `just thiccc web up`
+2. Edit code (hot reload)
 3. Done!
 
 ## Troubleshooting
@@ -68,15 +83,15 @@ open app/ios/thiccc/Thiccc.xcodeproj
 First build generates it. Just hit ⌘B in Xcode.
 
 ### "Rust not found"
-Run `./scripts/setup-mac.sh` again.
+Run `build/scripts/setup-mac.sh` again.
 
-### "Devcontainer not working"
-Reinstall Docker Desktop or see [README.md](./README.md).
+### "Docker not running"
+Start Docker Desktop, then retry.
 
 ## Why This Setup?
 
-- **Devcontainer**: Best Rust development experience (rust-analyzer, cargo test)
 - **Rust on Mac**: Required for iOS targets (Apple SDK is macOS-only)
+- **Docker**: Local web development stack
 - **Automatic workflow**: No manual build steps after initial setup
 
 **Note:** Rust on Mac is ~700MB, similar to Node.js. It's a build tool, like Xcode itself (40GB).
@@ -84,6 +99,7 @@ Reinstall Docker Desktop or see [README.md](./README.md).
 ---
 
 **Questions?**
+- Project structure: [STRUCTURE.md](./STRUCTURE.md)
 - More info: [README.md](../README.md)
 - How it works: [ARCHITECTURE.md](./ARCHITECTURE.md)
 
