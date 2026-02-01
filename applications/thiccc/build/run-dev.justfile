@@ -13,7 +13,7 @@ up:
     @echo "⏳ Waiting for database to be ready..."
     @sleep 2
     @echo "📦 Applying migrations..."
-    @DATABASE_URL="postgres://thiccc:thiccc@localhost:5432/thiccc" sqlx migrate run --source ../db/migrations 2>/dev/null || echo "  (sqlx-cli not installed, skipping migrations)"
+    @DATABASE_URL="postgres://postgres:postgres@localhost:5432/thiccc" sqlx migrate run --source ../db/migrations 2>/dev/null || echo "  (sqlx-cli not installed, skipping migrations)"
     @echo ""
     @echo "✅ Stack running:"
     @echo "  Database: localhost:5432"
@@ -38,6 +38,6 @@ reset:
     @echo "⏳ Waiting for database to be ready..."
     @sleep 2
     @echo "📦 Applying migrations..."
-    @DATABASE_URL="postgres://thiccc:thiccc@localhost:5432/thiccc" sqlx migrate run --source ../db/migrations 2>/dev/null || echo "  (sqlx-cli not installed, skipping migrations)"
+    @DATABASE_URL="postgres://postgres:postgres@localhost:5432/thiccc" sqlx migrate run --source ../db/migrations 2>/dev/null || echo "  (sqlx-cli not installed, skipping migrations)"
     @echo ""
     @echo "✅ Stack reset complete"
