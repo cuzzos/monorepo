@@ -1,0 +1,92 @@
+---
+description: Clerk authentication integration guidelines for Next.js App Router
+globs: ["**/*.tsx", "**/*.ts"]
+alwaysApply: false
+---
+
+# Clerk + Next.js App Router Integration
+
+## Required Setup
+
+1. **Install**: `@clerk/nextjs@latest`
+2. **Middleware**: Use `clerkMiddleware()` from `@clerk/nextjs/server` in `middleware.ts`
+3. **Provider**: Wrap app with `<ClerkProvider>` in `app/layout.tsx`
+4. **Components**: Use `<SignInButton>`, `<SignUpButton>`, `<UserButton>`, `<SignedIn>`, `<SignedOut>`
+
+## Environment Variables
+
+Store in `.env.local` only (never in tracked files):
+
+```bash
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY
+CLERK_SECRET_KEY=YOUR_SECRET_KEY
+```
+
+## Middleware Pattern
+
+```typescript
+// middleware.ts
+import { clerkMiddleware } from "@clerk/nextjs/server";
+
+export default clerkMiddleware();
+
+export const config = {
+  matcher: [
+    "/((?!_next|[^?]*\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
+    "/(api|trpc)(.*)",
+  ],
+};
+```
+
+## Layout Pattern
+
+```typescript
+// app/layout.tsx
+import { ClerkProvider, SignInButton, SignUpButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <ClerkProvider>
+      <html lang="en">
+        <body>
+          <header>
+            <SignedOut>
+              <SignInButton />
+              <SignUpButton />
+            </SignedOut>
+            <SignedIn>
+              <UserButton />
+            </SignedIn>
+          </header>
+          {children}
+        </body>
+      </html>
+    </ClerkProvider>
+  );
+}
+```
+
+## Critical Rules
+
+### ALWAYS
+- Use `clerkMiddleware()` from `@clerk/nextjs/server`
+- Import auth helpers with `async/await` from `@clerk/nextjs/server`
+- Use App Router patterns (`app/` directory)
+- Use placeholder values in code examples
+
+### NEVER
+- Use deprecated `authMiddleware()` 
+- Reference `_app.tsx` or pages-based patterns
+- Use `pages/signin.js` or `pages/signup.js`
+- Write real API keys in tracked files
+- Import from deprecated APIs (`withAuth`, old `currentUser`)
+
+## Verification Checklist
+
+Before any Clerk implementation:
+1. Is `clerkMiddleware()` used in `middleware.ts`?
+2. Is `<ClerkProvider>` wrapping the app in `app/layout.tsx`?
+3. Are imports from `@clerk/nextjs` or `@clerk/nextjs/server`?
+4. Is it using App Router (not `pages/` directory)?
+5. Are only placeholder values in code examples?
+6. Is `.env.local` in `.gitignore`?
