@@ -3,6 +3,7 @@
 > **TLDR:** Set up complete dev environment for thiccc web app. Verify Docker, test local stack with `just` commands, set up Clerk (auth), Railway (PostgreSQL + backend hosting), and Vercel (frontend hosting).
 
 ## Table of Contents
+
 - [AI Agent Instructions](#-ai-agent-instructions)
 - [Required Context](#-required-context)
 - [Feature Overview](#-feature-overview)
@@ -21,6 +22,7 @@
 ## 🤖 AI Agent Instructions
 
 **When starting this phase:**
+
 1. Read the project structure: `docs/STRUCTURE.md`
 2. Understand we're verifying local dev + setting up deployment accounts
 3. Follow tasks sequentially
@@ -31,6 +33,7 @@
 ## 📚 Required Context
 
 Read these files first:
+
 - `docs/STRUCTURE.md` - Project layout
 - `docs/web/00-OVERVIEW.md` - Overall architecture
 - `build/env/README.md` - Environment configuration
@@ -42,6 +45,7 @@ Read these files first:
 **What we're building:** Complete development and deployment environment
 
 **Success criteria:**
+
 - ✅ Local stack works (`just thiccc web up`)
 - ✅ Clerk account created with API keys
 - ✅ Railway project created with PostgreSQL
@@ -67,6 +71,7 @@ open -a Docker
 ```
 
 **Validation:**
+
 ```bash
 docker ps
 # Should connect (empty list is fine)
@@ -79,6 +84,7 @@ docker ps
 **Goal:** Verify the full local development stack works
 
 **Commands:**
+
 ```bash
 # Start everything (db + migrations + api + web)
 just thiccc web up
@@ -92,11 +98,13 @@ open http://localhost:3000          # Frontend
 ```
 
 **Expected:**
+
 - Database: `localhost:5432`
 - API: `http://localhost:8000/health` returns "OK"
 - Frontend: `http://localhost:3000` shows welcome page
 
 **Stop stack when done:**
+
 ```bash
 just thiccc web down
 ```
@@ -110,6 +118,7 @@ just thiccc web down
 **🚨 Human action required:** Create Clerk account and get API keys
 
 **Instructions:**
+
 1. Go to https://clerk.com
 2. Sign up for free account
 3. Create new application: "Thiccc Web"
@@ -119,6 +128,7 @@ just thiccc web down
    - Secret Key (starts with `sk_test_`)
 
 **Add keys to environment:**
+
 ```bash
 # Edit build/env/common.env (gitignored)
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_xxxxx
@@ -150,6 +160,7 @@ CLERK_SECRET_KEY=sk_test_xxxxx
 **Configure Environment Variables (in Railway dashboard):**
 
 For the **API service:**
+
 ```
 PORT=8000
 RUST_LOG=info
@@ -158,15 +169,18 @@ CLERK_SECRET_KEY=<from Clerk dashboard>
 ```
 
 For the **PostgreSQL service:**
+
 - Railway auto-configures this, just note the `DATABASE_URL`
 
 **Run migrations:**
+
 ```bash
 # Get the production DATABASE_URL from Railway dashboard
 DATABASE_URL=<railway-url> just thiccc db migrate
 ```
 
-**🚨 Human checkpoint:** 
+**🚨 Human checkpoint:**
+
 - Railway project created
 - PostgreSQL service running
 - API service configured (may not deploy yet - that's ok)
@@ -178,9 +192,68 @@ DATABASE_URL=<railway-url> just thiccc db migrate
 
 **Goal:** Create Vercel project for frontend hosting
 
-**🚨 Human action required:** Create Vercel account and connect repo
+**🚨 Human action required:** Create Vercel account and deploy
 
-**Instructions:**
+#### Option A: Vercel CLI (Recommended for Monorepos)
+
+Deploy directly without connecting your entire repo to Vercel.
+
+**1. Install Vercel CLI:**
+
+```bash
+brew install vercel-cli
+```
+
+**2. Login to Vercel:**
+
+```bash
+vercel login
+```
+
+**3. Deploy from web_frontend directory:**
+
+```bash
+cd applications/thiccc/web_frontend
+
+# First deploy (will prompt for project setup)
+vercel
+
+# Follow prompts:
+# - Set up and deploy? Y
+# - Which scope? (select your account)
+# - Link to existing project? N
+# - Project name? thiccc-web
+# - Directory with code? ./
+# - Override settings? N
+```
+
+**4. Set environment variables:**
+
+```bash
+# Add each environment variable
+vercel env add NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+vercel env add CLERK_SECRET_KEY
+vercel env add NEXT_PUBLIC_API_URL
+```
+
+**5. Deploy to production:**
+
+```bash
+vercel --prod
+```
+
+**Future deploys:**
+
+```bash
+cd applications/thiccc/web_frontend
+vercel --prod
+```
+
+---
+
+#### Option B: Connect GitHub Repo
+
+If you prefer automatic deploys on push:
 
 1. Go to https://vercel.com
 2. Sign up with GitHub account
@@ -197,7 +270,10 @@ DATABASE_URL=<railway-url> just thiccc db migrate
    ```
 7. Click "Deploy"
 
+---
+
 **🚨 Human checkpoint:**
+
 - Vercel project created
 - Environment variables configured
 - Deployment succeeds (or shows what's missing)
@@ -214,7 +290,8 @@ DATABASE_URL=<railway-url> just thiccc db migrate
 - [ ] Railway PostgreSQL service running
 - [ ] Railway API service configured
 - [ ] Production migrations run
-- [ ] Vercel project created
+- [ ] Vercel CLI installed (`brew install vercel-cli`)
+- [ ] Vercel project created and deployed
 - [ ] Vercel environment variables set
 - [ ] Both services deploy successfully
 
@@ -227,6 +304,7 @@ DATABASE_URL=<railway-url> just thiccc db migrate
 **Symptom:** `Cannot connect to Docker daemon`
 
 **Solution:**
+
 ```bash
 open -a Docker
 # Wait 30 seconds, then retry
@@ -237,6 +315,7 @@ open -a Docker
 **Symptom:** `Address already in use`
 
 **Solution:**
+
 ```bash
 # Stop any existing stack
 just thiccc web down
@@ -256,21 +335,33 @@ kill -9 <PID>
 
 **Symptom:** Next.js build errors
 
-**Solution:** 
-1. Check environment variables are set
-2. Ensure Root Directory is `applications/thiccc/web_frontend`
+**Solution:**
+
+1. Check environment variables are set: `vercel env ls`
+2. If using CLI, ensure you're in the `web_frontend` directory
+3. If using repo connection, ensure Root Directory is `applications/thiccc/web_frontend`
+
+### Issue: Vercel CLI not found
+
+**Symptom:** `vercel: command not found`
+
+**Solution:**
+
+```bash
+brew install vercel-cli
+```
 
 ---
 
 ## 📊 Progress Tracking
 
-| Task | Status | Type | Notes |
-|------|--------|------|-------|
-| 1. Verify Docker | ⬜ | Human | Start Docker Desktop |
-| 2. Test Local Stack | ⬜ | AI can do | Run just commands |
-| 3. Clerk Account | ⬜ | Human | Create account, get keys |
-| 4. Railway Project | ⬜ | Human | Create project, configure |
-| 5. Vercel Project | ⬜ | Human | Create project, deploy |
+| Task                | Status | Type      | Notes                     |
+| ------------------- | ------ | --------- | ------------------------- |
+| 1. Verify Docker    | ⬜     | Human     | Start Docker Desktop      |
+| 2. Test Local Stack | ⬜     | AI can do | Run just commands         |
+| 3. Clerk Account    | ⬜     | Human     | Create account, get keys  |
+| 4. Railway Project  | ⬜     | Human     | Create project, configure |
+| 5. Vercel Project   | ⬜     | Human     | Install CLI, deploy       |
 
 **Legend:** ⬜ Not started | ⏳ In progress | ✅ Done | ❌ Blocked
 

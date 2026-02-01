@@ -161,9 +161,9 @@ See: `/docs/dagger/` for details.
 
 ### Why Railway + Vercel?
 
-- ✅ Zero-config deployment (git push = deployed)
 - ✅ Railway: managed PostgreSQL + Rust hosting
 - ✅ Vercel: perfect for Next.js, free tier
+- ✅ Vercel CLI: deploy without connecting entire monorepo
 - ✅ No Kubernetes/Terraform needed (save weeks of work)
 - ✅ Can migrate to GCP/AWS later if needed
 
