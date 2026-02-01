@@ -1,25 +1,29 @@
 # Thiccc - Workout Tracking App
 
-iOS workout tracker with **Rust business logic** + **SwiftUI UI**.
+iOS workout tracker with **Rust business logic** + **SwiftUI UI**, plus a **Web app** (Next.js + Rust API).
 
-## ⚡ Get Started (2 steps)
+## Quick Start
 
 ```bash
-./scripts/setup-mac.sh  # Run once (installs everything)
-open app/ios/thiccc/Thiccc.xcodeproj && # ⌘R to run
+# iOS development
+just thiccc ios run      # Build and run in simulator
+
+# Web development  
+just thiccc web up       # Start local stack (DB + API + Frontend)
+just thiccc web down     # Stop stack
 ```
 
-**First time?** → [docs/QUICKSTART.md](./docs/QUICKSTART.md) has details
+**First time?** → Run `build/scripts/setup-mac.sh` first
 
 ## What Is This?
 
-**Architecture:** Rust (business logic) + Swift (UI only)
+**Architecture:** Shared Rust core + platform-specific UIs
 
-- ✅ All workout logic in Rust (portable, testable)
-- ✅ SwiftUI for iOS interface
-- ✅ Automatic Rust↔Swift bridge (UniFFI)
-- ✅ SQLite database
-- ✅ iOS 18.0+
+- Rust business logic (portable, testable)
+- SwiftUI for iOS interface
+- Next.js for web frontend
+- Rust/Axum for web API
+- Automatic Rust↔Swift bridge (UniFFI)
 
 **Features:** Workout tracking, exercise sets, timer, history, plate calculator
 
@@ -27,43 +31,37 @@ open app/ios/thiccc/Thiccc.xcodeproj && # ⌘R to run
 
 ```
 thiccc/
-├── scripts/
-│   ├── setup-mac.sh          # Run this first!
-│   ├── verify-rust-core.sh   # Verify Rust core
-│   └── verify-ios-build.sh   # Verify iOS build
-├── docs/                     # All documentation here
-├── app/
-│   ├── shared/               # Rust (business logic)
-│   └── ios/                  # Swift (UI)
+├── shared/           # Rust core (business logic)
+├── shared_types/     # Generated types (Swift + TypeScript)
+├── ios/              # SwiftUI app
+├── web_frontend/     # Next.js app
+├── api_server/       # Rust API (Axum)
+├── build/            # Build tooling (justfiles, docker, env, scripts)
+└── docs/             # Documentation
 ```
 
-## Daily Development
+**Full details:** [docs/STRUCTURE.md](./docs/STRUCTURE.md)
 
-**Edit Rust:** Use devcontainer (Linux) or Mac
+## Commands
+
 ```bash
-cd app/shared
-cargo test          # Run tests
-cargo check         # Check compilation
+just thiccc              # List all commands
+just thiccc ios run      # Build and run iOS simulator
+just thiccc ios test     # Run Rust tests
+just thiccc web up       # Start web dev stack
+just thiccc web logs     # View container logs
+just thiccc clean        # Remove all build artifacts
 ```
 
-**Build iOS:** Just hit ⌘R in Xcode (auto-rebuilds Rust if changed)
+## Documentation
 
-## Need Help?
-
-| Issue | Solution |
-|-------|----------|
-| "No such module 'SharedCore'" | Hit ⌘B in Xcode (first build) |
-| Build errors | Run `./scripts/setup-mac.sh` again |
-| How does it work? | See [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) |
-| Deploy to TestFlight | See [docs/DEPLOYMENT-INDEX.md](./docs/DEPLOYMENT-INDEX.md) |
-
-## Learn More
-
+- **[docs/STRUCTURE.md](./docs/STRUCTURE.md)** - Project structure overview
 - **[docs/QUICKSTART.md](./docs/QUICKSTART.md)** - Setup instructions
-- **[docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)** - How it works (architecture, testing, etc.)
-- **[docs/DEPLOYMENT-INDEX.md](./docs/DEPLOYMENT-INDEX.md)** - Deploy to TestFlight
+- **[docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)** - How it works
+- **[docs/web/](./docs/web/)** - Web development phases
 
 ## Stack
 
-**Rust:** Crux, UniFFI, rusqlite, serde  
-**Swift:** iOS 18+, SwiftUI, UniFFI-generated bindings
+**Rust:** Crux, UniFFI, Axum, SQLx, serde  
+**Swift:** iOS 18+, SwiftUI, UniFFI-generated bindings  
+**Web:** Next.js, React, TypeScript, Clerk (auth)
