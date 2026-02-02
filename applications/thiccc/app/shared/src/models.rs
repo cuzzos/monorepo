@@ -364,11 +364,15 @@ pub struct Exercise {
 
 impl Exercise {
     /// Creates a new exercise with the given name and workout ID.
+    ///
+    /// A new exercise is created with one default set, since an exercise
+    /// cannot be performed without at least one set.
     pub fn new(name: String, workout_id: Id) -> Self {
-        Self {
-            id: Id::new(),
+        let id = Id::new();
+        let mut exercise = Self {
+            id: id.clone(),
             superset_id: None,
-            workout_id,
+            workout_id: workout_id.clone(),
             name,
             pinned_notes: Vec::new(),
             notes: Vec::new(),
@@ -379,26 +383,21 @@ impl Exercise {
             default_rest_time: Some(60), // Default 60 second rest
             sets: Vec::new(),
             body_part: None,
-        }
+        };
+        
+        // Create the first default set (set_index = 0)
+        let default_set = ExerciseSet::new(id, workout_id, 0);
+        exercise.sets.push(default_set);
+        
+        exercise
     }
 
     /// Creates an exercise from a GlobalExercise template.
+    ///
+    /// A new exercise is created with one default set, since an exercise
+    /// cannot be performed without at least one set.
     pub fn from_global(global: &GlobalExercise, workout_id: Id) -> Self {
-        Self {
-            id: Id::new(),
-            superset_id: None,
-            workout_id,
-            name: global.name.clone(),
-            pinned_notes: Vec::new(),
-            notes: Vec::new(),
-            duration: None,
-            exercise_type: ExerciseType::default(), // Will be parsed from global.exercise_type
-            weight_unit: None,
-            default_warm_up_time: None,
-            default_rest_time: Some(60),
-            sets: Vec::new(),
-            body_part: None,
-        }
+        Self::new(global.name.clone(), workout_id)
     }
 
     /// Returns whether all sets in this exercise are completed.
@@ -799,7 +798,7 @@ mod tests {
             serde_json::from_str(&json).expect("Failed to deserialize workout with exercises");
 
         println!("Deserialized workout has {} exercises", deserialized.exercises.len());
-        if deserialized.exercises.len() > 0 {
+        if !deserialized.exercises.is_empty() {
             println!("Deserialized exercise 1 has {} sets", deserialized.exercises[0].sets.len());
         }
         if deserialized.exercises.len() > 1 {
@@ -843,8 +842,16 @@ mod tests {
     fn test_workout_completed_when_all_sets_done() {
         let mut workout = Workout::new();
         let exercise = workout.add_exercise("Squat");
+        
+        // Exercise now has 1 default set
+        assert_eq!(exercise.sets.len(), 1, "Should have 1 default set");
+        
+        // Add another set (now 2 total)
         let set = exercise.add_set();
         set.complete(SetActual::with_weight_and_reps(225.0, 5));
+        
+        // Complete the default set as well
+        exercise.sets[0].complete(SetActual::with_weight_and_reps(225.0, 5));
 
         assert!(workout.is_completed());
     }
@@ -891,7 +898,8 @@ mod tests {
 
         assert_eq!(exercise.name, "Squat");
         assert_eq!(exercise.workout_id, workout_id);
-        assert!(exercise.sets.is_empty());
+        assert_eq!(exercise.sets.len(), 1, "Exercise should have 1 default set");
+        assert_eq!(exercise.sets[0].set_index, 0, "Default set should have index 0");
     }
 
     #[test]
@@ -899,16 +907,22 @@ mod tests {
         let workout_id = Id::new();
         let mut exercise = Exercise::new("Curl".to_string(), workout_id);
 
-        // Empty exercise is not completed
+        // Exercise with only default incomplete set is not completed
+        assert_eq!(exercise.sets.len(), 1, "Should have 1 default set");
         assert!(!exercise.is_completed());
 
-        // Add incomplete set
+        // Add another incomplete set
         exercise.add_set();
+        assert_eq!(exercise.sets.len(), 2, "Should have 2 sets");
         assert!(!exercise.is_completed());
 
-        // Complete the set
+        // Complete the first set only - still not completed
         exercise.sets[0].complete(SetActual::with_weight_and_reps(25.0, 12));
-        assert!(exercise.is_completed());
+        assert!(!exercise.is_completed(), "Exercise not completed when only some sets are done");
+
+        // Complete the second set - now completed
+        exercise.sets[1].complete(SetActual::with_weight_and_reps(25.0, 12));
+        assert!(exercise.is_completed(), "Exercise completed when all sets are done");
     }
 
     // -------------------------------------------------------------------------

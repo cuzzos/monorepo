@@ -127,14 +127,16 @@ fn test_model_calculate_total_sets() {
     // Add a workout with exercises and sets
     let workout = model.get_or_create_workout();
     let exercise1 = workout.add_exercise("Squat");
+    // Exercise1 starts with 1 default set, then we add 2 more = 3 total
     exercise1.add_set();
     exercise1.add_set();
 
     let exercise2 = workout.add_exercise("Deadlift");
+    // Exercise2 starts with 1 default set, then we add 1 more = 2 total
     exercise2.add_set();
 
-    // Total should be 3 sets
-    assert_eq!(model.calculate_total_sets(), 3);
+    // Total should be 5 sets (3 from exercise1 + 2 from exercise2)
+    assert_eq!(model.calculate_total_sets(), 5);
 }
 
 #[test]

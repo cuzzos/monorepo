@@ -28,6 +28,14 @@ struct WorkoutView: View {
         )) {
             ImportWorkoutView(core: core)
         }
+        .alert("Error", isPresented: .init(
+            get: { core.view.showing_error },
+            set: { if !$0 { Task { await core.update(.dismissError) } } }
+        )) {
+            Button("OK") {}
+        } message: {
+            Text(core.view.error_message ?? "")
+        }
     }
     
     private var activeWorkoutView: some View {
