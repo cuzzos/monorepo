@@ -397,28 +397,7 @@ impl Exercise {
     /// A new exercise is created with one default set, since an exercise
     /// cannot be performed without at least one set.
     pub fn from_global(global: &GlobalExercise, workout_id: Id) -> Self {
-        let id = Id::new();
-        let mut exercise = Self {
-            id: id.clone(),
-            superset_id: None,
-            workout_id: workout_id.clone(),
-            name: global.name.clone(),
-            pinned_notes: Vec::new(),
-            notes: Vec::new(),
-            duration: None,
-            exercise_type: ExerciseType::default(), // Will be parsed from global.exercise_type
-            weight_unit: None,
-            default_warm_up_time: None,
-            default_rest_time: Some(60),
-            sets: Vec::new(),
-            body_part: None,
-        };
-        
-        // Create the first default set (set_index = 0)
-        let default_set = ExerciseSet::new(id, workout_id, 0);
-        exercise.sets.push(default_set);
-        
-        exercise
+        Self::new(global.name.clone(), workout_id)
     }
 
     /// Returns whether all sets in this exercise are completed.
@@ -819,7 +798,7 @@ mod tests {
             serde_json::from_str(&json).expect("Failed to deserialize workout with exercises");
 
         println!("Deserialized workout has {} exercises", deserialized.exercises.len());
-        if deserialized.exercises.len() > 0 {
+        if !deserialized.exercises.is_empty() {
             println!("Deserialized exercise 1 has {} sets", deserialized.exercises[0].sets.len());
         }
         if deserialized.exercises.len() > 1 {
