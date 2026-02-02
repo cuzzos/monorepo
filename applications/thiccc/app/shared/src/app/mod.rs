@@ -202,6 +202,7 @@ impl Thiccc {
 
         if weight_per_side < 0.0 {
             model.error_message = Some("Target weight is less than bar weight".to_string());
+            model.showing_error = true;
             model.plate_calculation = None;
         } else {
             // Get standard plates (use pounds for now)
@@ -328,6 +329,7 @@ impl App for Thiccc {
                 if model.current_workout.is_some() {
                     const WIP_MSG: &str = "A workout is already in progress. Please finish or discard it first.";
                     model.error_message = Some(WIP_MSG.to_string());
+                    model.showing_error = true;
                 } else {
                     model.current_workout = Some(Workout::new());
                     model.workout_timer_seconds = 0;
@@ -444,6 +446,7 @@ impl App for Thiccc {
                     }
                     Err(e) => {
                         model.error_message = Some(format!("Invalid exercise ID: {}", e));
+                        model.showing_error = true;
                     }
                 }
             }
@@ -463,6 +466,7 @@ impl App for Thiccc {
                             to_index,
                             workout.exercises.len()
                         ));
+                        model.showing_error = true;
                     }
                 }
             }
@@ -490,6 +494,7 @@ impl App for Thiccc {
                     }
                     Err(e) => {
                         model.error_message = Some(format!("Invalid exercise ID: {}", e));
+                        model.showing_error = true;
                     }
                 }
             }
@@ -543,6 +548,7 @@ impl App for Thiccc {
                     }
                     Err(e) => {
                         model.error_message = Some(format!("Invalid set ID: {}", e));
+                        model.showing_error = true;
                     }
                 }
             }
@@ -557,6 +563,7 @@ impl App for Thiccc {
                     }
                     Err(e) => {
                         model.error_message = Some(format!("Invalid set ID: {}", e));
+                        model.showing_error = true;
                     }
                 }
             }
@@ -671,6 +678,7 @@ impl App for Thiccc {
             Event::LoadWorkoutTemplate => {
                 // TODO: In Phase 3, implement template loading via capability
                 model.error_message = Some("Template loading not yet implemented".to_string());
+                model.showing_error = true;
             }
 
             // =================================================================
@@ -684,9 +692,11 @@ impl App for Thiccc {
                 // Validate inputs before calculation
                 if target_weight <= 0.0 {
                     model.error_message = Some("Target weight must be greater than 0".to_string());
+                    model.showing_error = true;
                     model.plate_calculation = None;
                 } else if bar_weight <= 0.0 {
                     model.error_message = Some("Bar weight must be greater than 0".to_string());
+                    model.showing_error = true;
                     model.plate_calculation = None;
                 } else if let Some(percentage) = use_percentage {
                     if !(0.0..=100.0).contains(&percentage) {
@@ -694,6 +704,7 @@ impl App for Thiccc {
                             "Percentage must be between 0 and 100 (got {})",
                             percentage
                         ));
+                        model.showing_error = true;
                         model.plate_calculation = None;
                     } else {
                         // All validations passed, perform calculation
@@ -776,6 +787,7 @@ impl App for Thiccc {
                     DatabaseResult::Error { message } => {
                         // Database error occurred
                         model.error_message = Some(message);
+                        model.showing_error = true;
                     }
                 }
             }
@@ -804,6 +816,7 @@ impl App for Thiccc {
                                 Err(e) => {
                                     model.error_message =
                                         Some(format!("Failed to load workout: {}", e));
+                                    model.showing_error = true;
                                 }
                             }
                         }
@@ -813,6 +826,7 @@ impl App for Thiccc {
                     }
                     StorageResult::Error { message } => {
                         model.error_message = Some(format!("Storage error: {}", message));
+                        model.showing_error = true;
                     }
                 }
             }

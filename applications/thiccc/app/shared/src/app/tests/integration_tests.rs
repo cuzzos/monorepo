@@ -1004,3 +1004,272 @@ fn test_import_workout_with_invalid_uuid_is_rejected() {
     );
 }
 
+#[test]
+fn test_start_workout_with_existing_workout_shows_error() {
+    let app = Thiccc;
+    let mut model = Model::default();
+
+    // Start first workout
+    app.update(Event::StartWorkout, &mut model, &());
+    assert!(model.current_workout.is_some());
+
+    // Try to start another workout
+    app.update(Event::StartWorkout, &mut model, &());
+
+    // Verify error is shown
+    assert!(model.error_message.is_some());
+    assert!(model.showing_error);
+    assert!(model.error_message.as_ref().unwrap().contains("already in progress"));
+}
+
+#[test]
+fn test_add_set_with_invalid_id_shows_error() {
+    let app = Thiccc;
+    let mut model = Model::default();
+
+    // Try to add set with invalid exercise ID
+    app.update(
+        Event::AddSet {
+            exercise_id: "not-a-valid-uuid".to_string(),
+        },
+        &mut model,
+        &(),
+    );
+
+    // Verify error is shown
+    assert!(model.error_message.is_some());
+    assert!(model.showing_error);
+    assert!(model.error_message.as_ref().unwrap().contains("Invalid exercise ID"));
+}
+
+#[test]
+fn test_update_set_actual_with_invalid_id_shows_error() {
+    let app = Thiccc;
+    let mut model = Model::default();
+
+    // Try to update set with invalid set ID
+    app.update(
+        Event::UpdateSetActual {
+            set_id: "not-a-valid-uuid".to_string(),
+            actual: SetActual::default(),
+        },
+        &mut model,
+        &(),
+    );
+
+    // Verify error is shown
+    assert!(model.error_message.is_some());
+    assert!(model.showing_error);
+    assert!(model.error_message.as_ref().unwrap().contains("Invalid set ID"));
+}
+
+#[test]
+fn test_toggle_set_completed_with_invalid_id_shows_error() {
+    let app = Thiccc;
+    let mut model = Model::default();
+
+    // Try to toggle set with invalid set ID
+    app.update(
+        Event::ToggleSetCompleted {
+            set_id: "not-a-valid-uuid".to_string(),
+        },
+        &mut model,
+        &(),
+    );
+
+    // Verify error is shown
+    assert!(model.error_message.is_some());
+    assert!(model.showing_error);
+    assert!(model.error_message.as_ref().unwrap().contains("Invalid set ID"));
+}
+
+#[test]
+fn test_delete_exercise_with_invalid_id_shows_error() {
+    let app = Thiccc;
+    let mut model = Model::default();
+
+    // Try to delete exercise with invalid ID
+    app.update(
+        Event::DeleteExercise {
+            exercise_id: "not-a-valid-uuid".to_string(),
+        },
+        &mut model,
+        &(),
+    );
+
+    // Verify error is shown
+    assert!(model.error_message.is_some());
+    assert!(model.showing_error);
+    assert!(model.error_message.as_ref().unwrap().contains("Invalid exercise ID"));
+}
+
+#[test]
+fn test_load_workout_template_shows_error() {
+    let app = Thiccc;
+    let mut model = Model::default();
+
+    // Try to load template (not yet implemented)
+    app.update(Event::LoadWorkoutTemplate, &mut model, &());
+
+    // Verify error is shown
+    assert!(model.error_message.is_some());
+    assert!(model.showing_error);
+    assert!(model.error_message.as_ref().unwrap().contains("not yet implemented"));
+}
+
+#[test]
+fn test_calculate_plates_with_zero_target_weight_shows_error() {
+    let app = Thiccc;
+    let mut model = Model::default();
+
+    // Try to calculate plates with zero target weight
+    app.update(
+        Event::CalculatePlates {
+            target_weight: 0.0,
+            bar_weight: 45.0,
+            use_percentage: None,
+        },
+        &mut model,
+        &(),
+    );
+
+    // Verify error is shown
+    assert!(model.error_message.is_some());
+    assert!(model.showing_error);
+    assert!(model.error_message.as_ref().unwrap().contains("Target weight must be greater than 0"));
+}
+
+#[test]
+fn test_calculate_plates_with_zero_bar_weight_shows_error() {
+    let app = Thiccc;
+    let mut model = Model::default();
+
+    // Try to calculate plates with zero bar weight
+    app.update(
+        Event::CalculatePlates {
+            target_weight: 225.0,
+            bar_weight: 0.0,
+            use_percentage: None,
+        },
+        &mut model,
+        &(),
+    );
+
+    // Verify error is shown
+    assert!(model.error_message.is_some());
+    assert!(model.showing_error);
+    assert!(model.error_message.as_ref().unwrap().contains("Bar weight must be greater than 0"));
+}
+
+#[test]
+fn test_calculate_plates_with_invalid_percentage_shows_error() {
+    let app = Thiccc;
+    let mut model = Model::default();
+
+    // Try to calculate plates with percentage > 100
+    app.update(
+        Event::CalculatePlates {
+            target_weight: 225.0,
+            bar_weight: 45.0,
+            use_percentage: Some(150.0),
+        },
+        &mut model,
+        &(),
+    );
+
+    // Verify error is shown
+    assert!(model.error_message.is_some());
+    assert!(model.showing_error);
+    assert!(model.error_message.as_ref().unwrap().contains("Percentage must be between 0 and 100"));
+}
+
+#[test]
+fn test_database_error_shows_error() {
+    let app = Thiccc;
+    let mut model = Model::default();
+
+    // Simulate database error
+    app.update(
+        Event::DatabaseResponse {
+            result: DatabaseResult::Error {
+                message: "Database connection failed".to_string(),
+            },
+        },
+        &mut model,
+        &(),
+    );
+
+    // Verify error is shown
+    assert!(model.error_message.is_some());
+    assert!(model.showing_error);
+    assert!(model.error_message.as_ref().unwrap().contains("Database connection failed"));
+}
+
+#[test]
+fn test_storage_error_shows_error() {
+    let app = Thiccc;
+    let mut model = Model::default();
+
+    // Simulate storage error
+    app.update(
+        Event::StorageResponse {
+            result: StorageResult::Error {
+                message: "Storage full".to_string(),
+            },
+        },
+        &mut model,
+        &(),
+    );
+
+    // Verify error is shown
+    assert!(model.error_message.is_some());
+    assert!(model.showing_error);
+    assert!(model.error_message.as_ref().unwrap().contains("Storage error: Storage full"));
+}
+
+#[test]
+fn test_storage_load_workout_error_shows_error() {
+    let app = Thiccc;
+    let mut model = Model::default();
+
+    // Simulate loading invalid workout JSON from storage
+    app.update(
+        Event::StorageResponse {
+            result: StorageResult::CurrentWorkoutLoaded {
+                workout_json: Some("invalid json".to_string()),
+            },
+        },
+        &mut model,
+        &(),
+    );
+
+    // Verify error is shown
+    assert!(model.error_message.is_some());
+    assert!(model.showing_error);
+    assert!(model.error_message.as_ref().unwrap().contains("Failed to load workout"));
+}
+
+#[test]
+fn test_plate_calculation_target_less_than_bar_shows_error() {
+    let app = Thiccc;
+    let mut model = Model::default();
+
+    // Try to calculate plates with target weight less than bar weight
+    // This is valid input (positive values) but results in negative weight per side
+    app.update(
+        Event::CalculatePlates {
+            target_weight: 20.0,
+            bar_weight: 45.0,
+            use_percentage: None,
+        },
+        &mut model,
+        &(),
+    );
+
+    // Verify error is shown in the calculation result
+    assert!(model.error_message.is_some());
+    assert!(model.showing_error);
+    assert!(model.error_message.as_ref().unwrap().contains("Target weight is less than bar weight"));
+    assert!(model.plate_calculation.is_none());
+}
+
